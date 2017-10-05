@@ -376,15 +376,22 @@ iNZightMapMod <- setRefClass(
             ii <- 1
 
             if (map.type == "shape") {
-                yVarList <- gcombobox(
-                    c("Select Variable", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
-                    selected = ifelse(
-                        is.null(map.vars$y),
-                        1, which(rszNames == map.vars$y)[1] + 1
-                        )
-                    )
-                tbl[ii, 1:6, expand = TRUE] <- yVarList
-                ii <- ii + 1
+              lbl <- glabel("Code Variables")
+              font(lbl) <- list(weight = "bold", size = 11)
+              tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
+              ii <- ii + 1
+              
+              lbl <- glabel("Colour by :")
+              yVarList <- gcombobox(c("", names(GUI$getActiveData())),
+                                      selected = ifelse(
+                                        is.null(map.vars$y),
+                                        1, which(names(GUI$getActiveData()) ==
+                                                   map.vars$y)[1] + 1
+                                      )
+              )
+              tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+              tbl[ii, 3:6, expand = TRUE] <- yVarList
+              ii <- ii + 1 
             } else {
                 lbl <- glabel("Code Variables")
                 font(lbl) <- list(weight = "bold", size = 11)
