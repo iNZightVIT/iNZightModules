@@ -84,7 +84,54 @@ iNZightMapMod <- setRefClass(
             add(gv, mapType)
 
             addSpace(gv, 10)
-
+            
+            #################################################
+            
+            lbl <- glabel("Map Source")
+            font(lbl) <- list(weight = "bold", size = 12, family = "normal")
+            mapSource <- gradio(c("Shapefile", "maps Package"))
+            add(gv, lbl)
+            add(gv, mapSource)
+            
+            mapSourceBrowse <- gfilebrowse(text = "Open Shapefile...", 
+                                           type = "open",
+                                           filter = list("All supported formats" = list(patterns = c("*.shp", "*.json", "*.geojson")),
+                                                         "Shapefile" = list(patterns = c("*.shp")),
+                                                         "GeoJSON" = list(patterns = c("*.json", "*.geojson")))
+            )
+            
+            # offspring <- function(path=character(0), lst, ...) {
+            #   if(length(path))
+            #     obj <- lst[[path]]
+            #   else
+            #     obj <- lst
+            #   nms <- names(obj)
+            #   hasOffspring <- sapply(nms, function(i) {
+            #     newobj <- obj[[i]]
+            #     is.recursive(newobj) && !is.null(names(newobj))
+            #   })
+            #   data.frame(Maps=nms, hasOffspring = hasOffspring, stringsAsFactors=FALSE)
+            # }
+            # 
+            # l <- list(world = "1", 
+            #           country = list("Soviet Union" = "21", 
+            #                          "United States" = "22", 
+            #                          "New Zealand" = list("Regions" = "231")
+            #                          )
+            #           )
+            # 
+            # mapTreeBrowse <- gtree(offspring = offspring, offspring.data = l)
+            
+            add(gv, mapSourceBrowse, expand = TRUE)
+            
+            addHandlerChanged(mapSource, function(h, ...) {
+              v <- svalue(mapSource, index = TRUE)
+              visible(mapTreeBrowse) <- v == 1
+            })
+            
+            addSpace(gv, 10)
+            
+            #################################################
 
             title <- glabel("Mapping Variables")
             font(title) <- list(weight = "bold", size = 12, family = "normal")
@@ -155,7 +202,8 @@ iNZightMapMod <- setRefClass(
                                  if (svalue(mapType, index = TRUE) == 1) {
                                      if (svalue(latVar, TRUE) > 1 && svalue(lonVar, TRUE) > 1) {
                                          setVars(list(latitude = svalue(latVar),
-                                                      longitude = svalue(lonVar)),
+                                                      longitude = svalue(lonVar),
+                                                      shapefile = svalue(mapSourceBrowse)),
                                                  type = "points")
                                          initiateModule()
                                          dispose(w)
@@ -163,9 +211,13 @@ iNZightMapMod <- setRefClass(
                                          gmessage("Please select a variable for latitude and longitude")
                                      }
                                  } else {
-                                     if (svalue(mapLoc, TRUE) > 1 && svalue(locVar, TRUE) > 1) {
+                                     if (svalue(mapLoc, TRUE) > 1 && svalue(locVar, TRUE) > 1 && svalue(mapSourceBrowse) > 1) {
+                                       # TODO: 
+                                       # Error checking for the filename later on  
                                          setVars(list(location = svalue(mapLoc),
-                                                      location.var = svalue(locVar)),
+                                                      # location.var = svalue(locVar)),
+                                                      location.var = svalue(locVar),
+                                                      shapefile = svalue(mapSourceBrowse)),
                                                  type = "shape")
                                          initiateModule(shape = TRUE)
                                          dispose(w)
