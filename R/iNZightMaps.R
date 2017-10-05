@@ -89,7 +89,7 @@ iNZightMapMod <- setRefClass(
             
             lbl <- glabel("Map Source")
             font(lbl) <- list(weight = "bold", size = 12, family = "normal")
-            mapSource <- gradio(c("Shapefile", "maps Package"))
+            mapSource <- gradio(c("Shapefile", "Inbuilt Maps"))
             add(gv, lbl)
             add(gv, mapSource)
             
@@ -124,10 +124,10 @@ iNZightMapMod <- setRefClass(
             
             add(gv, mapSourceBrowse, expand = TRUE)
             
-            addHandlerChanged(mapSource, function(h, ...) {
-              v <- svalue(mapSource, index = TRUE)
-              visible(mapTreeBrowse) <- v == 1
-            })
+#             addHandlerChanged(mapSource, function(h, ...) {
+#               v <- svalue(mapSource, index = TRUE)
+#               visible(mapTreeBrowse) <- v == 1
+#             })
             
             addSpace(gv, 10)
             
@@ -253,9 +253,8 @@ iNZightMapMod <- setRefClass(
         createMapObject = function() {
             map.object <<-
                 if (map.type == "shape") {
-                  # print(map.vars$shapefile)
                   map.obj <- sf::st_read(map.vars$shapefile)
-                  map.obj <- sf::st_simplify(map.obj, dTolerance = 0.5)
+                  map.obj <- sf::st_simplify(map.obj, dTolerance = 0.05)
                   iNZightMaps2::iNZightMapPlot(data = activeData,
                                                map = map.obj, 
                                                type = "region",
@@ -263,7 +262,6 @@ iNZightMapMod <- setRefClass(
                                                by.map = "NAME")
                   
                 } else {
-                  print(map.vars)
                   map.obj <- sf::st_read(map.vars$shapefile)
                   map.obj <- sf::st_simplify(map.obj, dTolerance = 0.0005)
                     iNZightMaps2::iNZightMapPlot(data = activeData,
@@ -856,13 +854,11 @@ iNZightMapMod <- setRefClass(
           args <- list(x = map.object, varnames = list())
           
           if (map.type == "shape") {
-            if (!is.null(map.vars$y)) {
-              map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object, 
-                                                                     layer.set = "map", 
-                                                                     layer.name = "baselayer", 
-                                                                     aes.name = "fill", 
-                                                                     aes.var = map.vars$y)
-            } else return(invisible(NULL))
+            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object, 
+                                                                   layer.set = "map", 
+                                                                   layer.name = "baselayer", 
+                                                                   aes.name = "fill", 
+                                                                   aes.var = map.vars$y)
           } else {
            # Point plotting updates 
             map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
