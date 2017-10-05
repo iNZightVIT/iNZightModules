@@ -253,14 +253,24 @@ iNZightMapMod <- setRefClass(
         createMapObject = function() {
             map.object <<-
                 if (map.type == "shape") {
-                    iNZightMaps::iNZightShapeMap(data = activeData,
-                                                 location = map.vars$location,
-                                                 data.region = map.vars$location.var)
+                  # print(map.vars$shapefile)
+                  map.obj <- sf::st_read(map.vars$shapefile)
+                  map.obj <- sf::st_simplify(map.obj, dTolerance = 0.5)
+                  iNZightMaps2::iNZightMapPlot(data = activeData,
+                                               map = map.obj, 
+                                               type = "region",
+                                               by.data = map.vars$location.var,
+                                               by.map = "NAME")
+                  
                 } else {
-                    iNZightMaps::iNZightMap(lat = eval(parse(text = paste("~", map.vars$latitude))),
-                                            lon = eval(parse(text = paste("~", map.vars$longitude))),
-                                            data = activeData,
-                                            name = GUI$dataNameWidget$datName)
+                  print(map.vars)
+                  map.obj <- sf::st_read(map.vars$shapefile)
+                  map.obj <- sf::st_simplify(map.obj, dTolerance = 0.0005)
+                    iNZightMaps2::iNZightMapPlot(data = activeData,
+                                                 map = map.obj,
+                                                 type = "point",
+                                                 coord = c(map.vars$longitude, map.vars$latitude),
+                                                 crs = 4326)
                 }
         },
         ## get only numeric type variables
