@@ -135,8 +135,8 @@ iNZightMapMod <- setRefClass(
 
             title <- glabel("Mapping Variables")
             font(title) <- list(weight = "bold", size = 12, family = "normal")
-            add(gv, title, anchor = c(-1, 0))
-
+            # add(gv, title, anchor = c(-1, 0))
+            add(gv, title)
 
             ## latitude and longitude
             tbl <- glayout(homogeneous = FALSE)
