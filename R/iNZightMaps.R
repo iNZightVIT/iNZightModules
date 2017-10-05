@@ -853,70 +853,40 @@ iNZightMapMod <- setRefClass(
         },
         ## update plot function
         updatePlot = function() {
-            args <- list(x = map.object, varnames = list())
-            if (map.type == "shape") {
-                if (!is.null(map.vars$y)) {
-                    args$variable <- eval(parse(text = paste("~", map.vars$y)))
-                    args$varnames$x = map.vars$y
-                    args$varnames$y = map.vars$location.var
-                } else return(invisible(NULL))
-
-                switch(map.vars$col,
-                       "heat" = ,
-                       "terrain" = {
-                           args$col.fun <- map.vars$col
-                       },
-                       {
-                           args$col.fun <- NULL
-                           args$col <- map.vars$col
-                       })
-                
-                args$na.fill <- map.vars$na.fill
-
-                args$name <- switch(map.vars$map.labels,
-                                    "", "r", "v", "b")
-
-            } else {
-                if (!is.null(map.vars$colby)) {
-                    args$colby <- activeData[[map.vars$colby]]
-                    args$varnames$colby = map.vars$colby
-                }
-                if (!is.null(map.vars$sizeby)) {
-                    args$sizeby <- activeData[[map.vars$sizeby]]
-                    args$varnames$sizeby = map.vars$sizeby
-                }
-                if (!is.null(map.vars$opacity)) {
-                    args$opacity <- map.vars$opacity
-                    args$varnames$opacity = map.vars$opacity
-                }
-
-                args$col.pt <- map.vars$col.pt
-                args$cex.pt <- map.vars$cex.pt
-                args$alpha <- map.vars$alpha
-                args$join <- map.vars$join
-                args$col.line <- map.vars$col.line
-                
-                args$type <- map.type
-            }
-
+          args <- list(x = map.object, varnames = list())
+          
+          if (map.type == "shape") {
+            if (!is.null(map.vars$y)) {
+              map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object, 
+                                                                     layer.set = "map", 
+                                                                     layer.name = "baselayer", 
+                                                                     aes.name = "fill", 
+                                                                     aes.var = map.vars$y)
+            } else return(invisible(NULL))
+          } else {
+           # Point plotting updates 
+            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
+                                                                   layer.set = "point",
+                                                                   layer.name = "baselayer",
+                                                                   aes.name = "colour",
+                                                                   aes.var = map.vars$colby)
             
-            if (!is.null(map.vars$g1)) {
-                args$varnames$g1 = map.vars$g1
-                if (!is.null(map.vars$g1.level))
-                    args$varnames$g1.level <- map.vars$g1.level
-            }
-            if (!is.null(map.vars$g2)) {
-                args$varnames$g2 = map.vars$g2
-                if (!is.null(map.vars$g2.level))
-                    args$varnames$g2.level <- map.vars$g2.level
-            }            
-
-            if (!is.null(extra.args))
-                args <- c(args, extra.args)
-
-            pl <- do.call(plot, args)
-
-            return(invisible(pl))
+            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
+                                                                   layer.set = "point",
+                                                                   layer.name = "baselayer",
+                                                                   aes.name = "size",
+                                                                   aes.var = map.vars$sizeby)
+            
+            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
+                                                                   layer.set = "point",
+                                                                   layer.name = "baselayer",
+                                                                   aes.name = "alpha",
+                                                                   aes.var = map.vars$opacity)
+          }
+          
+          pl <- plot(map.object)
+          
+          return(invisible(pl))
         }
     )
 
