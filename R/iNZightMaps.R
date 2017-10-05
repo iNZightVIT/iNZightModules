@@ -50,7 +50,7 @@ iNZightMapMod <- setRefClass(
             ## GUI
             initFields(GUI = GUI)
 
-            if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
+            if (!requireNamespace("iNZightMaps2", quietly = TRUE)) {
                 resp <- gconfirm("The Maps package isn't installed. Do you want to install it now?",
                                  title = "Install Maps package", icon = "question", parent = GUI$win)
 
