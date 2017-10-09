@@ -199,6 +199,17 @@ iNZightMapMod <- setRefClass(
             okbtn <- gbutton("OK", expand = TRUE,
                              cont = btnGrp,
                              handler = function(h, ...) {
+                                 ## Shapefile error checking
+                                 if(length(svalue(mapSourceBrowse)) == 0) {
+                                     gmessage("Please select a shapefile")
+                                     return()
+                                 } else {
+                                     if(!file.exists(svalue(mapSourceBrowse))) {
+                                         gmessage("Shapefile does not exist")
+                                         return()
+                                     }
+                                 }
+
                                  if (svalue(mapType, index = TRUE) == 1) {
                                      if (svalue(latVar, TRUE) > 1 && svalue(lonVar, TRUE) > 1) {
                                          setVars(list(latitude = svalue(latVar),
@@ -211,20 +222,14 @@ iNZightMapMod <- setRefClass(
                                          gmessage("Please select a variable for latitude and longitude")
                                      }
                                  } else {
-                                     if (svalue(mapSourceBrowse) > 1) {
-                                       # TODO: 
-                                       # Error checking for the filename later on  
-                                       matchingDialog(shapefile = svalue(mapSourceBrowse))
-                                        # setVars(list(location = svalue(mapLoc),
-                                        #              # location.var = svalue(locVar)),
-                                        #              location.var = svalue(locVar),
-                                        #              shapefile = svalue(mapSourceBrowse)),
-                                        #         type = "shape")
-                                        # initiateModule(shape = TRUE)
-                                         dispose(w)
-                                     } else {
-                                         gmessage("Please select a map location and variable")
-                                     }
+                                     matchingDialog(shapefile = svalue(mapSourceBrowse))
+                                     # setVars(list(location = svalue(mapLoc),
+                                     #              # location.var = svalue(locVar)),
+                                     #              location.var = svalue(locVar),
+                                     #              shapefile = svalue(mapSourceBrowse)),
+                                     #         type = "shape")
+                                     # initiateModule(shape = TRUE)
+                                     dispose(w)
                                  }
                              })
             cnclBtn <- gbutton("Cancel", expand = TRUE, cont = btnGrp,
