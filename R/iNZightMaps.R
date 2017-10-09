@@ -575,7 +575,7 @@ iNZightMapMod <- setRefClass(
 
             ## in this case, no point in having a separate "show" button
             if (map.type == "shape") {
-                addHandlerChanged(yVarList, handler = function(h, ...) if (svalue(h$obj, TRUE) > 1) updateEverything())
+                addHandlerChanged(yVarList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
@@ -892,120 +892,120 @@ iNZightMapMod <- setRefClass(
           
           return(invisible(pl))
         },
-matchingDialog = function(shapefile) {
-  map.obj <- sf::st_read(shapefile)
+        matchingDialog = function(shapefile) {
+          map.obj <- sf::st_read(shapefile)
+          
+          w.match <- gwindow("Match Variables", width = 400, height = 500, visible = FALSE)
+          gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
+          gv.match$set_borderwidth(15)
+          
+          map.obj.vars <- as.data.frame(map.obj[, !(colnames(map.obj) %in% "geometry")])
+          
+          mapvarBox <- gcombobox(items = colnames(map.obj.vars))
+          datavarBox <- gcombobox(items = colnames(activeData))
+          
+          tblmap <- glayout()
+          tblmap[1, 1] <- glabel("Map Variable: ")
+          tblmap[1, 2, expand = TRUE] <- mapvarBox
+          
+          tbldata <- glayout()
+          tbldata[1, 1] <- glabel("Data Variable: ")
+          tbldata[1, 2, expand = TRUE] <- datavarBox
+          
+          add(gv.match, tblmap)
+          add(gv.match, tbldata)
+          
+          #############################
+          
+          mapvar <- svalue(mapvarBox)
+          datavar <- svalue(datavarBox)
+          
+          datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
+          mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
+          
+          mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
+                                        matchvar = mapvar.unq, dest = "iso3c",
+                                        stringsAsFactors = FALSE)
+          
+          datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
+                                        matchvar = datavar.unq, dest = "iso3c",
+                                        stringsAsFactors = FALSE)
+          
+          match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+          
+          #############################
+          
+          addHandlerChanged(mapvarBox, handler = function(h, ...) {
+            mapvar <<- svalue(mapvarBox)
+            
+            message("Joining on: ", mapvar, " & ", datavar)
+            
+            mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
+            
+            if(any(grepl("country", c(datavar, mapvar)))) {
+              # matchvar <- countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c")
+              matchvar <- mapvar.unq
+            } else {
+              matchvar <- mapvar.unq
+            }
+            
+            print(matchvar)
+            
+            mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
+                                          matchvar = matchvar,
+                                          stringsAsFactors = FALSE)
+            
+            match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+            
+            
+            match.tbl[] <- match.df
+          })
+          
+          addHandlerChanged(datavarBox, handler = function(h, ...) {
+            datavar <<- svalue(datavarBox)
+            
+            message("Joining on: ", mapvar, " & ", datavar)
+            
+            datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
+            
+            if(any(grepl("country", c(datavar, mapvar)))) {
+              # matchvar <- countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c")
+              matchvar <- datavar.unq
+            } else {
+              matchvar <- datavar.unq
+            }
+            
+            print(matchvar)
+            
+            datavar.unq.tbl <<- data.frame(dataname = datavar.unq, 
+                                           matchvar = matchvar,
+                                           stringsAsFactors = FALSE)
+            
+            match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+            
+            match.tbl[] <- match.df
+          })
+          
+          
+          match.tbl <- gdf(match.df)
+          add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
+          
+          match.confirm.btn <- gbutton("OK", handler = function(h, ...) {
+            setVars(list(location.var = svalue(datavarBox),
+                         map.var = svalue(mapvarBox),
+                         shapefile = shapefile),
+                    type = "shape")
+            
+            initiateModule(shape = TRUE)
+            dispose(w.match)
+          })
+          
+          add(gv.match, match.confirm.btn)
+          
+          visible(w.match) <- TRUE
+        }
   
-  w.match <- gwindow("Match Variables", width = 400, height = 500, visible = FALSE)
-  gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
-  gv.match$set_borderwidth(15)
-  
-  map.obj.vars <- as.data.frame(map.obj[, !(colnames(map.obj) %in% "geometry")])
-  
-  mapvarBox <- gcombobox(items = colnames(map.obj.vars))
-  datavarBox <- gcombobox(items = colnames(activeData))
-  
-  tblmap <- glayout()
-  tblmap[1, 1] <- glabel("Map Variable: ")
-  tblmap[1, 2, expand = TRUE] <- mapvarBox
-  
-  tbldata <- glayout()
-  tbldata[1, 1] <- glabel("Data Variable: ")
-  tbldata[1, 2, expand = TRUE] <- datavarBox
-  
-  add(gv.match, tblmap)
-  add(gv.match, tbldata)
-  
-  #############################
-  
-  mapvar <- svalue(mapvarBox)
-  datavar <- svalue(datavarBox)
-  
-  datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
-  mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
-  
-  mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
-                                matchvar = mapvar.unq, dest = "iso3c",
-                                stringsAsFactors = FALSE)
-  
-  datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
-                                matchvar = datavar.unq, dest = "iso3c",
-                                stringsAsFactors = FALSE)
-  
-  match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-  
-  #############################
-  
-  addHandlerChanged(mapvarBox, handler = function(h, ...) {
-    mapvar <<- svalue(mapvarBox)
-    
-    message("Joining on: ", mapvar, " & ", datavar)
-    
-    mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
-    
-    if(any(grepl("country", c(datavar, mapvar)))) {
-      # matchvar <- countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c")
-      matchvar <- mapvar.unq
-    } else {
-      matchvar <- mapvar.unq
-    }
-    
-    print(matchvar)
-    
-    mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
-                                  matchvar = matchvar,
-                                  stringsAsFactors = FALSE)
-    
-    match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-    
-    
-    match.tbl[] <- match.df
-  })
-  
-  addHandlerChanged(datavarBox, handler = function(h, ...) {
-    datavar <<- svalue(datavarBox)
-    
-    message("Joining on: ", mapvar, " & ", datavar)
-    
-    datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
-    
-    if(any(grepl("country", c(datavar, mapvar)))) {
-      # matchvar <- countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c")
-      matchvar <- datavar.unq
-    } else {
-      matchvar <- datavar.unq
-    }
-    
-    print(matchvar)
-    
-    datavar.unq.tbl <<- data.frame(dataname = datavar.unq, 
-                                   matchvar = matchvar,
-                                   stringsAsFactors = FALSE)
-    
-    match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-    
-    match.tbl[] <- match.df
-  })
-  
-  
-  match.tbl <- gdf(match.df)
-  add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
-  
-  match.confirm.btn <- gbutton("OK", handler = function(h, ...) {
-    setVars(list(location.var = svalue(datavarBox),
-                 map.var = svalue(mapvarBox),
-                 shapefile = shapefile),
-            type = "shape")
-    
-    initiateModule(shape = TRUE)
-    dispose(w.match)
-  })
-  
-  add(gv.match, match.confirm.btn)
-  
-  visible(w.match) <- TRUE
-}
-
-    )
+      )
 
 
 )
