@@ -93,6 +93,8 @@ iNZightMapMod <- setRefClass(
             add(gv, lbl)
             add(gv, mapSource)
             
+            tblShapefile <- glayout()
+            
             mapSourceBrowse <- gfilebrowse(text = "Open Shapefile...", 
                                            type = "open",
                                            filter = list("All supported formats" = list(patterns = c("*.shp", "*.json", "*.geojson")),
@@ -100,34 +102,21 @@ iNZightMapMod <- setRefClass(
                                                          "GeoJSON" = list(patterns = c("*.json", "*.geojson")))
             )
             
-            # offspring <- function(path=character(0), lst, ...) {
-            #   if(length(path))
-            #     obj <- lst[[path]]
-            #   else
-            #     obj <- lst
-            #   nms <- names(obj)
-            #   hasOffspring <- sapply(nms, function(i) {
-            #     newobj <- obj[[i]]
-            #     is.recursive(newobj) && !is.null(names(newobj))
-            #   })
-            #   data.frame(Maps=nms, hasOffspring = hasOffspring, stringsAsFactors=FALSE)
-            # }
-            # 
-            # l <- list(world = "1", 
-            #           country = list("Soviet Union" = "21", 
-            #                          "United States" = "22", 
-            #                          "New Zealand" = list("Regions" = "231")
-            #                          )
-            #           )
-            # 
-            # mapTreeBrowse <- gtree(offspring = offspring, offspring.data = l)
+            tblShapefile[1, 1, expand = TRUE] <- mapSourceBrowse
             
-            add(gv, mapSourceBrowse, expand = TRUE)
+            stored.shapefiles <- list.files("~/iNZightVIT/shapefiles/", recursive = TRUE, pattern = ".shp$")
+            mapInbuiltBrowse <- gcombobox(stored.shapefiles)
             
-#             addHandlerChanged(mapSource, function(h, ...) {
-#               v <- svalue(mapSource, index = TRUE)
-#               visible(mapTreeBrowse) <- v == 1
-#             })
+            add(gv, tblShapefile, expand = TRUE)
+            add(gv, mapInbuiltBrowse, expand = TRUE)
+            
+            visible(mapInbuiltBrowse) <- FALSE
+            
+            addHandlerChanged(mapSource, function(h, ...) {
+              v <- svalue(mapSource, index = TRUE)
+              visible(tblShapefile) <- v == 1
+              visible(mapInbuiltBrowse) <- v == 2
+            })
             
             addSpace(gv, 10)
             
