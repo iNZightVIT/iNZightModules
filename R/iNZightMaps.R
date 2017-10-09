@@ -917,11 +917,11 @@ matchingDialog = function(shapefile) {
   mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
   
   mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
-                                matchvar = countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c"),
+                                matchvar = mapvar.unq, dest = "iso3c"),
                                 stringsAsFactors = FALSE)
   
   datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
-                                matchvar = countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c"),
+                                matchvar = datavar.unq, dest = "iso3c"),
                                 stringsAsFactors = FALSE)
   
   match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
@@ -936,7 +936,8 @@ matchingDialog = function(shapefile) {
     mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
     
     if(any(grepl("country", c(datavar, mapvar)))) {
-      matchvar <- countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c")
+      # matchvar <- countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c")
+      matchvar <- mapvar.unq
     } else {
       matchvar <- mapvar.unq
     }
@@ -961,7 +962,8 @@ matchingDialog = function(shapefile) {
     datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
     
     if(any(grepl("country", c(datavar, mapvar)))) {
-      matchvar <- countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c")
+      # matchvar <- countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c")
+      matchvar <- datavar.unq
     } else {
       matchvar <- datavar.unq
     }
