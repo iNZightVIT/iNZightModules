@@ -373,42 +373,39 @@ iNZightMapMod <- setRefClass(
 
             tbl <- glayout(homogeneous = FALSE)
             ii <- 1
+            
+            ## Options common to both regions and points
+            
+            lbl <- glabel("Code Variables")
+            font(lbl) <- list(weight = "bold", size = 11)
+            tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
+            ii <- ii + 1
+            
+            lbl <- glabel("Colour by :")
+            colVarList <- gcombobox(c("", names(GUI$getActiveData())),
+                                    selected = ifelse(
+                                      is.null(map.vars$colby),
+                                      1, which(names(GUI$getActiveData()) ==
+                                                 map.vars$colby)[1] + 1
+                                    )
+            )
+            tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+            tbl[ii, 3:6, expand = TRUE] <- colVarList
+            ii <- ii + 1 
 
             if (map.type == "shape") {
-              lbl <- glabel("Code Variables")
-              font(lbl) <- list(weight = "bold", size = 11)
-              tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
-              ii <- ii + 1
-              
-              lbl <- glabel("Colour by :")
-              yVarList <- gcombobox(c("", names(GUI$getActiveData())),
-                                      selected = ifelse(
-                                        is.null(map.vars$y),
-                                        1, which(names(GUI$getActiveData()) ==
-                                                   map.vars$y)[1] + 1
-                                      )
+              lbl <- glabel("Opacify by :")
+              opctyVarList <- gcombobox(
+                c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
+                selected = ifelse(
+                  is.null(map.vars$opacity),
+                  1, which(numNames == map.vars$opacity)[1] + 1
+                )
               )
               tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-              tbl[ii, 3:6, expand = TRUE] <- yVarList
-              ii <- ii + 1 
+              tbl[ii, 3:6, expand = TRUE] <- opctyVarList
+              ii <- ii + 1
             } else {
-                lbl <- glabel("Code Variables")
-                font(lbl) <- list(weight = "bold", size = 11)
-                tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
-                ii <- ii + 1
-                
-                lbl <- glabel("Colour by :")
-                colVarList <- gcombobox(c("", names(GUI$getActiveData())),
-                                        selected = ifelse(
-                                            is.null(map.vars$colby),
-                                            1, which(names(GUI$getActiveData()) ==
-                                                         map.vars$colby)[1] + 1
-                                            )
-                                        )
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- colVarList
-                ii <- ii + 1                
-                
                 lbl <- glabel("Size by :")
                 rszVarList <- gcombobox(
                     c("", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
@@ -419,19 +416,6 @@ iNZightMapMod <- setRefClass(
                     )
                 tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
                 tbl[ii, 3:6, expand = TRUE] <- rszVarList
-                ii <- ii + 1
-                
-                
-                lbl <- glabel("Opacify by :")
-                opctyVarList <- gcombobox(
-                    c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
-                    selected = ifelse(
-                        is.null(map.vars$opacity),
-                        1, which(numNames == map.vars$opacity)[1] + 1
-                        )
-                    )
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- opctyVarList
                 ii <- ii + 1
             }
             
@@ -552,14 +536,14 @@ iNZightMapMod <- setRefClass(
             ## Maintain a single function that is called whenever anything is updated:
             updateEverything <- function() {
                 if (map.type == "shape") {
-                    map.vars$y <<- svalue(yVarList)
+                    map.vars$y <<- svalue(colVarList)
                     map.vars$col <<- svalue(symbolColList)
                     map.vars$na.fill <<- svalue(naFillCol)
                     map.vars$map.labels <<- svalue(mapLbls, index = TRUE)
                 } else {
                     if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
                     if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
-                    if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
+                    # if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
                     
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
@@ -575,7 +559,7 @@ iNZightMapMod <- setRefClass(
 
             ## in this case, no point in having a separate "show" button
             if (map.type == "shape") {
-                addHandlerChanged(yVarList, handler = function(h, ...) updateEverything())
+                addHandlerChanged(colVarList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
@@ -583,7 +567,7 @@ iNZightMapMod <- setRefClass(
                                       updateEverything()
                                   })
                 addHandlerChanged(rszVarList, handler = function(h, ...) updateEverything())
-                addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
+                # addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
             }
 
