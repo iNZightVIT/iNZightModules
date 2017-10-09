@@ -877,7 +877,7 @@ iNZightMapMod <- setRefClass(
         matchingDialog = function(shapefile, sender) {
           map.obj <- sf::st_read(shapefile)
           
-          w.match <- gwindow("Match Variables", width = 400, height = 500, visible = FALSE, parent = sender)
+          w.match <- gwindow("Match Variables", width = 700, height = 500, visible = FALSE, parent = sender)
           gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
           gv.match$set_borderwidth(15)
           
@@ -906,8 +906,8 @@ iNZightMapMod <- setRefClass(
           mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
           
           mapvar.unq.tbl <- data.frame(mapname = mapvar.unq,
-                                        matchvar = mapvar.unq,
-                                        stringsAsFactors = FALSE)
+                                       matchvar = mapvar.unq,
+                                       stringsAsFactors = FALSE)
           
           datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
                                         matchvar = datavar.unq, 
@@ -918,20 +918,15 @@ iNZightMapMod <- setRefClass(
           #############################
           
           addHandlerChanged(mapvarBox, handler = function(h, ...) {
-            mapvar <<- svalue(mapvarBox)
-            
-            message("Joining on: ", mapvar, " & ", datavar)
+            mapvar <- svalue(mapvarBox)
             
             mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
             
             if(any(grepl("country", c(datavar, mapvar)))) {
-              # matchvar <- countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c")
               matchvar <- mapvar.unq
             } else {
               matchvar <- mapvar.unq
             }
-            
-            print(matchvar)
             
             mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
                                           matchvar = matchvar,
@@ -944,20 +939,15 @@ iNZightMapMod <- setRefClass(
           })
           
           addHandlerChanged(datavarBox, handler = function(h, ...) {
-            datavar <<- svalue(datavarBox)
-            
-            message("Joining on: ", mapvar, " & ", datavar)
+            datavar <- svalue(datavarBox)
             
             datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
             
             if(any(grepl("country", c(datavar, mapvar)))) {
-              # matchvar <- countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c")
               matchvar <- datavar.unq
             } else {
               matchvar <- datavar.unq
             }
-            
-            print(matchvar)
             
             datavar.unq.tbl <<- data.frame(dataname = datavar.unq, 
                                            matchvar = matchvar,
