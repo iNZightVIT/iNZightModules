@@ -214,12 +214,13 @@ iNZightMapMod <- setRefClass(
                                      if (svalue(mapLoc, TRUE) > 1 && svalue(locVar, TRUE) > 1 && svalue(mapSourceBrowse) > 1) {
                                        # TODO: 
                                        # Error checking for the filename later on  
-                                         setVars(list(location = svalue(mapLoc),
-                                                      # location.var = svalue(locVar)),
-                                                      location.var = svalue(locVar),
-                                                      shapefile = svalue(mapSourceBrowse)),
-                                                 type = "shape")
-                                         initiateModule(shape = TRUE)
+                                       matchingDialog(shapefile = svalue(mapSourceBrowse))
+                                        # setVars(list(location = svalue(mapLoc),
+                                        #              # location.var = svalue(locVar)),
+                                        #              location.var = svalue(locVar),
+                                        #              shapefile = svalue(mapSourceBrowse)),
+                                        #         type = "shape")
+                                        # initiateModule(shape = TRUE)
                                          dispose(w)
                                      } else {
                                          gmessage("Please select a map location and variable")
@@ -259,7 +260,7 @@ iNZightMapMod <- setRefClass(
                                                map = map.obj, 
                                                type = "region",
                                                by.data = map.vars$location.var,
-                                               by.map = "NAME")
+                                               by.map = map.vars$map.var)
                   
                 } else {
                   map.obj <- sf::st_read(map.vars$shapefile)
@@ -883,7 +884,119 @@ iNZightMapMod <- setRefClass(
           pl <- plot(map.object)
           
           return(invisible(pl))
-        }
+        },
+matchingDialog = function(shapefile) {
+  map.obj <- sf::st_read(shapefile)
+  
+  w.match <- gwindow("Match Variables", width = 400, height = 500, visible = FALSE)
+  gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
+  gv.match$set_borderwidth(15)
+  
+  map.obj.vars <- as.data.frame(map.obj[, !(colnames(map.obj) %in% "geometry")])
+  
+  mapvarBox <- gcombobox(items = colnames(map.obj.vars))
+  datavarBox <- gcombobox(items = colnames(activeData))
+  
+  tblmap <- glayout()
+  tblmap[1, 1] <- glabel("Map Variable: ")
+  tblmap[1, 2, expand = TRUE] <- mapvarBox
+  
+  tbldata <- glayout()
+  tbldata[1, 1] <- glabel("Data Variable: ")
+  tbldata[1, 2, expand = TRUE] <- datavarBox
+  
+  add(gv.match, tblmap)
+  add(gv.match, tbldata)
+  
+  #############################
+  
+  mapvar <- svalue(mapvarBox)
+  datavar <- svalue(datavarBox)
+  
+  datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
+  mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
+  
+  mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
+                                matchvar = countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c"),
+                                stringsAsFactors = FALSE)
+  
+  datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
+                                matchvar = countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c"),
+                                stringsAsFactors = FALSE)
+  
+  match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+  
+  #############################
+  
+  addHandlerChanged(mapvarBox, handler = function(h, ...) {
+    mapvar <<- svalue(mapvarBox)
+    
+    message("Joining on: ", mapvar, " & ", datavar)
+    
+    mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
+    
+    if(any(grepl("country", c(datavar, mapvar)))) {
+      matchvar <- countrycode::countrycode(mapvar.unq, origin = "country.name", dest = "iso3c")
+    } else {
+      matchvar <- mapvar.unq
+    }
+    
+    print(matchvar)
+    
+    mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
+                                  matchvar = matchvar,
+                                  stringsAsFactors = FALSE)
+    
+    match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+    
+    
+    match.tbl[] <- match.df
+  })
+  
+  addHandlerChanged(datavarBox, handler = function(h, ...) {
+    datavar <<- svalue(datavarBox)
+    
+    message("Joining on: ", mapvar, " & ", datavar)
+    
+    datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
+    
+    if(any(grepl("country", c(datavar, mapvar)))) {
+      matchvar <- countrycode::countrycode(datavar.unq, origin = "country.name", dest = "iso3c")
+    } else {
+      matchvar <- datavar.unq
+    }
+    
+    print(matchvar)
+    
+    datavar.unq.tbl <<- data.frame(dataname = datavar.unq, 
+                                   matchvar = matchvar,
+                                   stringsAsFactors = FALSE)
+    
+    match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+    
+    match.tbl[] <- match.df
+  })
+  
+  
+  match.tbl <- gdf(match.df)
+  add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
+  
+  match.confirm.btn <- gbutton("OK", handler = function(h, ...) {
+    setVars(list(location.var = svalue(datavarBox),
+                 map.var = svalue(mapvarBox),
+                 shapefile = shapefile),
+            type = "shape")
+    
+    initiateModule(shape = TRUE)
+    dispose(w.match)
+  })
+  
+  add(gv.match, match.confirm.btn)
+  
+  visible(w.match) <- TRUE
+}
+
     )
+
 
 )
