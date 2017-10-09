@@ -537,6 +537,7 @@ iNZightMapMod <- setRefClass(
             updateEverything <- function() {
                 if (map.type == "shape") {
                     map.vars$y <<- svalue(colVarList)
+                    map.vars$opacity <<- svalue(opctyVarList)
                     map.vars$col <<- svalue(symbolColList)
                     map.vars$na.fill <<- svalue(naFillCol)
                     map.vars$map.labels <<- svalue(mapLbls, index = TRUE)
@@ -561,13 +562,13 @@ iNZightMapMod <- setRefClass(
             if (map.type == "shape") {
                 addHandlerChanged(colVarList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
+                addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
                                       enabled(joinCol) <- svalue(colVarList, TRUE) == 1
                                       updateEverything()
                                   })
                 addHandlerChanged(rszVarList, handler = function(h, ...) updateEverything())
-                # addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
             }
 
@@ -851,6 +852,11 @@ iNZightMapMod <- setRefClass(
                                                                    layer.name = "baselayer", 
                                                                    aes.name = "fill", 
                                                                    aes.var = map.vars$y)
+            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
+                                                                   layer.set = "map",
+                                                                   layer.name = "baselayer",
+                                                                   aes.name = "alpha",
+                                                                   aes.var = map.vars$opacity)
           } else {
            # Point plotting updates 
             map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
@@ -865,11 +871,7 @@ iNZightMapMod <- setRefClass(
                                                                    aes.name = "size",
                                                                    aes.var = map.vars$sizeby)
             
-            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
-                                                                   layer.set = "point",
-                                                                   layer.name = "baselayer",
-                                                                   aes.name = "alpha",
-                                                                   aes.var = map.vars$opacity)
+            
           }
           
           pl <- plot(map.object)
