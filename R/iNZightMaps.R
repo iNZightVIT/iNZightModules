@@ -924,11 +924,11 @@ matchingDialog = function(shapefile) {
   mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
   
   mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
-                                matchvar = mapvar.unq, dest = "iso3c"),
+                                matchvar = mapvar.unq, dest = "iso3c",
                                 stringsAsFactors = FALSE)
   
   datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
-                                matchvar = datavar.unq, dest = "iso3c"),
+                                matchvar = datavar.unq, dest = "iso3c",
                                 stringsAsFactors = FALSE)
   
   match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
