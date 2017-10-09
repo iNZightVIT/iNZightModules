@@ -193,11 +193,11 @@ iNZightMapMod <- setRefClass(
                                  ## Error checking
                                  if(svalue(mapSource, index = TRUE) == 1) {
                                      if(length(svalue(mapSourceBrowse)) == 0) {
-                                         gmessage("Please select a shapefile")
+                                         gmessage("Please select a shapefile", parent = w)
                                          return()
                                      } else {
                                          if(!file.exists(svalue(mapSourceBrowse))) {
-                                             gmessage("Shapefile does not exist")
+                                             gmessage("Shapefile does not exist", parent = w)
                                              return()
                                          }
                                          
@@ -216,11 +216,11 @@ iNZightMapMod <- setRefClass(
                                          initiateModule()
                                          dispose(w)
                                      } else {
-                                         gmessage("Please select a variable for latitude and longitude")
+                                         gmessage("Please select a variable for latitude and longitude", parent = w)
                                      }
                                  } else {
-                                     matchingDialog(shapefile = shapefile)
-                                     dispose(w)
+                                     matchingDialog(shapefile = shapefile, sender = w)
+                                     # dispose(w)
                                  }
                              })
             cnclBtn <- gbutton("Cancel", expand = TRUE, cont = btnGrp,
@@ -874,10 +874,10 @@ iNZightMapMod <- setRefClass(
           
           return(invisible(pl))
         },
-        matchingDialog = function(shapefile) {
+        matchingDialog = function(shapefile, sender) {
           map.obj <- sf::st_read(shapefile)
           
-          w.match <- gwindow("Match Variables", width = 400, height = 500, visible = FALSE)
+          w.match <- gwindow("Match Variables", width = 400, height = 500, visible = FALSE, parent = sender)
           gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
           gv.match$set_borderwidth(15)
           
@@ -894,8 +894,8 @@ iNZightMapMod <- setRefClass(
           tbldata[1, 1] <- glabel("Data Variable: ")
           tbldata[1, 2, expand = TRUE] <- datavarBox
           
-          add(gv.match, tblmap)
           add(gv.match, tbldata)
+          add(gv.match, tblmap)
           
           #############################
           
@@ -905,7 +905,7 @@ iNZightMapMod <- setRefClass(
           datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
           mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
           
-          mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
+          mapvar.unq.tbl <- data.frame(mapname = mapvar.unq,
                                         matchvar = mapvar.unq, dest = "iso3c",
                                         stringsAsFactors = FALSE)
           
@@ -972,6 +972,10 @@ iNZightMapMod <- setRefClass(
           match.tbl <- gdf(match.df)
           add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
           
+          match.btnGrp <- ggroup(cont = gv.match)
+          
+          addSpring(match.btnGrp)
+          
           match.confirm.btn <- gbutton("OK", handler = function(h, ...) {
             setVars(list(location.var = svalue(datavarBox),
                          map.var = svalue(mapvarBox),
@@ -980,9 +984,15 @@ iNZightMapMod <- setRefClass(
             
             initiateModule(shape = TRUE)
             dispose(w.match)
+            dispose(sender)
           })
           
-          add(gv.match, match.confirm.btn)
+          match.cancel.btn <- gbutton("Back", handler = function(h, ...) {
+              dispose(w.match)
+          })
+          
+          add(match.btnGrp, match.confirm.btn)
+          add(match.btnGrp, match.cancel.btn)
           
           visible(w.match) <- TRUE
         }
