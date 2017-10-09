@@ -163,33 +163,33 @@ iNZightMapMod <- setRefClass(
 
 
             ## shape file and region variable
-            tbl2 <- glayout(homogeneous = FALSE)
-            ii <- 1
-
-            lbl <- "Map Location :"
-            mapLoc <- gcombobox(c("", "world"))
-            tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- mapLoc
-            ii <- ii + 1
-
-            lbl <- "Location Variable :"
-            locVar <- gcombobox(c("", characterVars()))
-            tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- locVar
-            ii <- ii + 1
-            
-            visible(tbl2) <- FALSE
+            # tbl2 <- glayout(homogeneous = FALSE)
+            # ii <- 1
+# 
+            # lbl <- "Map Location :"
+            # mapLoc <- gcombobox(c("", "world"))
+            # tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+            # tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- mapLoc
+            # ii <- ii + 1
+# 
+            # lbl <- "Location Variable :"
+            # locVar <- gcombobox(c("", characterVars()))
+            # tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+            # tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- locVar
+            # ii <- ii + 1
+            # 
+            # visible(tbl2) <- FALSE
 
             addSpace(gv, 10)
             add(gv, tbl, expand = TRUE, fill = TRUE)
-            add(gv, tbl2, expand = TRUE, fill = TRUE)
+            # add(gv, tbl2, expand = TRUE, fill = TRUE)
             addSpring(gv)
 
             ## switch between them using radio buttons
             addHandlerChanged(mapType, function(h, ...) {
                                   v <- svalue(mapType, index = TRUE)
                                   visible(tbl) <- v == 1
-                                  visible(tbl2) <- v == 2
+                                  # visible(tbl2) <- v == 2
                               })
 
             ## OK Button
@@ -211,7 +211,7 @@ iNZightMapMod <- setRefClass(
                                          gmessage("Please select a variable for latitude and longitude")
                                      }
                                  } else {
-                                     if (svalue(mapLoc, TRUE) > 1 && svalue(locVar, TRUE) > 1 && svalue(mapSourceBrowse) > 1) {
+                                     if (svalue(mapSourceBrowse) > 1) {
                                        # TODO: 
                                        # Error checking for the filename later on  
                                        matchingDialog(shapefile = svalue(mapSourceBrowse))
