@@ -639,21 +639,14 @@ iNZightMapMod <- setRefClass(
                         if (svalue(G1box, index = TRUE) > 1) {
                             val <- svalue(G1box)
                             ds <- if (map.type == "shape") map.object$data else activeData
+                            
+                            map.object <<- addFacet(map.object, val)
+                            updatePlot() ############### CHECK FUNCTION
+                            
                             createSlider(pos = 2, val)
-                            changePlotSettings(list(
-                                g1 = iNZightPlots:::convert.to.factor(
-                                    ds[val][[1]]
-                                    ),
-                                g1.level = "_MULTI",
-                                varnames = list(
-                                    g1 = val)
-                                ))
+                            
                         } else {
-                            changePlotSettings(list(g1 = NULL,
-                                                    g1.level = NULL,
-                                                    varnames = list(
-                                                        g1 = NULL)
-                                                    ), reset = TRUE)
+                            
                         }
                     }
                 })
@@ -748,7 +741,7 @@ iNZightMapMod <- setRefClass(
             ## build the level names that are used for the slider
             ds <- if (map.type == "shape") map.object$data else activeData
             grpData <- ds[dropdata][[1]]
-            grpData <- iNZightPlots:::convert.to.factor(grpData)
+            # grpData <- iNZightPlots:::convert.to.factor(grpData)
             if (pos == 2)
                 lev <- c("_MULTI", levels(grpData))
             else
@@ -763,16 +756,9 @@ iNZightMapMod <- setRefClass(
                 grp = "g2"
             ## update the plot settings whenever the slider changes
             addHandlerChanged(slider, handler = function(h, ...) {
-                                  lbl <- paste(grp, "level", sep = ".")
-                                  changePlotSettings(
-                                      structure(list(
-                                          as.character(svalue(h$obj)),
-                                          structure(list(as.character(svalue(h$obj))),
-                                                    .Names = lbl
-                                                    )),
-                                                .Names = c(lbl, "varnames")
-                                                )
-                                      )
+                map.vars$facet.var <<- as.character(svalue(h$obj))
+                print(map.vars$facet.var)
+                updatePlot()
                           })
             lbl <- levels(grpData)
             ## if the level names are too long, replace them with nr
@@ -787,29 +773,7 @@ iNZightMapMod <- setRefClass(
             if (sum(nchar(lbl)) + 3 * length(lbl) < 50)
                 add(sliderGrp, glabel(paste(lbl, collapse = "   ")))
 
-            ## Play button
-            ## playBtn <- gbutton("Play", expand = FALSE,
-            ##                 handler = function(h, ...) {
-            ##                     oldSet <- GUI$getActiveDoc()$getSettings()
-            ##                     for (i in 1:length(levels(grpData))) {
-            ##                         changePlotSettings(
-            ##                             structure(list(i),
-            ##                                       .Names = paste(
-            ##                                           grp,
-            ##                                           "level",
-            ##                                           sep = ".")
-            ##                                       )
-            ##                             )
-            ##                       # This effectively freezes the R session,
-            ##                       # and therefore iNZight --- so increase with
-            ##                       # discression!!!!!
-            ##                         Sys.sleep(0.6)
-            ##                     }
-            ##                     changePlotSettings(oldSet)
-            ##                 })
             add(hzGrp, sliderGrp, expand = TRUE)
-
-            ## tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
 
         },
         deleteSlider = function(pos) {
@@ -870,7 +834,12 @@ iNZightMapMod <- setRefClass(
             
           }
           
-          pl <- plot(map.object)
+          if(is.null(map.vars$facet.var)) {
+              pl <- plot(map.object)
+          } else {
+              pl <- plot(map.object, facet = map.vars$facet.var)
+          }
+          
           
           return(invisible(pl))
         },
