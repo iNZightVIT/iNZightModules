@@ -114,7 +114,7 @@ iNZightMapMod <- setRefClass(
             mapSource <- gradio(c("Use Inbuilt Map", "Import Shapefile"))
             add(gv, lbl)
             add(gv, mapSource)
-            
+
             tblShapefile <- glayout()
             tblInbuiltfile <- glayout()
             
@@ -883,7 +883,7 @@ iNZightMapMod <- setRefClass(
           gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
           gv.match$set_borderwidth(15)
           
-          map.obj.vars <- as.data.frame(map.obj[, !(colnames(map.obj) %in% "geometry")])
+          map.obj.vars <- as.data.frame(map.obj)[, !(colnames(map.obj) %in% "geometry")]
           
           mapvarBox <- gcombobox(items = colnames(map.obj.vars))
           datavarBox <- gcombobox(items = colnames(activeData))
@@ -918,47 +918,40 @@ iNZightMapMod <- setRefClass(
           match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
           
           #############################
+
+          generateMatchDf <- function(mapvar, datavar) {
+            mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
+            datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
+
+            if(any(grepl("country", c(datavar, mapvar)))) {
+              matchvar <- mapvar.unq
+            } else {
+              matchvar <- mapvar.unq
+            }
+
+            mapvar.unq.tbl <- data.frame(mapname = mapvar.unq,
+                                         matchvar = mapvar.unq,
+                                         stringsAsFactors = FALSE)
+
+            datavar.unq.tbl <- data.frame(dataname = datavar.unq,
+                                          matchvar = datavar.unq,
+                                          stringsAsFactors = FALSE)
+
+            match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+            match.df
+          }
           
           addHandlerChanged(mapvarBox, handler = function(h, ...) {
             mapvar <- svalue(mapvarBox)
-            
-            mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
-            
-            if(any(grepl("country", c(datavar, mapvar)))) {
-              matchvar <- mapvar.unq
-            } else {
-              matchvar <- mapvar.unq
-            }
-            
-            mapvar.unq.tbl <<- data.frame(mapname = mapvar.unq,
-                                          matchvar = matchvar,
-                                          stringsAsFactors = FALSE)
-            
-            match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-            
-            
-            match.tbl[] <- match.df
-          })
-          
-          addHandlerChanged(datavarBox, handler = function(h, ...) {
             datavar <- svalue(datavarBox)
-            
-            datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
-            
-            if(any(grepl("country", c(datavar, mapvar)))) {
-              matchvar <- datavar.unq
-            } else {
-              matchvar <- datavar.unq
-            }
-            
-            datavar.unq.tbl <<- data.frame(dataname = datavar.unq, 
-                                           matchvar = matchvar,
-                                           stringsAsFactors = FALSE)
-            
-            match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-            
-            match.tbl[] <- match.df
+            match.tbl[] <- generateMatchDf(mapvar, datavar)
           })
+          addHandlerChanged(datavarBox, handler = function(h, ...) {
+            mapvar <- svalue(mapvarBox)
+            datavar <- svalue(datavarBox)
+            match.tbl[] <- generateMatchDf(mapvar, datavar)
+          })
+
           
           
           match.tbl <- gdf(match.df)
