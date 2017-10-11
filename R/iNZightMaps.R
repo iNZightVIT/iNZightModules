@@ -255,10 +255,11 @@ iNZightMapMod <- setRefClass(
             createMapObject()
         },
         createMapObject = function() {
+            simplify.level <- 0.01
             map.object <<-
                 if (map.type == "shape") {
                   map.obj <- sf::st_read(map.vars$shapefile)
-                  map.obj <- sf::st_simplify(map.obj, dTolerance = 0.05)
+                  map.obj <- sf::st_simplify(map.obj, dTolerance = simplify.level)
                   iNZightMaps2::iNZightMapPlot(data = activeData,
                                                map = map.obj, 
                                                type = "region",
@@ -267,7 +268,7 @@ iNZightMapMod <- setRefClass(
                   
                 } else {
                   map.obj <- sf::st_read(map.vars$shapefile)
-                  map.obj <- sf::st_simplify(map.obj, dTolerance = 0.0005)
+                  map.obj <- sf::st_simplify(map.obj, dTolerance = simplify.level)
                     iNZightMaps2::iNZightMapPlot(data = activeData,
                                                  map = map.obj,
                                                  type = "point",
