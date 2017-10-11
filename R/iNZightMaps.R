@@ -26,6 +26,11 @@ iNZightMapMod <- setRefClass(
     #     - activeData: imported data retrieved from the main iNZight GUI
     #   + Can change names
     #   + Set as many fields as needed
+    #   + Additional fields:
+    #     - map.vars : extra variables stored about the map plot object
+    #     - map.object : the plot itself (plus additional layers)
+    #     - [R] map.type : what type of plot it is
+    #     - grpTbl : sidebar gtable
     # =================================================================================
     fields = list(
         GUI         = "ANY",
@@ -43,6 +48,20 @@ iNZightMapMod <- setRefClass(
     # METHOD DEFINITION
     #   + Pre-defined method:
     #     - initialize(): all that relate to module window GUI should be defined here
+    #   + Additonal Methods:
+    #     - [R] setVars()   : set extra variables to control plot appearance
+    #     - createMapObject(): Creates the map object based on details from 
+    #                          initialisation dialog
+    #     - numericVars() : vector of numeric variables in activeData 
+    #     - characterVars() : vector of character variables in activeData
+    #     - initiateModule() : initiate map module into GUI - set up sidebar, plot 
+    #                          area, etc. 
+    #     - [R] canIZoom() : 
+    #     - createSlider() : create the facetting slider based on the variable chosen
+    #                        in the dropdown box
+    #     - deleteSlider() : delete a facetting slider
+    #     - [R]changePlotSettings() : update plotting attributes with extra.args
+    #     - updatePlot() : updates the plot with any new mappings or layers
     # ================================================================================
     methods = list(
         ## Function with all GUI specifications
