@@ -34,7 +34,7 @@ iNZightMapMod <- setRefClass(
         map.vars    = "ANY",
         map.object  = "ANY",
         map.type    = "ANY",
-        extra.args  = "list",
+        # extra.args  = "list",
         grpTbl      = "ANY"
     ),
 
@@ -248,7 +248,7 @@ iNZightMapMod <- setRefClass(
             ## defaults:
             map.vars$alpha <<- 1
             map.vars$cex.pt <<- 1
-            extra.args <<- list()
+            # extra.args <<- list()
 
             createMapObject()
         },
@@ -817,10 +817,10 @@ iNZightMapMod <- setRefClass(
             map.vars <<- modifyList(map.vars, set$varnames)
 
             set$varnames <- NULL
-            if (reset)
-                extra.args <<- set
-            else
-                extra.args <<- iNZight:::modifyList(extra.args, set, keep.null = TRUE)
+            # if (reset)
+            #     extra.args <<- set
+            # else
+            #     extra.args <<- iNZight:::modifyList(extra.args, set, keep.null = TRUE)
 
             updatePlot()
         },
