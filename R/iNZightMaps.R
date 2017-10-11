@@ -349,9 +349,14 @@ iNZightMapMod <- setRefClass(
                                       }
                                   })
             }
-            
-            
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(zoomBtn, zoomOutBtn, aboutBtn))
+
+            addtoplotBtn <- gimage(stock.id="edit", size = "button",
+                                         tooltip = "Add to Plot")
+            addHandlerClicked(addtoplotBtn, function(h, ...) {
+              
+            })
+
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addtoplotBtn, zoomBtn, zoomOutBtn, aboutBtn))
 
             ## mainGrp
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
@@ -635,18 +640,19 @@ iNZightMapMod <- setRefClass(
                         gmessage("You cannot use the same variable in both subsetting slots.",
                                  parent = GUI$win)
                     } else {
-                        deleteSlider(pos = 2)
+                        # deleteSlider(pos = 2)
                         if (svalue(G1box, index = TRUE) > 1) {
                             val <- svalue(G1box)
                             ds <- if (map.type == "shape") map.object$data else activeData
-                            
                             map.object <<- addFacet(map.object, val)
                             updatePlot() ############### CHECK FUNCTION
                             
-                            createSlider(pos = 2, val)
+                            # createSlider(pos = 2, val)
                             
                         } else {
-                            
+                            map.type.temp <- if(map.type == "shape") "map" else "point"
+                            map.object <<- removeLayer.iNZightMapPlot(map.object, map.type.temp, "facet")
+                            updatePlot()
                         }
                     }
                 })
