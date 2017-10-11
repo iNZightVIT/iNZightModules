@@ -561,6 +561,8 @@ iNZightMapMod <- setRefClass(
                     map.type <<- svalue(typeList)
                 }
                 
+                map.vars$plot.title <<- svalue(addPlotTitle)
+                
                 updatePlot()
             }
 
@@ -609,6 +611,15 @@ iNZightMapMod <- setRefClass(
 
 
             add(mainGrp, tbl)
+            
+            addPlotLabel <- glabel("Plot Title")
+            add(mainGrp, addPlotLabel)
+            print("test2")
+            addPlotTitle <- gedit("", cont = mainGrp)
+            addPlotTitleBtn <- gbutton("Add Title", cont = mainGrp)
+            addHandlerClicked(addPlotTitleBtn, handler = function(h, ...) {
+                updateEverything()
+            })
             
             addSpring(mainGrp)
             ## --------------------------------------------------  SLIDERS
@@ -843,6 +854,14 @@ iNZightMapMod <- setRefClass(
                                                                    aes.var = map.vars$sizeby)
             
             
+          }
+          
+          if(!is.null(map.vars$plot.title)) {
+              map.object <<- iNZightMaps2::addLayer.iNZightMapPlot(map.object,
+                                                                   layer.set = "map",
+                                                                   layer.name = "title",
+                                                                   ggplot2::ggtitle(map.vars$plot.title)
+              )
           }
           
           if(is.null(map.vars$facet.var)) {
