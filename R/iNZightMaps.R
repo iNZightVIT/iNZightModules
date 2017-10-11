@@ -116,6 +116,7 @@ iNZightMapMod <- setRefClass(
             add(gv, mapSource)
             
             tblShapefile <- glayout()
+            tblInbuiltfile <- glayout()
             
             mapSourceBrowse <- gfilebrowse(text = "Open Shapefile...", 
                                            type = "open",
@@ -128,17 +129,19 @@ iNZightMapMod <- setRefClass(
             
             stored.shapefiles <- list.files("~/iNZightVIT/shapefiles/", recursive = TRUE, pattern = ".shp$")
             mapInbuiltBrowse <- gcombobox(stored.shapefiles)
+
+            tblInbuiltfile[1, 1, expand = TRUE] <- mapInbuiltBrowse
             
-            add(gv, tblShapefile, expand = TRUE)
-            add(gv, mapInbuiltBrowse, expand = TRUE)
+            add(gv, tblShapefile, fill = "x")
+            add(gv, tblInbuiltfile, fill = "x")
             
-            visible(mapInbuiltBrowse) <- TRUE
+            visible(tblInbuiltfile) <- TRUE
             visible(tblShapefile) <- FALSE
             
             addHandlerChanged(mapSource, function(h, ...) {
               v <- svalue(mapSource, index = TRUE)
               visible(tblShapefile) <- v == 2
-              visible(mapInbuiltBrowse) <- v == 1
+              visible(tblInbuiltfile) <- v == 1
             })
             
             addSpace(gv, 10)
