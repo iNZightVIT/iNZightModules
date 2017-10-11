@@ -83,13 +83,16 @@ iNZightMapMod <- setRefClass(
             add(gv, lbl)
             add(gv, mapType)
 
+          coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
+          svalue(mapType, index = TRUE) <- if(coord.or.region) 1 else 2
+
             addSpace(gv, 10)
             
             #################################################
             
             lbl <- glabel("Map Source")
             font(lbl) <- list(weight = "bold", size = 12, family = "normal")
-            mapSource <- gradio(c("Shapefile", "Inbuilt Maps"))
+            mapSource <- gradio(c("Use Inbuilt Map", "Import Shapefile"))
             add(gv, lbl)
             add(gv, mapSource)
             
@@ -110,12 +113,13 @@ iNZightMapMod <- setRefClass(
             add(gv, tblShapefile, expand = TRUE)
             add(gv, mapInbuiltBrowse, expand = TRUE)
             
-            visible(mapInbuiltBrowse) <- FALSE
+            visible(mapInbuiltBrowse) <- TRUE
+            visible(tblShapefile) <- FALSE
             
             addHandlerChanged(mapSource, function(h, ...) {
               v <- svalue(mapSource, index = TRUE)
-              visible(tblShapefile) <- v == 1
-              visible(mapInbuiltBrowse) <- v == 2
+              visible(tblShapefile) <- v == 2
+              visible(mapInbuiltBrowse) <- v == 1
             })
             
             addSpace(gv, 10)
@@ -150,6 +154,7 @@ iNZightMapMod <- setRefClass(
             lon.match <- grep("lon", tolower(vars))
             if (length(lon.match)) svalue(lonVar, index = TRUE) <- lon.match[1] + 1
 
+            visible(tbl) <- coord.or.region
 
             ## shape file and region variable
             # tbl2 <- glayout(homogeneous = FALSE)
@@ -188,10 +193,10 @@ iNZightMapMod <- setRefClass(
             okbtn <- gbutton("OK", expand = TRUE,
                              cont = btnGrp,
                              handler = function(h, ...) {
-                                 ## mapSource == 1 -> Shapefile
-                                 ## mapSource == 2 -> Inbuilt
+                                 ## mapSource == 2 -> Shapefile
+                                 ## mapSource == 1 -> Inbuilt
                                  ## Error checking
-                                 if(svalue(mapSource, index = TRUE) == 1) {
+                                 if(svalue(mapSource, index = TRUE) == 2) {
                                      if(length(svalue(mapSourceBrowse)) == 0) {
                                          gmessage("Please select a shapefile", parent = w)
                                          return()
