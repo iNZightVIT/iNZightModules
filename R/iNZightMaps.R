@@ -85,7 +85,6 @@ iNZightMapMod <- setRefClass(
                 }
             }
             
-            
             ## Configure the data / variables for mapping:
             ## activeData
             activeData <<- GUI$getActiveData()
@@ -94,7 +93,6 @@ iNZightMapMod <- setRefClass(
             gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
             gv$set_borderwidth(15)
 
-
             lbl <- glabel("Type of Map Data")
             font(lbl) <- list(weight = "bold", size = 12, family = "normal")
             mapType <- gradio(c("Coordinate (latitude, longitude)",
@@ -102,12 +100,14 @@ iNZightMapMod <- setRefClass(
             add(gv, lbl)
             add(gv, mapType)
 
-          coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
-          svalue(mapType, index = TRUE) <- if(coord.or.region) 1 else 2
+            coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
+            svalue(mapType, index = TRUE) <- if(coord.or.region) 1 else 2
 
             addSpace(gv, 10)
             
             #################################################
+
+            # TODO: Fix problem of inputs moving slightly
             
             lbl <- glabel("Map Source")
             font(lbl) <- list(weight = "bold", size = 12, family = "normal")
@@ -122,7 +122,7 @@ iNZightMapMod <- setRefClass(
                                            filter = list("All supported formats" = list(patterns = c("*.shp", "*.json", "*.geojson")),
                                                          "Shapefile" = list(patterns = c("*.shp")),
                                                          "GeoJSON" = list(patterns = c("*.json", "*.geojson")))
-            )
+                                           )
             
             tblShapefile[1, 1, expand = TRUE] <- mapSourceBrowse
             
@@ -147,7 +147,6 @@ iNZightMapMod <- setRefClass(
 
             title <- glabel("Mapping Variables")
             font(title) <- list(weight = "bold", size = 12, family = "normal")
-            # add(gv, title, anchor = c(-1, 0))
             add(gv, title)
 
             ## latitude and longitude
@@ -174,35 +173,17 @@ iNZightMapMod <- setRefClass(
             if (length(lon.match)) svalue(lonVar, index = TRUE) <- lon.match[1] + 1
 
             visible(tbl) <- coord.or.region
-
-            ## shape file and region variable
-            # tbl2 <- glayout(homogeneous = FALSE)
-            # ii <- 1
-# 
-            # lbl <- "Map Location :"
-            # mapLoc <- gcombobox(c("", "world"))
-            # tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            # tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- mapLoc
-            # ii <- ii + 1
-# 
-            # lbl <- "Location Variable :"
-            # locVar <- gcombobox(c("", characterVars()))
-            # tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            # tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- locVar
-            # ii <- ii + 1
-            # 
-            # visible(tbl2) <- FALSE
+            visible(title) <- coord.or.region
 
             addSpace(gv, 10)
             add(gv, tbl, expand = TRUE, fill = TRUE)
-            # add(gv, tbl2, expand = TRUE, fill = TRUE)
             addSpring(gv)
 
             ## switch between them using radio buttons
             addHandlerChanged(mapType, function(h, ...) {
                                   v <- svalue(mapType, index = TRUE)
                                   visible(tbl) <- v == 1
-                                  # visible(tbl2) <- v == 2
+                                  visible(title) <- v == 1
                               })
 
             ## OK Button
@@ -218,16 +199,17 @@ iNZightMapMod <- setRefClass(
                                  if(svalue(mapSource, index = TRUE) == 2) {
                                      if(length(svalue(mapSourceBrowse)) == 0) {
                                          gmessage("Please select a shapefile", parent = w)
-                                         return()
+                                         return(NULL)
                                      } else {
                                          if(!file.exists(svalue(mapSourceBrowse))) {
                                              gmessage("Shapefile does not exist", parent = w)
-                                             return()
+                                             return(NULL)
                                          }
                                          
                                          shapefile <- svalue(mapSourceBrowse)
                                      }
                                  } else {
+                                     # TODO: Replace with a less fixed path
                                      shapefile <- paste0("~/iNZightVIT/shapefiles/", svalue(mapInbuiltBrowse))
                                  }
                                  
@@ -244,17 +226,15 @@ iNZightMapMod <- setRefClass(
                                      }
                                  } else {
                                      matchingDialog(shapefile = shapefile, sender = w)
-                                     # dispose(w)
                                  }
                              })
+
             cnclBtn <- gbutton("Cancel", expand = TRUE, cont = btnGrp,
                                handler = function(h, ...) {
                                   dispose(w)
                                })
 
-
             visible(w) <- TRUE
-
 
         },
 
