@@ -328,34 +328,22 @@ iNZightMapMod <- setRefClass(
             zoomOutBtn <- gimage(stock.id = "zoom-out", size = "button")
             if (map.type == "shape") {                
                 addHandlerClicked(zoomBtn, function(h, ...) {
-                                      if (canIZoom()) {
-                                          zoom <- iNZightMaps::sClickOnZoom(3/4)
-                                      } else {
-                                          gmessage("Cannot zoom when displaying multiple subsets.")
-                                      }
-                                  })
+                    zoom.point <- grid.locator()
+                    print(zoom.point)
+                })
                 addHandlerClicked(zoomOutBtn, function(h, ...) {
-                                      if (canIZoom()) {
-                                          iNZightMaps::sClickOnZoom(4/3)
-                                      } else {
-                                          gmessage("Cannot zoom when displaying multiple subsets.")
-                                      }
-                                  })
+                    zoom.point <- grid.locator()
+                    print(zoom.point)
+                })
             } else {
                 addHandlerClicked(zoomBtn, function(h, ...) {
-                                      if (canIZoom()) {
-                                          iNZightMaps::ClickOnZoom(3/4)
-                                      } else {
-                                          gmessage("Cannot zoom when displaying multiple subsets.")
-                                      }
-                                  })
+                    zoom.point <- grid.locator()
+                    print(zoom.point)
+                })
                 addHandlerClicked(zoomOutBtn, function(h, ...) {
-                                      if (canIZoom()) {
-                                          iNZightMaps::ClickOnZoom(4/3)
-                                      } else {
-                                          gmessage("Cannot zoom when displaying multiple subsets.")
-                                      }
-                                  })
+                    zoom.point <- grid.locator()
+                    print(zoom.point)
+                })
             }
 
             addtoplotBtn <- gimage(stock.id="edit", size = "button",
