@@ -457,16 +457,8 @@ iNZightMapMod <- setRefClass(
                         which(pointCols == map.vars$col.pt)[1]),
                     editable = FALSE)
             } else {
-                pointCols <- c("grey50", "black", "darkblue", "darkgreen",
-                               "darkmagenta", "darkslateblue", "hotpink4",
-                               "lightsalmon2", "palegreen3", "steelblue3")
-                symbolColList <- gcombobox(
-                    pointCols,
-                    selected = ifelse(
-                        is.na(which(pointCols == map.vars$col.pt)[1]),
-                        1,
-                        which(pointCols == map.vars$col.pt)[1]),
-                    editable = TRUE)
+                pointCols <- c("", colours())
+                symbolColList <- gcombobox(pointCols, editable = TRUE)
             }
 
             tbl[ii,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl
@@ -542,7 +534,7 @@ iNZightMapMod <- setRefClass(
                     if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
                     if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
                     # if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
-                    
+                    if (svalue(symbolColList, TRUE) > 1) map.vars$colconst <<- svalue(symbolColList) else map.vars$colconst <<- NULL
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
                     map.vars$alpha <<- 1 - svalue(transpSlider) / 100
@@ -559,14 +551,21 @@ iNZightMapMod <- setRefClass(
 
             ## in this case, no point in having a separate "show" button
             if (map.type == "shape") {
-                addHandlerChanged(colVarList, handler = function(h, ...) updateEverything())
+                addHandlerChanged(colVarList, handler = function(h, ...)  {
+                    if(!is.null(map.vars$colconst)) {
+                        svalue(symbolColList, index = TRUE) <- 1
+                    }
+                    updateEverything()
+                    })
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
                 addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
             } else {
-                addHandlerChanged(colVarList, handler = function(h, ...) {
-                                      enabled(joinCol) <- svalue(colVarList, TRUE) == 1
-                                      updateEverything()
-                                  })
+                addHandlerChanged(colVarList, handler = function(h, ...)  {
+                    if(!is.null(map.vars$colconst)) {
+                        svalue(symbolColList, index = TRUE) <- 1
+                    }
+                    updateEverything()
+                })
                 addHandlerChanged(rszVarList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
             }
@@ -574,12 +573,12 @@ iNZightMapMod <- setRefClass(
             pcoltimer <- NULL
             addHandlerChanged(symbolColList,
                               handler = function(h, ...) {
-                                  if (!is.null(pcoltimer))
-                                      pcoltimer$stop_timer()
-                                  pcoltimer <- gtimer(200, function(...) {
-                                                          if (nchar(svalue(symbolColList)) >= 3)
-                                                              updateEverything()
-                                                      }, one.shot = TRUE)
+                                  if(!is.null(map.vars$colby) && svalue(symbolColList, index = TRUE) > 1) {
+                                      gmessage("Colours already specified by variable")
+                                      svalue(symbolColList, index = TRUE) <- 1
+                                  } else {
+                                      updateEverything()
+                                  }
                               })
 
             if (map.type != "shape") {
@@ -857,6 +856,11 @@ iNZightMapMod <- setRefClass(
                                                                    aes.name = "size",
                                                                    aes.var = map.vars$sizeby)
             
+            map.object <<- iNZightMaps2::setConstant.iNZightMapPlot(map.object,
+                                                                    layer.set = "point",
+                                                                    layer.name = "baselayer",
+                                                                    aes.name = "colour",
+                                                                    aes.val = map.vars$colconst)
             
           }
           
