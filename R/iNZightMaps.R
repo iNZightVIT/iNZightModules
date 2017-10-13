@@ -615,14 +615,20 @@ iNZightMapMod <- setRefClass(
 
             add(mainGrp, tbl)
             
+            title.tbl <- glayout()
+            
             addPlotLabel <- glabel("Plot Title")
-            add(mainGrp, addPlotLabel)
-            print("test2")
-            addPlotTitle <- gedit("", cont = mainGrp)
-            addPlotTitleBtn <- gbutton("Add Title", cont = mainGrp)
+            title.tbl[1, 1:2, anchor = c(1, 0), expand = TRUE] <- addPlotLabel
+            addPlotTitle <- gedit("")
+            title.tbl[1, 4:5, expand = TRUE] <- addPlotTitle
+            addPlotTitleBtn <- gbutton("Add Title")
+            title.tbl[1, 6] <- addPlotTitleBtn
+            
             addHandlerClicked(addPlotTitleBtn, handler = function(h, ...) {
                 updateEverything()
             })
+            
+            add(mainGrp, title.tbl)
             
             addSpring(mainGrp)
             ## --------------------------------------------------  SLIDERS
