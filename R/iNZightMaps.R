@@ -844,6 +844,13 @@ iNZightMapMod <- setRefClass(
                                                                    aes.name = "colour",
                                                                    aes.var = map.vars$colby)
             
+            # Add a fill aesthetic too - this makes the legend more informative
+            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
+                                                                   layer.set = "point",
+                                                                   layer.name = "baselayer",
+                                                                   aes.name = "fill",
+                                                                   aes.var = map.vars$colby)
+            
             map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
                                                                    layer.set = "point",
                                                                    layer.name = "baselayer",
