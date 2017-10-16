@@ -352,7 +352,8 @@ iNZightMapMod <- setRefClass(
                                                            "map", 
                                                            "coordlims",
                                                            ggplot2::coord_sf(xlim = zoom.xlim,
-                                                                             ylim = zoom.ylim))
+                                                                             ylim = zoom.ylim,
+                                                                             datum = map.object$crs))
                     updateEverything()
                 })
                 addHandlerClicked(zoomOutBtn, function(h, ...) {
@@ -378,7 +379,8 @@ iNZightMapMod <- setRefClass(
                                                         "map", 
                                                         "coordlims",
                                                         ggplot2::coord_sf(xlim = zoom.xlim,
-                                                                          ylim = zoom.ylim))
+                                                                          ylim = zoom.ylim,
+                                                                          datum = map.object$crs))
                     updateEverything()
                 })
                 
@@ -633,7 +635,7 @@ iNZightMapMod <- setRefClass(
                                       updateEverything()
                                   }
                               })
-
+            
             if (map.type != "shape") {
                 cextimer <- NULL
                 addHandlerChanged(cexSlider,
