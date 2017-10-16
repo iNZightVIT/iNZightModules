@@ -326,14 +326,67 @@ iNZightMapMod <- setRefClass(
 
             zoomBtn <- gimage(stock.id = "zoom-in", size = "button")
             zoomOutBtn <- gimage(stock.id = "zoom-out", size = "button")
+            zoomFitBtn <- gimage(stock.id = "zoom-fit", size = "button")
+            
             if (map.type == "shape") {                
                 addHandlerClicked(zoomBtn, function(h, ...) {
-                    zoom.point <- grid.locator()
-                    print(zoom.point)
+                    test.pt <- grid::grid.locator("npc")
+                    
+                    print(test.pt)
+                    
+                    mp.build <- ggplot2::ggplot_build(plot(map.object))
+                    
+                    test.xlim <- mp.build$layout$panel_params[[1]]$x_range
+                    test.ylim <- mp.build$layout$panel_params[[1]]$y_range
+                    
+                    test.xrange <- diff(test.xlim)
+                    test.yrange <- diff(test.ylim)
+                    
+                    x.centre <- test.xlim[1] + as.numeric(test.pt$x) * test.xrange
+                    y.centre <- test.ylim[1] + as.numeric(test.pt$y) * test.yrange
+                    
+                    zoom.xlim <- x.centre + c(-1, 1) * (1/2) * (1/2) * test.xrange
+                    zoom.ylim <- y.centre + c(-1, 1) * (1/2) * (1/2) * test.yrange
+                    
+                    map.object <<- addLayer.iNZightMapPlot(map.object, 
+                                                           "map", 
+                                                           "coordlims",
+                                                           ggplot2::coord_sf(xlim = zoom.xlim,
+                                                                             ylim = zoom.ylim))
+                    updateEverything()
                 })
                 addHandlerClicked(zoomOutBtn, function(h, ...) {
-                    zoom.point <- grid.locator()
-                    print(zoom.point)
+                    test.pt <- grid::grid.locator("npc")
+                    
+                    print(test.pt)
+                    
+                    mp.build <- ggplot2::ggplot_build(plot(map.object))
+                    
+                    test.xlim <- mp.build$layout$panel_params[[1]]$x_range
+                    test.ylim <- mp.build$layout$panel_params[[1]]$y_range
+                    
+                    test.xrange <- diff(test.xlim)
+                    test.yrange <- diff(test.ylim)
+                    
+                    x.centre <- test.xlim[1] + as.numeric(test.pt$x) * test.xrange
+                    y.centre <- test.ylim[1] + as.numeric(test.pt$y) * test.yrange
+                    
+                    zoom.xlim <- x.centre + c(-1, 1) * (1/2) * (2/1) * test.xrange
+                    zoom.ylim <- y.centre + c(-1, 1) * (1/2) * (2/1) * test.yrange
+
+                    map.object <<- addLayer.iNZightMapPlot(map.object, 
+                                                        "map", 
+                                                        "coordlims",
+                                                        ggplot2::coord_sf(xlim = zoom.xlim,
+                                                                          ylim = zoom.ylim))
+                    updateEverything()
+                })
+                
+                addHandlerClicked(zoomFitBtn, function(h, ...) {
+                    map.object <<- removeLayer.iNZightMapPlot(map.object, 
+                                                           "map", 
+                                                           "coordlims")
+                    updateEverything()
                 })
             } else {
                 addHandlerClicked(zoomBtn, function(h, ...) {
@@ -352,7 +405,7 @@ iNZightMapMod <- setRefClass(
               
             })
 
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addtoplotBtn, zoomBtn, zoomOutBtn, aboutBtn))
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addtoplotBtn, zoomFitBtn, zoomBtn, zoomOutBtn, aboutBtn))
 
             ## mainGrp
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
