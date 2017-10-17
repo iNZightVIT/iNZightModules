@@ -407,7 +407,7 @@ iNZightMapMod <- setRefClass(
               
             })
 
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addtoplotBtn, zoomFitBtn, zoomBtn, zoomOutBtn, aboutBtn))
+            GUI$plotToolbar$update(NULL, extra = list(addtoplotBtn, zoomFitBtn, zoomBtn, zoomOutBtn, aboutBtn))
 
             ## mainGrp
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
@@ -580,13 +580,13 @@ iNZightMapMod <- setRefClass(
             ## Maintain a single function that is called whenever anything is updated:
             updateEverything <- function() {
                 if (map.type == "shape") {
-                    map.vars$y <<- svalue(colVarList)
+                    map.vars$y <<- svalue(V1box)
                     map.vars$opacity <<- svalue(opctyVarList)
                     map.vars$col <<- svalue(symbolColList)
                     map.vars$na.fill <<- svalue(naFillCol)
                     map.vars$map.labels <<- svalue(mapLbls, index = TRUE)
                 } else {
-                    if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
+                    if (svalue(V1box, TRUE) > 1) map.vars$colby <<- svalue(V1box) else map.vars$colby <<- NULL
                     if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
                     # if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
                     if (svalue(symbolColList, TRUE) > 1) map.vars$colconst <<- svalue(symbolColList) else map.vars$colconst <<- NULL
@@ -681,6 +681,36 @@ iNZightMapMod <- setRefClass(
             add(mainGrp, addCentresBtn)
             
             addSpring(mainGrp)
+            
+            
+            ########################################################
+            
+            varWidget <- gtable(colnames(activeData), expand = TRUE)
+            add(mainGrp, varWidget, expand = TRUE)
+            addDropSource(varWidget, handler = function(h, ...) {
+                    svalue(h$obj)
+            })
+            
+            V1box <- gcombobox(c("Select/Drag-drop Variable 1", colnames(activeData)))
+            add(mainGrp, V1box, expand = TRUE, fill = "x")
+            
+            addDropTarget(
+                V1box,
+                handler = function(h, ...) {
+                    svalue(h$obj) <- h$dropdata
+                })
+            
+            addHandlerChanged(
+                V1box,
+                handler = function(h, ...) {
+                    
+                })
+            
+            
+            ################################################################
+            
+            
+            
             ## --------------------------------------------------  SLIDERS
             grpTbl <<- glayout(expand = FALSE, cont = mainGrp)
             G1box <- gcombobox(c("Select Subset Variable 1", colnames(activeData)))
@@ -935,13 +965,13 @@ iNZightMapMod <- setRefClass(
               )
           }
           
-          dev.hold()
+          # dev.hold()
           if(is.null(map.vars$facet.var)) {
               pl <- plot(map.object)
           } else {
               pl <- plot(map.object, facet = map.vars$facet.var)
           }
-          dev.flush()
+          # dev.flush()
           
           return(invisible(pl))
         },
