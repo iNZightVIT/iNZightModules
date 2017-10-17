@@ -672,6 +672,14 @@ iNZightMapMod <- setRefClass(
             
             add(mainGrp, title.tbl)
             
+            addCentresBtn <- gbutton("Region Centres")
+            addHandlerClicked(addCentresBtn, handler = function(h, ...) {
+                # Find centres
+                map.object <<- regionPoints.iNZightMapPlot(map.object)
+                updateEverything()
+            })
+            add(mainGrp, addCentresBtn)
+            
             addSpring(mainGrp)
             ## --------------------------------------------------  SLIDERS
             grpTbl <<- glayout(expand = FALSE, cont = mainGrp)
