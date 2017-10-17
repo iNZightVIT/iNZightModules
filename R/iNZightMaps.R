@@ -89,7 +89,7 @@ iNZightMapMod <- setRefClass(
             ## activeData
             activeData <<- GUI$getActiveData()
 
-            w <- gwindow("Define Geographical Variables", width = 400, height = 300, parent = GUI$win, visible = FALSE)
+            w <- gwindow("Define Geographical Variables", width = 400, height = 500, parent = GUI$win, visible = FALSE)
             gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
             gv$set_borderwidth(15)
 
@@ -128,12 +128,42 @@ iNZightMapMod <- setRefClass(
             tblShapefile[1, 1, expand = TRUE] <- mapSourceBrowse
             
             stored.shapefiles <- list.files("~/iNZightVIT/shapefiles/", recursive = TRUE, pattern = ".shp$")
-            mapInbuiltBrowse <- gcombobox(stored.shapefiles)
+            
+            offspring.files <- function(path, obj) {
+                if(length(path) > 0) {
+                    path.pattern <- paste0("^", paste(path, collapse = "/"), "/")
+                } else {
+                    path.pattern <- ""
+                }
+                
+                files.list <- obj[grepl(path.pattern, obj)]
+                
+                files.list <- sub(path.pattern, "", files.list)
 
-            tblInbuiltfile[1, 1, expand = TRUE] <- mapInbuiltBrowse
+                slash.loc <- regexpr("/", files.list)
+                has.children <- slash.loc != -1
+                
+                filenames <- files.list
+                filenames[!has.children] <- files.list[!has.children]
+                
+                filenames[has.children] <- substring(files.list[has.children], 
+                                                     first = 1, 
+                                                     last = slash.loc[has.children] - 1)
+                
+                unique.ind <- !duplicated(filenames)
+                
+                data.frame(filename = filenames[unique.ind], has.children = has.children[unique.ind])
+            }
+
+            mapInbuiltBrowse <- gtree(offspring = offspring.files, 
+                                      offspring.data = stored.shapefiles, 
+                                      chosen.col = "filename",
+                                      offspring.col = "has.children")
+
+            tblInbuiltfile[1, 1, expand = TRUE, fill = "both"] <- mapInbuiltBrowse
             
             add(gv, tblShapefile, fill = "x")
-            add(gv, tblInbuiltfile, fill = "x")
+            add(gv, tblInbuiltfile, expand = TRUE)
             
             visible(tblInbuiltfile) <- TRUE
             visible(tblShapefile) <- FALSE
@@ -213,8 +243,15 @@ iNZightMapMod <- setRefClass(
                                      }
                                  } else {
                                      # TODO: Replace with a less fixed path
-                                     shapefile <- paste0("~/iNZightVIT/shapefiles/", svalue(mapInbuiltBrowse))
+                                     inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                                     if(grepl(".shp$", inbuilt.path)) {
+                                         shapefile <- paste0("~/iNZightVIT/shapefiles/", inbuilt.path)
+                                     } else {
+                                         gmessage("Please choose a shapefile", parent = w)
+                                         return(NULL)
+                                     }
                                  }
+                                 print(shapefile)
                                  
                                  if (svalue(mapType, index = TRUE) == 1) {
                                      if (svalue(latVar, TRUE) > 1 && svalue(lonVar, TRUE) > 1) {
