@@ -1043,25 +1043,32 @@ iNZightMapMod <- setRefClass(
                                           matchvar = datavar.unq,
                                           stringsAsFactors = FALSE)
 
-            match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-            match.df
+            join.df <- dplyr::full_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
+            nonmatches.df <- dplyr::filter(join.df, !is.na(dataname), is.na(mapname))
+            matches.df <- dplyr::filter(join.df, !is.na(dataname), !is.na(mapname))
+            list(nonmatches = nonmatches.df, matches = matches.df)
           }
           
           addHandlerChanged(mapvarBox, handler = function(h, ...) {
             mapvar <- svalue(mapvarBox)
             datavar <- svalue(datavarBox)
-            match.tbl[] <- generateMatchDf(mapvar, datavar)
+            match.list <- generateMatchDf(mapvar, datavar)
+            match.tbl[] <- match.list$nonmatches
+            matches.tbl[] <- match.list$matches
           })
           addHandlerChanged(datavarBox, handler = function(h, ...) {
             mapvar <- svalue(mapvarBox)
             datavar <- svalue(datavarBox)
-            match.tbl[] <- generateMatchDf(mapvar, datavar)
+            match.list <- generateMatchDf(mapvar, datavar)
+            match.tbl[] <- match.list$nonmatches
+            matches.tbl[] <- match.list$matches
           })
 
-          
-          
-          match.tbl <- gdf(match.df)
+          match.tbl <- gdf(dplyr::filter(match.df, is.na(mapname)))
           add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
+
+          matches.eg <- gexpandgroup(cont = gv.match, horizontal = FALSE)
+          matches.tbl <- gdf(match.df, cont = matches.eg)
           
           match.btnGrp <- ggroup(cont = gv.match)
           
