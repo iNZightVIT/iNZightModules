@@ -97,7 +97,7 @@ iNZightTSMod <- setRefClass(
             ## g1a options
 
             g1a_opt1   = gcombobox(names(activeData),
-                                   selected = match(timeVar, names(activeData)),
+                                   selected = match(timeVar, names(activeData), nomatch = 0),
                                    handler = function(h, ...) {
                                        timeVar <<- svalue(h$obj)
                                        updatePlot()
@@ -248,6 +248,8 @@ iNZightTSMod <- setRefClass(
             g3_layout[1, 1, anchor = c(-1, 0), expand = TRUE] <- glabel("Hold CTRL to select many")
             g3_layout[2, 1, expand = TRUE] = g3_opt1
 
+           
+
             addHandlerSelectionChanged(g3_opt1, function(h, ...) {
                 if (length(svalue(g3_opt1)) == 0) {
                     visible(novar) <- TRUE
@@ -264,15 +266,28 @@ iNZightTSMod <- setRefClass(
                     visible(onevar) <- FALSE
                     visible(multivar) <- TRUE
                 }
-                
-                if (svalue(g1_opt1, TRUE) == 1) {
-                    tsObj <<- iNZightTS::iNZightTS(data = activeData, var = var_ind,
-                                                   time.col = which(colnames(activeData) == timeVar))
-                } else {
-                    tsObj <<- iNZightTS::iNZightTS(data = activeData, var = var_ind,
-                                                   start = timeStart, freq = timeFreq)
+
+                if (!is.na(timeVar)) {
+                    tryCatch({
+                        if (svalue(g1_opt1, TRUE) == 1) {
+                            tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,
+                                                        time.col = which(colnames(activeData) == timeVar))
+                        } else {
+                            tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,
+                                                        start = timeStart, freq = timeFreq)
+                        }
+                        tsObj <<- tso
+                        updatePlot()
+                    }, error = function(e) {
+                        gmessage(paste(sep="\n\n", "Error creating Time Series object", e$message),
+                                 title = "Error creating time series", icon = "error", parent = GUI$win)
+                    }, finally = {})
                 }
-                updatePlot()
+
+            })
+
+            addHandlerChanged(g1a_opt1, function(h, ...) {
+                g3_opt1$set_items(names(activeData)[! names(activeData) %in% timeVar])
             })
 
 
@@ -376,7 +391,8 @@ iNZightTSMod <- setRefClass(
             g4_layout = glayout(container = g4)
             g4_lab1   = glabel("x-axis")
             g4_lab2   = glabel("y-axis")
-            xLab <<- gedit(timeVar)
+
+            xLab <<- gedit(ifelse(!is.na(timeVar), timeVar, ""))
             yLab <<- gedit("")
 
             addHandlerKeystroke(xLab, function(h, ...) updatePlot())
