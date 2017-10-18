@@ -27,6 +27,10 @@ or not see, just let us know!
 - code history for model fitting module
 - more bug fixes
 
+### tba
+
+- display error message when time series is missing values (or fails some other way)
+
 ***
 
 # Version 2.1
