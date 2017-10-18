@@ -993,54 +993,41 @@ iNZightMapMod <- setRefClass(
           
           mapvarBox <- gcombobox(items = colnames(map.obj.vars))
           datavarBox <- gcombobox(items = colnames(activeData))
+
+          iscountryDataCheck <- gcheckbox(text = "Convert to ISO Code")
+          iscountryMapCheck <- gcheckbox(text = "Convert to ISO Code")
           
           tblmap <- glayout()
           tblmap[1, 1] <- glabel("Map Variable: ")
           tblmap[1, 2, expand = TRUE] <- mapvarBox
+          tblmap[1, 3] <- iscountryMapCheck
           
           tbldata <- glayout()
           tbldata[1, 1] <- glabel("Data Variable: ")
           tbldata[1, 2, expand = TRUE] <- datavarBox
+          tbldata[1, 3] <- iscountryDataCheck
           
           add(gv.match, tbldata)
           add(gv.match, tblmap)
           
-          #############################
-          
-          mapvar <- svalue(mapvarBox)
-          datavar <- svalue(datavarBox)
-          
-          datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
-          mapvar.unq <-  unique(as.character(unlist(map.obj.vars[, mapvar])))
-          
-          mapvar.unq.tbl <- data.frame(mapname = mapvar.unq,
-                                       matchvar = mapvar.unq,
-                                       stringsAsFactors = FALSE)
-          
-          datavar.unq.tbl <- data.frame(dataname = datavar.unq, 
-                                        matchvar = datavar.unq, 
-                                        stringsAsFactors = FALSE)
-          
-          match.df <- dplyr::left_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-          
-          #############################
-
           generateMatchDf <- function(mapvar, datavar) {
             mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
             datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
 
-            if(any(grepl("country", c(datavar, mapvar)))) {
-              matchvar <- mapvar.unq
-            } else {
-              matchvar <- mapvar.unq
-            }
+            datamatch <- if(svalue(iscountryDataCheck)) {
+                           countrycode::countrycode(datavar.unq, origin = "country.name", destination = "iso3c")
+                           } else  { datavar.unq }
+
+            mapmatch <- if(svalue(iscountryDataCheck)) {
+                           countrycode::countrycode(mapvar.unq, origin = "country.name", destination = "iso3c")
+                           } else  { mapvar.unq }
 
             mapvar.unq.tbl <- data.frame(mapname = mapvar.unq,
-                                         matchvar = mapvar.unq,
+                                         matchvar = mapmatch,
                                          stringsAsFactors = FALSE)
 
             datavar.unq.tbl <- data.frame(dataname = datavar.unq,
-                                          matchvar = datavar.unq,
+                                          matchvar = datamatch,
                                           stringsAsFactors = FALSE)
 
             join.df <- dplyr::full_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
@@ -1050,29 +1037,46 @@ iNZightMapMod <- setRefClass(
           }
           
           addHandlerChanged(mapvarBox, handler = function(h, ...) {
+            visible(datavarBox) <- FALSE
+            visible(mapvarBox) <- FALSE
             mapvar <- svalue(mapvarBox)
             datavar <- svalue(datavarBox)
             match.list <- generateMatchDf(mapvar, datavar)
             match.tbl[] <- match.list$nonmatches
             matches.tbl[] <- match.list$matches
-          })
-          addHandlerChanged(datavarBox, handler = function(h, ...) {
-            mapvar <- svalue(mapvarBox)
-            datavar <- svalue(datavarBox)
-            match.list <- generateMatchDf(mapvar, datavar)
-            match.tbl[] <- match.list$nonmatches
-            matches.tbl[] <- match.list$matches
+            visible(datavarBox) <- TRUE
+            visible(mapvarBox) <- TRUE
           })
 
-          match.tbl <- gdf(dplyr::filter(match.df, is.na(mapname)))
+          addHandlerChanged(datavarBox, handler = function(h, ...) {
+            visible(datavarBox) <- FALSE
+            visible(mapvarBox) <- FALSE
+            mapvar <- svalue(mapvarBox)
+            datavar <- svalue(datavarBox)
+            match.list <- generateMatchDf(mapvar, datavar)
+            match.tbl[] <- match.list$nonmatches
+            matches.tbl[] <- match.list$matches
+            visible(datavarBox) <- TRUE
+            visible(mapvarBox) <- TRUE
+          })
+
+          mapvar <- svalue(mapvarBox)
+          datavar <- svalue(datavarBox)
+          match.list <- generateMatchDf(mapvar, datavar)
+
+          unmatched.lbl <- glabel("Unmatched Data Rows")
+          add(gv.match, unmatched.lbl)
+          match.tbl <- gdf(match.list$nonmatches)
           add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
 
-          matches.eg <- gexpandgroup(cont = gv.match, horizontal = FALSE)
-          matches.tbl <- gdf(match.df, cont = matches.eg)
+          matched.lbl <- glabel("Matched Data Rows")
+          add(gv.match, matched.lbl)
+          matches.eg <- gexpandgroup(cont = gv.match, expand = TRUE)
+          matches.tbl <- gdf(match.list$matches, cont = matches.eg, expand = TRUE)
           
           match.btnGrp <- ggroup(cont = gv.match)
           
-          addSpring(match.btnGrp)
+          ## addSpring(match.btnGrp)
           
           match.confirm.btn <- gbutton("OK", handler = function(h, ...) {
             setVars(list(location.var = svalue(datavarBox),
