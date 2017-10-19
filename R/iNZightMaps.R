@@ -444,7 +444,7 @@ iNZightMapMod <- setRefClass(
               
             })
 
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addtoplotBtn, zoomFitBtn, zoomBtn, zoomOutBtn, aboutBtn))
+            GUI$plotToolbar$update(NULL, extra = list(addtoplotBtn, zoomFitBtn, zoomBtn, zoomOutBtn, aboutBtn))
 
             ## mainGrp
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
@@ -697,6 +697,7 @@ iNZightMapMod <- setRefClass(
             ## Maintain a single function that is called whenever anything is updated:
             updateEverything <- function() {
                 if (map.type == "shape") {
+<<<<<<< HEAD
                     # map.vars$y <<- svalue(colVarList)
                     # map.vars$opacity <<- svalue(opctyVarList)
                     # map.vars$colconst <<- svalue(symbolColList)
@@ -806,6 +807,36 @@ iNZightMapMod <- setRefClass(
             add(mainGrp, addCentresBtn)
             
             addSpring(mainGrp)
+            
+            
+            ########################################################
+            
+            varWidget <- gtable(colnames(activeData), expand = TRUE)
+            add(mainGrp, varWidget, expand = TRUE)
+            addDropSource(varWidget, handler = function(h, ...) {
+                    svalue(h$obj)
+            })
+            
+            V1box <- gcombobox(c("Select/Drag-drop Variable 1", colnames(activeData)))
+            add(mainGrp, V1box, expand = TRUE, fill = "x")
+            
+            addDropTarget(
+                V1box,
+                handler = function(h, ...) {
+                    svalue(h$obj) <- h$dropdata
+                })
+            
+            addHandlerChanged(
+                V1box,
+                handler = function(h, ...) {
+                    
+                })
+            
+            
+            ################################################################
+            
+            
+            
             ## --------------------------------------------------  SLIDERS
             grpTbl <<- glayout(expand = FALSE, cont = mainGrp)
             G1box <- gcombobox(c("Select Subset Variable 1", colnames(activeData)))
