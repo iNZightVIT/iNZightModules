@@ -562,7 +562,8 @@ iNZightMapMod <- setRefClass(
 
               combobox.constFill <- gcombobox(c("", "red", "blue"))
               combobox.constColour <- gcombobox(c("", "red", "blue"))
-              combobox.constAlpha <- gcombobox(seq(1, 0, by = -0.1))
+              ## combobox.constAlpha <- gcombobox(seq(1, 0, by = -0.1))
+              slider.constAlpha <- gslider(from = 0, to = 1, by = 0.05, value = 1)
 
               tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.constFill
               tbl[ii, 3:6, expand = TRUE] <- combobox.constFill
@@ -573,7 +574,7 @@ iNZightMapMod <- setRefClass(
               ii <- ii + 1
 
               tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.constAlpha
-              tbl[ii, 3:6, expand = TRUE] <- combobox.constAlpha
+              tbl[ii, 3:6, expand = TRUE] <- slider.constAlpha
               ii <- ii + 1
 
               addHandlerChanged(combobox.constFill, handler = function(h, ...) {
@@ -587,7 +588,12 @@ iNZightMapMod <- setRefClass(
                 }
               })
               addHandlerChanged(combobox.constColour, handler = function(h, ...) updateEverything())
-              addHandlerChanged(combobox.constAlpha, handler = function(h, ...) updateEverything())
+
+              timer.constAlpha <- NULL
+              addHandlerChanged(slider.constAlpha, handler = function(h, ...) {
+                if(!is.null(timer.constAlpha)) timer.constAlpha$stop_timer()
+                timer.constAlpha <- gtimer(500, one.shot = TRUE, FUN = function(...) updateEverything())
+              })
             } else if (map.type == "point") {
               lbl.constColour <- glabel("Point Colour:")
 
@@ -651,7 +657,7 @@ iNZightMapMod <- setRefClass(
            ##      
            ##      ## Transparency
            ##      lbl <- glabel("Transparency :")
-           ##      transpSlider <- gslider(from = 0, to = 100,
+           ##       transpSlider <- gslider(from = 0, to = 100,
            ##                              by = 1, value = 100 * (1 - map.vars$alpha))
            ##      tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
            ##      tbl[ii, 3:6, expand = TRUE] <- transpSlider
@@ -697,7 +703,7 @@ iNZightMapMod <- setRefClass(
 
                     map.vars$constFill <<- svalue(combobox.constFill)
                     map.vars$constColour <<- svalue(combobox.constColour)
-                    map.vars$constAlpha <<- svalue(combobox.constAlpha)
+                    map.vars$constAlpha <<- svalue(slider.constAlpha)
 
                     map.vars$varFill <<- svalue(combobox.varFill)
                     ## map.vars$varAlpha <<- svalue(combobox.varAlpha)
@@ -745,7 +751,6 @@ iNZightMapMod <- setRefClass(
             ##     # addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
             ## }
 
-            pcoltimer <- NULL
             ##addHandlerChanged(combobox.constColour,
             ##                  handler = function(h, ...) {
             ##                      if(map.vars$varColour != "" && svalue(combobox.constColour, index = TRUE) > 1) {
