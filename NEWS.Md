@@ -18,18 +18,18 @@ or not see, just let us know!
 
 ## Patches
 
-### 2.2.0-1, 23/08/2017
+### 2.2.0-1 - 23/08/2017
 - bug fixes: bootstrapping, residual plots
 - better handling of errors
 - extra features, etc
 
-### 2.2.0-2, 25/08/2017
+### 2.2.0-2 - 25/08/2017
 - code history for model fitting module
 - more bug fixes
 
-### tba
+### 2.2.0-3 - 20/10/2017
 
-- display error message when time series is missing values (or fails some other way)
+- \[TS Module\] display error message when time series is missing values (or fails some other way)
 
 ***
 
