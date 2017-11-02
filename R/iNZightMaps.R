@@ -302,6 +302,7 @@ iNZightMapMod <- setRefClass(
                                                type = "region",
                                                by.data = map.vars$location.var,
                                                by.map = map.vars$map.var)
+                  # map.vars$orig.crs <<- sf::st_crs(map.obj)
                   
                 } else {
                   map.obj <- sf::st_read(map.vars$shapefile)
@@ -311,6 +312,7 @@ iNZightMapMod <- setRefClass(
                                                  type = "point",
                                                  coord = c(map.vars$longitude, map.vars$latitude),
                                                  crs = 4326)
+                  # map.vars$orig.crs <<- 4326
                 }
         },
         ## get only numeric type variables
@@ -722,13 +724,17 @@ iNZightMapMod <- setRefClass(
                     # map.vars$alpha <<- 1 - svalue(transpSlider) / 100
                     # map.vars$join <<- svalue(joinPts)
                     # map.vars$col.line <<- svalue(joinCol)
-                    
                     # map.type <<- svalue(typeList)
                 }
-                
+
                 map.vars$plot.title <<- svalue(addPlotTitle)
+                # if(svalue(combobox.proj, index = TRUE) > 1) {
+                   map.vars$crs <<- as.numeric(proj.df[svalue(combobox.proj, index = TRUE), "epsg"]) 
+                # } else {
+                #   map.vars$crs <<- 4387
+                # }
+
                 print(map.vars)
-                
                 updatePlot()
             }
 
@@ -806,6 +812,13 @@ iNZightMapMod <- setRefClass(
                 updateEverything()
             })
             add(mainGrp, addCentresBtn)
+
+            proj.df <- data.frame(name = c("", "WGS84", "NAD83", "NAD27", "UTM (Zone 10)", "WGS84 Web Mercator", "World Robinson", "World Mollweide"),
+                                  epsg = c("", 4326, 4269, 4267, 32610, 3857, 54030, 54009),
+                                  stringsAsFactors = FALSE)
+            combobox.proj <- gcombobox(proj.df$name)
+            add(mainGrp, combobox.proj)
+            # addHandlerChanged(combobox.proj, handler = function(h, ...) { updateEverything() })
 
             addSpring(mainGrp)
 
@@ -1039,6 +1052,7 @@ iNZightMapMod <- setRefClass(
         ## update plot function
         updatePlot = function() {
           args <- list(x = map.object, varnames = list())
+          map.object$crs <<- map.vars$crs
           
           if (map.type == "shape") {
             map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object, 
