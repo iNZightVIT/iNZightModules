@@ -1,4 +1,10 @@
 library(gWidgets2)
+map.data <- NULL
+map.vars <- NULL
+nomatch.df <- data.frame(var.name = "")
+
+## State Variables
+stale.map.data <- TRUE
 
 ## Layout Styles
 font.header <- list(weight = "bold", size = 12, family = "normal")
@@ -19,7 +25,7 @@ expand.import    <- gexpandgroup(text = "Select Map", horizontal = FALSE)
 frame.variables <- gframe(horizontal =  FALSE)
 group.variables <- ggroup(spacing = 5)
 group.variables$set_borderwidth(10)
-expand.variables <- gexpandgroup(text = "Select Merge Variables")
+expand.variables <- gexpandgroup(text = "Select Merge Variables", horizontal = FALSE)
 
 frame.merge <- gframe(horizontal =  FALSE)
 group.merge <- ggroup(spacing = 5)
@@ -29,6 +35,15 @@ expand.merge     <- gexpandgroup(text = "Merge Results")
 font(expand.import)    <- font.header
 font(expand.variables) <- font.header
 font(expand.merge)     <- font.header
+
+visible(expand.variables) <- FALSE
+
+enabled(frame.variables) <- FALSE
+
+## Add all frames to window
+add(gv.match, frame.import, expand = TRUE)
+add(gv.match, frame.variables, expand = TRUE)
+add(gv.match, frame.merge)
 
 ## Map Source Box
 
@@ -119,7 +134,8 @@ addHandlerClicked(btn.import, function(h, ...) {
 
     ## Extract the filename from inputs
     if(svalue(mapSource, index = TRUE) == 1) {
-        map.filename <- svalue(mapInbuiltBrowse)
+        inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+        map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
     } else {
         map.filename <- svalue(mapSourceBrowse)
     }
@@ -128,13 +144,77 @@ addHandlerClicked(btn.import, function(h, ...) {
     ### TO IMPLEMENT
 
     ## Import the map data
-    map.data <- importMapData(map.filename)
+    ### TO CHANGE: Allow rds files too
+    lbl.loading <- glabel("Please wait... Map is loading...")
+    add(expand.variables, lbl.loading)
+    visible(expand.variables) <- TRUE
+    
+    map.data <<- sf::st_read(map.filename)
+    map.vars <<- as.data.frame(map.data)[, !(colnames(map.data) %in% "geometry")]
+    combobox.mapvars[] <- colnames(map.vars)
+    Sys.sleep(2)
+    
+    delete(expand.variables, lbl.loading)
+
+    visible(tbl.variables) <- TRUE
+    visible(table.nonmatched) <- TRUE
+    enabled(frame.variables) <- TRUE
 })
 
 ## Variables Box
+tbl.variables <- glayout()
 
+combobox.mapvars <- gcombobox(items = c(""))
+combobox.datavars <- gcombobox(items = colnames(activeData))
 
-            
-add(gv.match, frame.import, expand = TRUE)
-add(gv.match, frame.variables)
-add(gv.match, frame.merge)
+tbl.variables[1, 1] <- glabel("Map Variable: ")
+tbl.variables[1, 2, expand = TRUE] <- combobox.mapvars
+
+tbl.variables[1, 4] <- glabel("Data Variable: ")
+tbl.variables[1, 5, expand = TRUE] <- combobox.datavars
+
+table.nonmatched <- gtable(nomatch.df)
+lbl.allmatched <- glabel("All matched!")
+
+### Add to frame
+add(frame.variables, group.variables, expand = TRUE)
+add(group.variables, expand.variables, expand = TRUE)
+addSpace(expand.variables, 15)
+add(expand.variables, tbl.variables)
+addSpace(expand.variables, 15)
+add(expand.variables, table.nonmatched, expand = TRUE)
+addSpace(expand.variables, 15)
+add(expand.variables, lbl.allmatched)
+
+visible(tbl.variables) <- FALSE
+visible(table.nonmatched) <- FALSE
+visible(lbl.allmatched) <- FALSE
+
+cb.change <- function(h, ...) {
+    enabled(table.nonmatched) <- FALSE
+
+    data.var <- svalue(combobox.datavars)
+    map.var <- svalue(combobox.mapvars)
+
+    data.is.na <- is.na(activeData[, data.var])
+    activeData2 <- activeData[!data.is.na, ]
+
+    table.nonmatched[] <- activeData2[!(as.character(activeData2[, data.var]) %in% as.character(map.vars[, map.var])), data.var, drop = FALSE]
+
+    enabled(table.nonmatched) <- TRUE
+    ##print(visible(table.nonmatched))
+
+##     if(length(table.nonmatched[]) > 0) {
+##         visible(table.nonmatched) <- TRUE
+##         visible(lbl.allmatched) <- FALSE
+##     } else {
+##         visible(table.nonmatched) <- FALSE
+##         visible(table.nonmatched) <- FALSE
+##         visible(lbl.allmatched) <- TRUE
+##     }
+    
+    }
+
+addHandlerChanged(combobox.mapvars, handler = cb.change)
+addHandlerChanged(combobox.datavars, handler = cb.change)
+
