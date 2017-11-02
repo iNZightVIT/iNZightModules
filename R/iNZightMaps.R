@@ -698,6 +698,7 @@ iNZightMapMod <- setRefClass(
 
             ## Maintain a single function that is called whenever anything is updated:
             updateEverything <- function() {
+              print(map.type)
                 if (map.type == "shape") {
                     # map.vars$y <<- svalue(colVarList)
                     # map.vars$opacity <<- svalue(opctyVarList)
@@ -714,7 +715,8 @@ iNZightMapMod <- setRefClass(
                     map.vars$constColour <<- svalue(combobox.constColour)
                     # map.vars$varColour <<- svalue(combobox.varColour)
                     map.vars$varColour <<- ifelse(svalue(V1box, index = TRUE) > 1, svalue(V1box), "")
-                    map.vars$varSize <<- svalue(combobox.varSize)
+                    map.vars$varSize <<- ifelse(svalue(V2box, index = TRUE) > 1, svalue(V2box), "")
+                    # map.vars$varSize <<- svalue(combobox.varSize)
   ##                  if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
   ##                  if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
   ##                  # if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
@@ -807,9 +809,13 @@ iNZightMapMod <- setRefClass(
             
             addCentresBtn <- gbutton("Region Centres")
             addHandlerClicked(addCentresBtn, handler = function(h, ...) {
-                # Find centres
-                map.object <<- regionPoints.iNZightMapPlot(map.object)
-                updateEverything()
+                                        # Find centres
+              map.object <<- regionPoints.iNZightMapPlot(map.object)
+              map.type <<- "point"
+              print(map.object)
+
+              
+              updateEverything()
             })
             add(mainGrp, addCentresBtn)
 
@@ -854,6 +860,21 @@ iNZightMapMod <- setRefClass(
 
             addHandlerChanged(
                 V1box,
+                handler = function(h, ...) {
+                   updateEverything()
+                })
+
+            V2box <- gcombobox(c("Select/Drag-drop Variable 2", colnames(activeData)))
+            add(mainGrp, V2box, expand = TRUE)
+
+            addDropTarget(
+                V2box,
+                handler = function(h, ...) {
+                    svalue(h$obj) <- h$dropdata
+                })
+
+            addHandlerChanged(
+                V2box,
                 handler = function(h, ...) {
                    updateEverything()
                 })
