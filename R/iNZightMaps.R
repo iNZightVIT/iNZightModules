@@ -833,6 +833,45 @@ iNZightMapMod <- setRefClass(
 
             addHandlerClicked(btn.proj, handler = function(h, ...) updateEverything())
 
+            ## Palette Chooser
+            palette.vect <- c("Set2" = "Contrast", "Set1" = "Bright", "Set3" = "Light")
+           combobox.palette <- gcombobox(palette.vect, cont = mainGrp)
+
+            addHandlerChanged(combobox.palette, handler = function(h, ...) {
+              palette.name <- names(palette.vect)[svalue(combobox.palette, index = TRUE)]
+
+              if(map.type == "shape") {
+                if(is.numeric(activeData[,map.vars$varFill])) {
+                  new.palette <- ggplot2::scale_fill_distiller(palette = palette.name)
+                } else {
+                  new.palette <- ggplot2::scale_fill_brewer(palette = palette.name)
+                }
+              map.object <<- addLayer.iNZightMapPlot(map.object,
+                                                     "map",
+                                                     "fill.palette",
+                                                     new.palette)
+              } else if (map.type == "point") {
+                if(is.numeric(activeData[,map.vars$varColour])) {
+                  new.palette <- ggplot2::scale_colour_distiller(palette = palette.name)
+                  new.palette2 <- ggplot2::scale_fill_distiller(palette = palette.name)
+                } else {
+                  new.palette <- ggplot2::scale_colour_brewer(palette = palette.name)
+                  new.palette2 <- ggplot2::scale_fill_brewer(palette = palette.name)
+                }
+              map.object <<- addLayer.iNZightMapPlot(map.object,
+                                                     "map",
+                                                     "colour.palette",
+                                                     new.palette)
+              map.object <<- addLayer.iNZightMapPlot(map.object,
+                                                     "map",
+                                                     "fill.palette",
+                                                     new.palette2)
+              }
+              # summary(map.object)
+              # print(names(palette.vect)[svalue(combobox.palette, index = TRUE)])
+              updateEverything()
+            })
+
             ## timer.proj <- NULL
             ## addHandlerChanged(combobox.proj, handler = function(h, ...) {
             ##   if(!is.null(timer.proj)) timer.proj$stop_timer()
