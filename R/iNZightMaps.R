@@ -728,12 +728,16 @@ iNZightMapMod <- setRefClass(
                     # map.vars$col.line <<- svalue(joinCol)
                     # map.type <<- svalue(typeList)
                 }
-
+              print("Projection")
+              print(svalue(combobox.proj, index = TRUE))
+              print("-----")
                 map.vars$plot.title <<- svalue(addPlotTitle)
                 if(is.na(svalue(combobox.proj, index = TRUE))) {
                   map.vars$crs <<- as.numeric(svalue(combobox.proj))
-                } else {
+                } else if (svalue(combobox.proj, index = TRUE) > 1) {
                   map.vars$crs <<- as.numeric(proj.df[svalue(combobox.proj, index = TRUE), "epsg"])
+                } else {
+                 map.vars$crs <<- 4326
                 }
 
                 print(map.vars)
