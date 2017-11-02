@@ -697,7 +697,6 @@ iNZightMapMod <- setRefClass(
             ## Maintain a single function that is called whenever anything is updated:
             updateEverything <- function() {
                 if (map.type == "shape") {
-<<<<<<< HEAD
                     # map.vars$y <<- svalue(colVarList)
                     # map.vars$opacity <<- svalue(opctyVarList)
                     # map.vars$colconst <<- svalue(symbolColList)
@@ -706,11 +705,13 @@ iNZightMapMod <- setRefClass(
                     map.vars$constColour <<- svalue(combobox.constColour)
                     map.vars$constAlpha <<- svalue(slider.constAlpha)
 
-                    map.vars$varFill <<- svalue(combobox.varFill)
+                    #map.vars$varFill <<- svalue(combobox.varFill)
+                    map.vars$varFill <<- ifelse(svalue(V1box, index = TRUE) > 1, svalue(V1box), "")
                     ## map.vars$varAlpha <<- svalue(combobox.varAlpha)
                 } else {
                     map.vars$constColour <<- svalue(combobox.constColour)
-                    map.vars$varColour <<- svalue(combobox.varColour)
+                    # map.vars$varColour <<- svalue(combobox.varColour)
+                    map.vars$varColour <<- ifelse(svalue(V1box, index = TRUE) > 1, svalue(V1box), "")
                     map.vars$varSize <<- svalue(combobox.varSize)
   ##                  if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
   ##                  if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
@@ -805,38 +806,34 @@ iNZightMapMod <- setRefClass(
                 updateEverything()
             })
             add(mainGrp, addCentresBtn)
-            
+
             addSpring(mainGrp)
-            
-            
+
             ########################################################
-            
+
             varWidget <- gtable(colnames(activeData), expand = TRUE)
             add(mainGrp, varWidget, expand = TRUE)
             addDropSource(varWidget, handler = function(h, ...) {
                     svalue(h$obj)
             })
-            
+
             V1box <- gcombobox(c("Select/Drag-drop Variable 1", colnames(activeData)))
-            add(mainGrp, V1box, expand = TRUE, fill = "x")
-            
+            add(mainGrp, V1box, expand = TRUE)
+
             addDropTarget(
                 V1box,
                 handler = function(h, ...) {
                     svalue(h$obj) <- h$dropdata
                 })
-            
+
             addHandlerChanged(
                 V1box,
                 handler = function(h, ...) {
-                    
+                   updateEverything()
                 })
-            
-            
+
             ################################################################
-            
-            
-            
+
             ## --------------------------------------------------  SLIDERS
             grpTbl <<- glayout(expand = FALSE, cont = mainGrp)
             G1box <- gcombobox(c("Select Subset Variable 1", colnames(activeData)))
