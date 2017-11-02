@@ -121,13 +121,29 @@ add(expand.import, btn.import)
 visible(tblInbuiltfile) <- TRUE
 visible(tblShapefile) <- FALSE
             
+findBestMatch <- function(data, map.data) {
+    ## Eliminate columns with duplicates in the shapefile
+    map.data <- map.data[, !(apply(map.data, 2, anyDuplicated))]
+    ## Eliminate multiple rows per observation
+    match.sums <- apply(data, 2, function(x) {
+        apply(map.data, 2, function(y) {
+            sum(y %in% unique(x))
+        })
+    })
+    ## Find indices of the best matching pair
+    best.match <- which(match.sums == max(match.sums), arr.ind = TRUE)[1,]
+    ## Extract out the names of the variables (as we have removed map vars with dups)
+    best.match.vars <- c(colnames(match.sums)[best.match[2]], rownames(match.sums)[best.match[1]])
+    best.match.vars
+}
+
 addHandlerChanged(mapSource, function(h, ...) {
     v <- svalue(mapSource, index = TRUE)
     visible(tblShapefile) <- v == 2
     visible(tblInbuiltfile) <- v == 1
 })
 
-addHandlerClicked(btn.import, function(h, ...) {
+addHandlerClicked(btn.import, handler = function(h, ...) {
     ## Change which region has focus
     visible(expand.import) <- FALSE
     visible(expand.variables) <- TRUE
@@ -152,6 +168,11 @@ addHandlerClicked(btn.import, function(h, ...) {
     map.data <<- sf::st_read(map.filename)
     map.vars <<- as.data.frame(map.data)[, !(colnames(map.data) %in% "geometry")]
     combobox.mapvars[] <- colnames(map.vars)
+
+    best.vars <- findBestMatch(activeData, map.vars)
+    best.data.var <- best.vars[1]
+    best.map.var <-  best.vars[2]
+    
     Sys.sleep(2)
     
     delete(expand.variables, lbl.loading)
@@ -159,6 +180,9 @@ addHandlerClicked(btn.import, function(h, ...) {
     visible(tbl.variables) <- TRUE
     visible(table.nonmatched) <- TRUE
     enabled(frame.variables) <- TRUE
+
+    svalue(combobox.datavars) <- best.data.var
+    svalue(combobox.mapvars) <- best.map.var
 })
 
 ## Variables Box
@@ -199,7 +223,7 @@ cb.change <- function(h, ...) {
     data.is.na <- is.na(activeData[, data.var])
     activeData2 <- activeData[!data.is.na, ]
 
-    table.nonmatched[] <- activeData2[!(as.character(activeData2[, data.var]) %in% as.character(map.vars[, map.var])), data.var, drop = FALSE]
+    table.nonmatched[] <- unique(activeData2[!(as.character(activeData2[, data.var]) %in% as.character(map.vars[, map.var])), data.var, drop = FALSE])
 
     enabled(table.nonmatched) <- TRUE
     ##print(visible(table.nonmatched))
@@ -217,4 +241,5 @@ cb.change <- function(h, ...) {
 
 addHandlerChanged(combobox.mapvars, handler = cb.change)
 addHandlerChanged(combobox.datavars, handler = cb.change)
+
 
