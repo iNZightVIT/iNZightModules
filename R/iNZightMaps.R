@@ -728,11 +728,11 @@ iNZightMapMod <- setRefClass(
                 }
 
                 map.vars$plot.title <<- svalue(addPlotTitle)
-                # if(svalue(combobox.proj, index = TRUE) > 1) {
-                   map.vars$crs <<- as.numeric(proj.df[svalue(combobox.proj, index = TRUE), "epsg"]) 
-                # } else {
-                #   map.vars$crs <<- 4387
-                # }
+                if(is.na(svalue(combobox.proj, index = TRUE))) {
+                  map.vars$crs <<- as.numeric(svalue(combobox.proj))
+                } else {
+                  map.vars$crs <<- as.numeric(proj.df[svalue(combobox.proj, index = TRUE), "epsg"])
+                }
 
                 print(map.vars)
                 updatePlot()
@@ -813,12 +813,25 @@ iNZightMapMod <- setRefClass(
             })
             add(mainGrp, addCentresBtn)
 
-            proj.df <- data.frame(name = c("", "WGS84", "NAD83", "NAD27", "UTM (Zone 10)", "WGS84 Web Mercator", "World Robinson", "World Mollweide"),
-                                  epsg = c("", 4326, 4269, 4267, 32610, 3857, 54030, 54009),
+            tbl.proj <- glayout()
+            proj.df <- data.frame(name = c("", "WGS84", "NAD83", "NAD27", "UTM (Zone 10)", "WGS84 Web Mercator", "World Robinson", "World Mollweide", "US National Atlas Equal Area"),
+                                  epsg = c("", 4326, 4269, 4267, 32610, 3857, 54030, 54009, 2163),
                                   stringsAsFactors = FALSE)
-            combobox.proj <- gcombobox(proj.df$name)
-            add(mainGrp, combobox.proj)
-            # addHandlerChanged(combobox.proj, handler = function(h, ...) { updateEverything() })
+            lbl.proj <- glabel("Map Projection (EPSG):")
+            combobox.proj <- gcombobox(proj.df$name, editable = TRUE)
+            btn.proj <- gbutton("Project")
+            tbl.proj[1, 1:2, expand = TRUE] <- lbl.proj
+            tbl.proj[1, 3:5, expand = TRUE] <- combobox.proj
+            tbl.proj[1, 6] <- btn.proj
+            add(mainGrp, tbl.proj)
+
+            addHandlerClicked(btn.proj, handler = function(h, ...) updateEverything())
+
+            ## timer.proj <- NULL
+            ## addHandlerChanged(combobox.proj, handler = function(h, ...) {
+            ##   if(!is.null(timer.proj)) timer.proj$stop_timer()
+            ##   timer.proj <- gtimer(1500, one.shot = TRUE, FUN = function(...) updateEverything())
+            ## })
 
             addSpring(mainGrp)
 
