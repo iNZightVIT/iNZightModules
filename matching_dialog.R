@@ -1,4 +1,5 @@
 library(gWidgets2)
+devtools::load_all("h:/echome/inzightwork/package/iNZightMaps")
 activeData <- read.csv("h:/echome/inzightwork/2017_10_09-mortalitydata/heart.csv")
 activeData <- read.csv("h:/Documents/iNZightVIT/gapminder.csv")
 
@@ -40,9 +41,13 @@ font(expand.variables) <- font.header
 visible(expand.variables) <- FALSE
 enabled(frame.variables) <- FALSE
 
+btn.finish <- gbutton("Finish")
+enabled(btn.finish) <- FALSE
+
 ## Add all frames to window
 add(gv.match, frame.import, expand = TRUE)
 add(gv.match, frame.variables, expand = TRUE)
+add(gv.match, btn.finish, fill = "x")
 
 ################################################################################
                                         # Map Source Box
@@ -191,6 +196,7 @@ addHandlerChanged(mapSourceBrowse, function(h, ...) {
         stale.map.data <- TRUE
         visible(expand.variables) <- FALSE
         enabled(frame.variables) <- FALSE
+        enabled(btn.finish) <- FALSE
     }
 })
 
@@ -201,6 +207,7 @@ addHandlerSelectionChanged(mapInbuiltBrowse, function(h, ...) {
         stale.map.data <<- TRUE
         visible(expand.variables) <- FALSE
         enabled(frame.variables) <- FALSE
+        enabled(btn.finish) <- FALSE
     }
 })
 
@@ -212,12 +219,13 @@ addHandlerSelect(mapInbuiltBrowse, function(h, ...) {
         visible(expand.variables) <- FALSE
         enabled(frame.variables) <- FALSE
         visible(lbl.allmatched) <- FALSE
+        enabled(btn.finish) <- FALSE
     }
 
     chosen.filename <- paste(svalue(mapInbuiltBrowse), collapse = "/")
     chosen.desc <- mapdir.contents$description[which(mapdir.contents[, 1] == chosen.filename)]
 
-    if(length(chosen.desc) > 0) {
+    if(length(chosen.desc) > 0 && !is.na(chosen.desc)) {
         svalue(lbl.mapdesc) <- paste("Description:", chosen.desc)
     } else {
         svalue(lbl.mapdesc) <- "Description: No description available." 
@@ -258,7 +266,7 @@ addHandlerClicked(btn.import, handler = function(h, ...) {
     best.vars <- findBestMatch(activeData, map.vars)
     best.data.var <- best.vars[1]
     best.map.var <-  best.vars[2]
-    
+
     ## Finished loading, so replace loading label with a blank label
     ## (prevents widgets moving around too much)
     visible(lbl.loading) <- FALSE
@@ -267,6 +275,7 @@ addHandlerClicked(btn.import, handler = function(h, ...) {
     ## Enable user interaction with the variable merging section now
     ## that nearly everything is done
     enabled(frame.variables) <- TRUE
+    enabled(btn.finish) <- TRUE
 
     ## Initialize with the best variables from above
     svalue(combobox.datavars) <- best.data.var
@@ -340,6 +349,9 @@ tbl.variables[1, 2, expand = TRUE] <- combobox.datavars
 tbl.variables[1, 4] <- glabel("Map Variable: ")
 tbl.variables[1, 5, expand = TRUE] <- combobox.mapvars
 
+lbl.nonmatchedtitle <- glabel("Unmatched Data")
+lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no corresponding region in the map file")
+font(lbl.nonmatchedtitle) <- list(weight = "bold", family = "normal", size = 10)
 table.nonmatched <- gtable(nomatch.df)
 
 lbl.allmatched <- glabel("All rows of data matched to a region!")
@@ -355,9 +367,14 @@ addSpace(expand.variables, 15)
 add(expand.variables, lbl.allmatched)
 add(expand.variables, lbl.loading)
 add(expand.variables, lbl.blank)
-addSpace(expand.variables, 15)
+#addSpace(expand.variables, 5)
+add(expand.variables, lbl.nonmatchedtitle)
+add(expand.variables, lbl.nonmatchedsubtitle)
+addSpace(expand.variables, 5)
 add(expand.variables, table.nonmatched, expand = TRUE)
 
+#visible(lbl.nonmatchedtitle) <- FALSE
+#visible(lbl.nonmatchedsubtitle) <- FALSE
 visible(table.nonmatched) <- FALSE
 
 visible(lbl.allmatched) <- FALSE
@@ -367,3 +384,14 @@ visible(lbl.blank) <- FALSE
 ## Event handlers
 addHandlerChanged(combobox.mapvars, handler = cb.change)
 addHandlerChanged(combobox.datavars, handler = cb.change)
+
+
+################################################################################
+                                        # Finish Importing
+
+addHandlerClicked(btn.finish, function(h, ...) {
+    ## Join data to map
+
+    ## Pass through the joined data, map name, etc.
+
+})
