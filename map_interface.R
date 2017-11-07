@@ -2,6 +2,7 @@ library(gWidgets2)
 data(mtcars)
 
 map.name <- "New Zealand DHBs (2012)"
+if(nchar(map.name) > 50) map.name = paste0(substr(map.name, 1, 47), "...")
 activeData <- mtcars
 
 proj.vect <- c("Web Mercator" = 3857,
@@ -17,30 +18,31 @@ proj.vect <- c("Web Mercator" = 3857,
                "Natural Earth" = 0000)
 ## http://www.radicalcartography.net/index.html?projectionref
 
-has.multipleobs <- TRUE
+has.multipleobs <- FALSE
 
 ################################################################################
                                         # Create window, etc.
 
 ## Overall Layout
-w.match <- gwindow("Import Map File", width = 500, height = 700)
+w.match <- gwindow("Map Interface", width = 500, height = 700)
 
 mainGrp <<- gvbox(spacing = 5, container = w.match, expand = TRUE)
 mainGrp$set_borderwidth(5)
 
 addSpace(mainGrp, 10)
 
-lbl1 <- glabel("iNZight Maps")
-font(lbl1) <- list(weight = "bold",
-                   family = "normal",
-                   size   = 12)
-add(mainGrp, lbl1, anchor = c(0, 0))
+lbl.inzightmaps <- glabel("iNZight Maps")
+font(lbl.inzightmaps) <- list(weight = "bold",
+                              family = "normal",
+                              size   = 12)
+add(mainGrp, lbl.inzightmaps, anchor = c(0, 0))
 addSpace(mainGrp, 10)
 
 frame.mapoptions <- gframe(horizontal = FALSE)
 group.mapoptions <- ggroup(spacing = 5)
 group.mapoptions$set_borderwidth(10)
 expand.mapoptions <- gexpandgroup(text = "Map Options", horizontal = FALSE)
+font(expand.mapoptions) <- list(weight = "bold", family = "normal", size = 10)
 
 add(mainGrp, frame.mapoptions)
 add(frame.mapoptions, group.mapoptions, expand = TRUE)
@@ -50,13 +52,14 @@ frame.plotoptions <- gframe(horizontal = FALSE)
 group.plotoptions <- ggroup(spacing = 5)
 group.plotoptions$set_borderwidth(10)
 expand.plotoptions <- gexpandgroup(text = "Plot Options", horizontal = FALSE)
+font(expand.plotoptions) <- list(weight = "bold", family = "normal", size = 10)
 
 add(mainGrp, frame.plotoptions)
 add(frame.plotoptions, group.plotoptions, expand = TRUE)
 add(group.plotoptions, expand.plotoptions, expand = TRUE)
 
 frame.main <- gframe(horizontal = FALSE)
-group.main <- ggroup(spacing = 5)
+group.main <- ggroup(spacing = 5, horizontal = FALSE)
 group.main$set_borderwidth(10)
 
 add(mainGrp, group.main, expand = TRUE, fill = TRUE)
@@ -92,13 +95,13 @@ tbl.plotoptions <- glayout()
 lbl.plottitle <- glabel("Plot Title:")
 edit.plottitle <- gedit("")
 checkbox.axislabels <- gcheckbox(text = "Axis Labels", checked = TRUE)
-lbl.xaxis <- glabel("x-axis:")
-lbl.yaxis <- glabel("y-axis:")
+lbl.xaxis <- glabel("x-axis Label:")
+lbl.yaxis <- glabel("y-axis Label:")
 edit.xaxis <- gedit("Longitude")
 edit.yaxis <- gedit("Latitude")
 checkbox.datum <- gcheckbox("Grid Lines", checked = TRUE)
 
-lbl.palette <- glabel("Theme:")
+lbl.palette <- glabel("Map Theme:")
 combobox.palette <- gcombobox(c("Default", "Dark"))
 
 tbl.xaxisedit <- glayout()
@@ -110,16 +113,16 @@ tbl.yaxisedit[1, 1, expand = TRUE] <- edit.yaxis
 tbl.plotoptions[1, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.plottitle
 tbl.plotoptions[1, 2:4, expand = TRUE] <- edit.plottitle
 
-tbl.plotoptions[3, 1:4] <- checkbox.datum
+tbl.plotoptions[2, 1, expand = TRUE,  anchor = c(1, 0)] <- lbl.palette
+tbl.plotoptions[2, 2:4, expand = TRUE] <- combobox.palette
 
-tbl.plotoptions[4, 1:4, expand = TRUE] <- checkbox.axislabels
+tbl.plotoptions[3, 2:4, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
+
+tbl.plotoptions[4, 2:4, expand = TRUE] <- checkbox.axislabels
 tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.xaxis
 tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
 tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
 tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
-
-tbl.plotoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.palette
-tbl.plotoptions[2, 2:4, expand = TRUE] <- combobox.palette
 
 add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
 
@@ -139,10 +142,14 @@ addHandlerChanged(checkbox.axislabels, function (h, ...) {
 
 ## Variable selection
 
+lbl.maintitle <- glabel("Select Variable/s to Display")
+lbl.mainsubtitle <- glabel("(Use Ctrl to select multiple variables)")
+font(lbl.maintitle) <- list(weight = "bold", family = "normal", size = 10)
+
 tbl.main <- glayout()
 
 table.vars <- gtable(colnames(activeData), multiple = TRUE)
-lbl.maptype <- glabel("Map Type:")
+lbl.maptype <- glabel("Plot as:")
 radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE)
 lbl.sizeselect <- glabel("Size by:")
 combobox.sizeselect <- gcombobox(colnames(activeData))
@@ -179,6 +186,8 @@ visible(lbl.timevariablechoice) <- FALSE
 visible(combobox.aggregation) <- FALSE
 visible(combobox.separate) <- FALSE
 
+add(group.main, lbl.maintitle)
+add(group.main, lbl.mainsubtitle)
 add(group.main, tbl.main, expand = TRUE, fill = TRUE)
 
 addHandlerSelectionChanged(table.vars, function(h, ...) {
