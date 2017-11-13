@@ -1,0 +1,756 @@
+iNZightMap2Mod <- setRefClass(
+    "iNZightMap2Mod",
+
+    fields = list(
+        GUI = "ANY",
+        mainGrp = "ANY",
+
+        activeData = "data.frame",
+        mapData = "sf",
+        combinedData = "ANY",
+        staleMap = "logical",
+        has.multipleobs = "logical",
+
+        mapName = "character",
+        mapType = "ANY",
+        mapVars = "ANY",
+        mapSizeVar = "ANY",
+
+        plotTitle = "ANY",
+        plotAxes = "logical",
+        plotXLab = "ANY",
+        plotYLab = "ANY",
+        plotDatumLines = "ANY",
+        plotProjection = "ANY",
+
+        codeHistory = "ANY"
+    ),
+
+    methods = list(
+        initialize = function(GUI) {
+            initFields(GUI = GUI)
+
+            ## TODO: Check package name, details, etc.
+            if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
+                resp <- gconfirm("The Maps package isn't installed. Do you want to install it now?",
+                                 title = "Install Maps package", icon = "question", parent = GUI$win)
+
+                if (resp) {
+                    utils::install.packages("iNZightMaps", repos = c("http://cran.stat.auckland.ac.nz",
+                                                               "http://r.docker.stat.auckland.ac.nz/R"))
+                    if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
+                        gmessage("Unable to install package. Please check the website.")
+                        return(NULL)
+                    }
+                } else {
+                    return(NULL)
+                }
+            }
+            
+            ## Configure the data / variables for mapping:
+            activeData <<- GUI$getActiveData()
+
+            mapTypeDialog()
+        },
+
+        mapTypeDialog = function() {
+            w <- gwindow("Define Geographical Variables",
+                         width = 400,
+                         height = 500,
+                         parent = GUI$win,
+                         visible = FALSE)
+
+            gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
+            gv$set_borderwidth(15)
+
+            lbl <- glabel("Type of Map Data")
+            font(lbl) <- list(weight = "bold", size = 12, family = "normal")
+            radioMapType <- gradio(c("Coordinate (latitude, longitude)",
+                                     "Regions (country, state, county, etc.)"))
+            add(gv, lbl)
+            add(gv, radioMapType)
+
+            coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
+            svalue(radioMapType, index = TRUE) <- if(coord.or.region) 1 else 2
+
+            addSpace(gv, 10)
+
+            btnFinish <- gbutton("OK")
+            add(gv, btnFinish)
+
+            addHandlerClicked(btnFinish, function(h, ...) {
+                if(svalue(radioMapType, index = TRUE) == 1) {
+                    print("Coordinate")
+                } else {
+                    print("Region")
+                    mapType <<- "Region"
+                    dispose(w)
+                    importDialog()
+                }
+            })
+
+            visible(w) <- TRUE
+        },
+        importDialog = function() {
+                                        # General variables
+            
+            ## Variables used later on in the merge variable selection section
+            nomatch.df <- data.frame(var.name = "")
+            staleMap <<- FALSE
+            
+            ## Section heading font
+            font.header <- list(weight = "bold", size = 12, family = "normal")
+            
+                                        # Create window, etc.
+            
+            ## Overall Layout
+            w.match <- gwindow("Import Map File", width = 500, height = 750, visible = FALSE)
+            gv.match <- gvbox(container = w.match, expand = TRUE, fill = TRUE)
+            gv.match$set_borderwidth(15)
+            
+            ## Expandable boxes 
+            frame.import <- gframe(horizontal = FALSE)
+            group.import <- ggroup(spacing = 5)
+            group.import$set_borderwidth(10)
+            expand.import <- gexpandgroup(text = "Select Map", horizontal = FALSE)
+            font(expand.import)    <- font.header
+            
+            frame.variables <- gframe(horizontal = FALSE)
+            group.variables <- ggroup(spacing = 5)
+            group.variables$set_borderwidth(10)
+            expand.variables <- gexpandgroup(text = "Select Merge Variables", horizontal = FALSE)
+            font(expand.variables) <- font.header
+            
+            visible(expand.variables) <- FALSE
+            enabled(frame.variables) <- FALSE
+            
+            btn.finish <- gbutton("Finish")
+            enabled(btn.finish) <- FALSE
+            
+            ## Add all frames to window
+            add(gv.match, frame.import, expand = TRUE)
+            add(gv.match, frame.variables, expand = TRUE)
+            add(gv.match, btn.finish, fill = "x")
+            
+                                        # Map Source Box
+            ## Function definitions
+            
+### Read descriptions from ~/iNZightVIT/shapefiles/metadata
+            read.mapmetadata <- function() {
+                metadata <- scan("h:/Documents/iNZightVIT/shapefiles/metadata",
+                                 what = rep("character", 3), fill = TRUE,
+                                 comment.char = ";", sep = "\t")
+                metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
+                colnames(metadata) <- c("filepath", "tidy_filename", "description")
+                metadata
+            }
+            
+### Change filesystem directory names to more readable names (i.e. nzl
+### to New Zealand)
+### --- UNFINISHED ---
+            decodeMapDir <- function(mapdir.mat) {
+                mapdir.mat <- mapdir.contents
+                ## Replace filenames
+                
+                have.tidy <- !is.na(mapdir.mat$tidy_filename)
+                
+                mapdir.mat$tidy_filepath[have.tidy] <- sub("^.*/([-_\\.A-z0-9]+\\.(shp|rds))$",
+                                                           mapdir.mat$tidy_filename[have.tidy],
+                                                           mapdir.mat$x[have.tidy])
+                
+                iso.matrix <- matrix(c("nzl", "New Zealand",
+                                       "usa", "United States"),
+                                     ncol = 2, byrow = TRUE)
+                ## Replace ISO codes
+                country.ind <- grepl("^countries/", dir.vect)
+                country.iso <- sub("^countries/([A-z]+)/.*$", "\\1", dir.vect[country.ind])
+                country.name <- iso.matrix[which(country.iso == iso.matrix[,1]), 2]
+                dir.vect[country.ind] <- sub("^countries/([A-z]+)/",
+                                             paste0("countries/", country.name, "/"),
+                                             dir.vect[country.ind])
+                
+                ## Replace first directories with capitals
+                sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
+            }
+            
+### Helper function for gtree()
+            offspring.files <- function(path, obj) {
+                if(length(path) > 0) {
+                    path.pattern <- paste0("^", paste(path, collapse = "/"), "/")
+                } else {
+                    path.pattern <- ""
+                }
+                
+                files.list <- obj[grepl(path.pattern, obj)]
+                
+                files.list <- sub(path.pattern, "", files.list)
+                
+                slash.loc <- regexpr("/", files.list)
+                has.children <- slash.loc != -1
+                
+                filenames <- files.list
+                filenames[!has.children] <- files.list[!has.children]
+                
+                filenames[has.children] <- substring(files.list[has.children], 
+                                                     first = 1, 
+                                                     last = slash.loc[has.children] - 1)
+                
+                unique.ind <- !duplicated(filenames)
+                
+                data.frame(filename = filenames[unique.ind],
+                           has.children = has.children[unique.ind])
+            }
+            
+            ## Variable definitions
+            stored.shapefiles <- list.files("H:/Documents/iNZightVIT/shapefiles/",
+                                            recursive = TRUE,
+                                            pattern = ".(shp|rds)$")
+            
+            metadata <- read.mapmetadata()
+            
+            mapdir.contents <- merge(stored.shapefiles, metadata,
+                                     by.x = 1, by.y = 1, all.x = TRUE)
+            
+            ## Heading area
+            lbl <- glabel("Map Source:")
+            mapSource <- gradio(c("Use Inbuilt Map", "Import Shapefile"),
+                                horizontal = TRUE)
+            
+            ## Inbuilt Map Data 
+            tblInbuiltfile <- glayout()
+            
+            mapInbuiltBrowse <- gtree(offspring = offspring.files,
+                                      offspring.data = mapdir.contents[, 1],
+                                      chosen.col = "filename",
+                                      offspring.col = "has.children")
+            mapInbuiltBrowse$widget$`headers-visible` <- FALSE
+            
+            lbl.mapdesc <- gtext("Description: No description available.")
+            font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
+            
+            tblInbuiltfile[1, 1, expand = TRUE, fill = "both"] <- mapInbuiltBrowse
+            tblInbuiltfile[2, 1, expand = TRUE, fill = "both"] <- lbl.mapdesc
+            
+            enabled(lbl.mapdesc) <- FALSE
+            
+            ## User-imported Shapefile
+            tblShapefile <- glayout()
+            
+            mapSourceBrowse <- gfilebrowse(text = "Open Shapefile...",
+                                           type = "open",
+                                           filter = list("All formats" = list(patterns = c("*.shp",
+                                                                                           "*.json",
+                                                                                           "*.geojson",
+                                                                                           "*.rds")),
+                                                         "Shapefile" = list(patterns = c("*.shp")),
+                                                         "GeoJSON" = list(patterns = c("*.json",
+                                                                                       "*.geojson"))))
+            
+            btn.import <- gbutton(text = "Import Map")
+            
+            tblShapefile[1, 1, expand = TRUE] <- mapSourceBrowse
+            
+            ## Add widgets to layout
+            add(frame.import, group.import, expand = TRUE)
+            add(group.import, expand.import, expand = TRUE)
+            addSpace(expand.import, 15)
+            add(expand.import, mapSource)
+            addSpace(expand.import, 5)
+            add(expand.import, tblShapefile, expand = TRUE)
+            add(expand.import, tblInbuiltfile, expand = TRUE)
+            addSpace(expand.import, 15)
+            add(expand.import, btn.import)
+            
+            visible(tblInbuiltfile) <- TRUE
+            visible(tblShapefile) <- FALSE
+            
+            ## Event handling
+            
+### Map source radio button
+            addHandlerChanged(mapSource, function(h, ...) {
+                v <- svalue(mapSource, index = TRUE)
+                visible(tblShapefile) <- v == 2
+                visible(tblInbuiltfile) <- v == 1
+            })
+            
+### If user changes the map file, hide the variable merging section
+### again to prevent dissonance between the two sections.
+            addHandlerChanged(mapSourceBrowse, function(h, ...) {
+                if(!staleMap) {
+                    staleMap <<- TRUE
+                    visible(expand.variables) <- FALSE
+                    enabled(frame.variables) <- FALSE
+                    enabled(btn.finish) <- FALSE
+                }
+            })
+            
+### If user changes the map file, hide the variable merging section
+### again to prevent dissonance between the two sections.
+            addHandlerSelectionChanged(mapInbuiltBrowse, function(h, ...) {
+                if(!staleMap) {
+                    staleMap <<- TRUE
+                    visible(expand.variables) <- FALSE
+                    enabled(frame.variables) <- FALSE
+                    enabled(btn.finish) <- FALSE
+                }
+            })
+            
+### Again, prevent dissonance between sections. Also insert the map
+### description if it is present in the metadata
+            addHandlerSelect(mapInbuiltBrowse, function(h, ...) {
+                if(!staleMap) {
+                    staleMap <<- TRUE
+                    visible(expand.variables) <- FALSE
+                    enabled(frame.variables) <- FALSE
+                    visible(lbl.allmatched) <- FALSE
+                    enabled(btn.finish) <- FALSE
+                }
+                
+                chosen.filename <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                chosen.desc <- mapdir.contents$description[which(mapdir.contents[, 1] == chosen.filename)]
+                
+                if(length(chosen.desc) > 0 && !is.na(chosen.desc)) {
+                    svalue(lbl.mapdesc) <- paste("Description:", chosen.desc)
+                } else {
+                    svalue(lbl.mapdesc) <- "Description: No description available." 
+                }
+                font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
+            })
+            
+### Import the map; update the relevant widgets in the variable
+### merging section; hide the map selection section and unhide the
+### variable merging section. Intialize the dropboxes with the pair of
+### variables with the higest number of matches
+            addHandlerClicked(btn.import, handler = function(h, ...) {
+                ## Extract the true filename from inputs
+                if(svalue(mapSource, index = TRUE) == 1) {
+                    inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                    map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
+                } else {
+                    map.filename <- svalue(mapSourceBrowse)
+                }
+                
+                ## Change which region has focus
+                visible(expand.import) <- FALSE
+                visible(expand.variables) <- TRUE
+                
+                ## Indicate to the user that the map is being loaded in case it is
+                ## large enough to seem like it is hanging
+                visible(lbl.loading) <- TRUE
+                
+                ## Import the map - either a shapefile or rds
+                mapData <<- iNZightMaps::retrieveMap(map.filename)
+                map.vars <- as.data.frame(mapData)[, !(colnames(mapData) %in% "geometry")]
+                
+                ## Only take variables in the shapefile that are unique to one
+                ## region in the map file
+                combobox.mapvars[] <- colnames(map.vars[, !(apply(map.vars, 2, anyDuplicated))])
+                staleMap <<- FALSE
+                
+                ## Find the pair of variables with the highest number of matches
+                best.vars <- iNZightMaps::findBestMatch(activeData, map.vars)
+                best.data.var <- best.vars[1]
+                best.map.var <-  best.vars[2]
+                
+                ## Finished loading, so replace loading label with a blank label
+                ## (prevents widgets moving around too much)
+                visible(lbl.loading) <- FALSE
+                visible(lbl.blank) <- TRUE
+                
+                ## Enable user interaction with the variable merging section now
+                ## that nearly everything is done
+                enabled(frame.variables) <- TRUE
+                enabled(btn.finish) <- TRUE
+                
+                ## Initialize with the best variables from above
+                svalue(combobox.datavars) <- best.data.var
+                svalue(combobox.mapvars) <- best.map.var
+            })
+            
+################################################################################
+                                        # Variable Merging
+            
+            ## Function definitions
+### Helper function that is called each time either combobox is
+### changed. Updates the gtable of nonmatches.
+            cb.change <- function(h, ...) {
+                enabled(table.nonmatched) <- FALSE
+                
+                data.var <- svalue(combobox.datavars)
+                map.var <- svalue(combobox.mapvars)
+                
+                data.is.na <- is.na(activeData[, data.var])
+                data.vect <- as.character(unique(activeData[!data.is.na, data.var]))
+                map.vect <-  as.character(as.data.frame(mapData)[, map.var])
+
+                table.nonmatched[] <- data.vect
+                visible(table.nonmatched) <- !(data.vect %in% map.vect)
+                
+                enabled(table.nonmatched) <- TRUE
+                
+                svalue(lbl.unmatchedcount) <- paste("Unmatched Count:", sum(visible(table.nonmatched)))
+                svalue(lbl.matchedcount) <- paste("Matched Count:", sum(!visible(table.nonmatched)))
+                
+                if(any(visible(table.nonmatched))) {
+                    visible(lbl.allmatched) <- FALSE
+                    visible(lbl.blank) <- TRUE
+                } else {
+                    visible(lbl.allmatched) <- TRUE
+                    visible(lbl.blank) <- FALSE
+                }
+            }
+            
+            ## Widget definitions
+            
+            tbl.variables <- glayout()
+            
+            combobox.mapvars <- gcombobox(items = c(""))
+            combobox.datavars <- gcombobox(items = colnames(activeData))
+            
+            tbl.variables[1, 1] <- glabel("Data Variable: ")
+            tbl.variables[1, 2, expand = TRUE] <- combobox.datavars
+            
+            tbl.variables[1, 4] <- glabel("Map Variable: ")
+            tbl.variables[1, 5, expand = TRUE] <- combobox.mapvars
+            
+            lbl.nonmatchedtitle <- glabel("Unmatched Data")
+            lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no corresponding region in the map file")
+            font(lbl.nonmatchedtitle) <- list(weight = "bold", family = "normal", size = 10)
+            table.nonmatched <- gtable(nomatch.df)
+            
+            lbl.matchedcount <- glabel("Matched Count: 0")
+            lbl.unmatchedcount <- glabel("Unmatched Count: 0")
+            tbl.matchcounts <- glayout()
+            tbl.matchcounts[1, 1, expand = TRUE] <- lbl.unmatchedcount
+            tbl.matchcounts[1, 2, expand = TRUE] <- lbl.matchedcount
+            
+            lbl.allmatched <- glabel("All rows of data matched to a region!")
+            lbl.loading <- glabel("Loading map... Please wait...")
+            lbl.blank <- glabel("")
+            
+            ## Add to frame
+            add(frame.variables, group.variables, expand = TRUE)
+            add(group.variables, expand.variables, expand = TRUE)
+            addSpace(expand.variables, 15)
+            add(expand.variables, tbl.variables)
+            addSpace(expand.variables, 15)
+            add(expand.variables, lbl.allmatched)
+            add(expand.variables, lbl.loading)
+            add(expand.variables, lbl.blank)
+            add(expand.variables, lbl.nonmatchedtitle)
+            add(expand.variables, lbl.nonmatchedsubtitle)
+            addSpace(expand.variables, 5)
+            add(expand.variables, table.nonmatched, expand = TRUE)
+            add(expand.variables, tbl.matchcounts)
+            
+            visible(table.nonmatched) <- FALSE
+            
+            visible(lbl.allmatched) <- FALSE
+            visible(lbl.loading) <- FALSE
+            visible(lbl.blank) <- FALSE
+            
+            ## Event handlers
+            addHandlerChanged(combobox.mapvars, handler = cb.change)
+            addHandlerChanged(combobox.datavars, handler = cb.change)
+            ### Right click menu for nonmatched table to update it.
+            
+################################################################################
+                                        # Finish Importing
+            
+            addHandlerClicked(btn.finish, function(h, ...) {
+                ## Join data to map
+                data.var <- svalue(combobox.datavars)
+                map.var <- svalue(combobox.mapvars)
+
+                ## TODO: Simplification
+                simplify.level <- 0.01
+                combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
+                                                             map = sf::st_simplify(mapData, dTolerance = simplify.level),
+                                                             type = "region",
+                                                             by.data = data.var,
+                                                             by.map = map.var)
+                mapName <<- "Placeholder Map Name..."
+                mapType <<- "region"
+                dispose(w.match)
+                initiateModule()
+            })
+
+            visible(w.match) <- TRUE
+        },
+        ## Create the map object based on the options given in the importation dialog box
+        createMapObject = function() {},
+        ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
+        initiateModule = function() {
+            GUI$initializeModuleWindow(.self)
+            mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp$set_borderwidth(5)
+            
+            addSpace(mainGrp, 10)
+            
+            lbl.inzightmaps <- glabel("iNZight Maps")
+            font(lbl.inzightmaps) <- list(weight = "bold",
+                                          family = "normal",
+                                          size   = 12)
+            add(mainGrp, lbl.inzightmaps, anchor = c(0, 0))
+            addSpace(mainGrp, 10)
+            
+            frame.mapoptions <- gframe(horizontal = FALSE)
+            group.mapoptions <- ggroup(spacing = 5)
+            group.mapoptions$set_borderwidth(10)
+            expand.mapoptions <- gexpandgroup(text = "Map Options", horizontal = FALSE)
+            font(expand.mapoptions) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.mapoptions)
+            add(frame.mapoptions, group.mapoptions, expand = TRUE)
+            add(group.mapoptions, expand.mapoptions, expand = TRUE)
+            
+            frame.plotoptions <- gframe(horizontal = FALSE)
+            group.plotoptions <- ggroup(spacing = 5)
+            group.plotoptions$set_borderwidth(10)
+            expand.plotoptions <- gexpandgroup(text = "Plot Options", horizontal = FALSE)
+            font(expand.plotoptions) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.plotoptions)
+            add(frame.plotoptions, group.plotoptions, expand = TRUE)
+            add(group.plotoptions, expand.plotoptions, expand = TRUE)
+            
+            frame.main <- gframe(horizontal = FALSE)
+            group.main <- ggroup(spacing = 5, horizontal = FALSE)
+            group.main$set_borderwidth(10)
+            
+            add(mainGrp, group.main, expand = TRUE, fill = TRUE)
+            
+            visible(expand.mapoptions) <- FALSE
+            visible(expand.plotoptions) <- FALSE
+            
+            ## Map Options
+            
+            tbl.mapoptions <- glayout()
+            
+            lbl.currentmap <- glabel("Current Map:")
+            lbl.mapname <- glabel(mapName)
+            btn.changemap <- gbutton("Change")
+            
+            tbl.mapoptions[1, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.currentmap
+            tbl.mapoptions[1, 2:3, expand = TRUE, anchor = c(-1, 0)] <- lbl.mapname
+            tbl.mapoptions[1, 4] <- btn.changemap
+
+#####
+            proj.df <- read.csv("H:/echome/inzightwork/package/iNZightMaps/projections.csv",
+                                stringsAsFactors = FALSE)
+            
+            lbl.mapproj <- glabel("Projection:")
+            combobox.mapproj <- gcombobox(proj.df$Name)
+            
+            tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
+            tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
+            tbl.mapoptions[2, 3:4, expand = TRUE] <- combobox.mapproj
+            
+            add(expand.mapoptions, tbl.mapoptions, expand = TRUE, fill = TRUE)
+            
+            ## Plot Options
+            
+            tbl.plotoptions <- glayout()
+            
+            lbl.plottitle <- glabel("Plot Title:")
+            edit.plottitle <- gedit("")
+            checkbox.axislabels <- gcheckbox(text = "Axis Labels", checked = TRUE)
+            lbl.xaxis <- glabel("x-axis Label:")
+            lbl.yaxis <- glabel("y-axis Label:")
+            edit.xaxis <- gedit("Longitude")
+            edit.yaxis <- gedit("Latitude")
+            checkbox.datum <- gcheckbox("Grid Lines", checked = TRUE)
+            
+            lbl.palette <- glabel("Map Theme:")
+            combobox.palette <- gcombobox(c("Default", "Dark"))
+            
+            tbl.xaxisedit <- glayout()
+            tbl.xaxisedit[1, 1, expand = TRUE] <- edit.xaxis
+            
+            tbl.yaxisedit <- glayout()
+            tbl.yaxisedit[1, 1, expand = TRUE] <- edit.yaxis
+            
+            tbl.plotoptions[1, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.plottitle
+            tbl.plotoptions[1, 2:4, expand = TRUE] <- edit.plottitle
+            
+            tbl.plotoptions[2, 1, expand = TRUE,  anchor = c(1, 0)] <- lbl.palette
+            tbl.plotoptions[2, 2:4, expand = TRUE] <- combobox.palette
+            
+            tbl.plotoptions[3, 2:4, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
+            
+            tbl.plotoptions[4, 2:4, expand = TRUE] <- checkbox.axislabels
+            tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.xaxis
+            tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
+            tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
+            tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
+            
+            add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
+            
+            addHandlerChanged(checkbox.axislabels, function (h, ...) {
+                if(svalue(checkbox.axislabels)) {
+                    visible(lbl.xaxis) <- TRUE
+                    visible(tbl.xaxisedit) <- TRUE
+                    visible(lbl.yaxis) <- TRUE
+                    visible(tbl.yaxisedit) <- TRUE
+                } else {
+                    visible(lbl.xaxis) <- FALSE
+                    visible(tbl.xaxisedit) <- FALSE
+                    visible(lbl.yaxis) <- FALSE
+                    visible(tbl.yaxisedit) <- FALSE
+                }
+                updateOptions()
+            })
+
+            addHandlerChanged(edit.plottitle, function(h, ...) {
+                updateOptions()
+            })
+            addHandlerChanged(edit.xaxis, function(h, ...) {
+                updateOptions()
+            })
+            addHandlerChanged(edit.yaxis, function(h, ...) {
+                updateOptions()
+            })
+            addHandlerChanged(checkbox.datum, function(h, ...) {
+                updateOptions()
+            })
+            
+            ## Variable selection
+            
+            lbl.maintitle <- glabel("Select Variable/s to Display")
+            lbl.mainsubtitle <- glabel("(Use Ctrl to select multiple variables)")
+            font(lbl.maintitle) <- list(weight = "bold", family = "normal", size = 10)
+            
+            tbl.main <- glayout()
+            
+            table.vars <- gtable(colnames(activeData), multiple = TRUE)
+            lbl.maptype <- glabel("Plot as:")
+            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE)
+            lbl.sizeselect <- glabel("Size by:")
+            combobox.sizeselect <- gcombobox(c("", colnames(activeData)))
+            
+            lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
+            radio.timevariable <- gradio(c("Separate", "Aggregate"), horizontal = TRUE)
+            lbl.timevariablechoice <- glabel("Plot:")
+            combobox.aggregation <- gcombobox(c("Average", "First Observation", "Median"))
+            combobox.separate <- gcombobox(c("Separate Plots", "Sparklines", "Barchart"))
+            separator.timevariable <- gseparator()
+            
+            tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
+            tbl.main[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+            tbl.main[2, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
+            tbl.main[3, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+            tbl.main[3, 2, expand = TRUE] <- combobox.sizeselect
+            
+            tbl.main[4, 1:3, expand = TRUE] <- separator.timevariable
+            tbl.main[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.timevariable
+            tbl.main[5, 2, expand = TRUE, anchor = c(-1, 0)] <- radio.timevariable
+            tbl.main[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.timevariablechoice
+            tbl.main[6, 2, expand = TRUE] <- combobox.aggregation
+            tbl.main[6, 2, expand = TRUE] <- combobox.separate
+            
+            visible(lbl.maptype) <- FALSE
+            visible(radio.maptype) <- FALSE
+            visible(lbl.sizeselect) <- FALSE
+            visible(combobox.sizeselect) <- FALSE
+            
+            visible(separator.timevariable) <- FALSE
+            visible(radio.timevariable) <- FALSE
+            visible(lbl.timevariable) <- FALSE
+            visible(lbl.timevariablechoice) <- FALSE
+            visible(combobox.aggregation) <- FALSE
+            visible(combobox.separate) <- FALSE
+            
+            add(group.main, lbl.maintitle)
+            add(group.main, lbl.mainsubtitle)
+            add(group.main, tbl.main, expand = TRUE, fill = TRUE)
+
+########
+            has.multipleobs <<- FALSE
+            
+            addHandlerSelectionChanged(table.vars, function(h, ...) {
+                visible(lbl.maptype) <- TRUE
+                visible(radio.maptype) <- TRUE
+                
+                if(has.multipleobs) {
+                    visible(separator.timevariable) <- TRUE
+                    visible(lbl.timevariable) <- TRUE
+                    visible(radio.timevariable) <- TRUE
+                    visible(lbl.timevariablechoice) <- TRUE
+                    visible(combobox.separate) <- TRUE
+                }
+
+                updateOptions()
+            })
+            
+            addHandlerChanged(radio.maptype, function(h, ...) {
+                if(svalue(radio.maptype, index = TRUE) == 1) {
+                    visible(lbl.sizeselect) <- FALSE
+                    visible(combobox.sizeselect) <- FALSE
+                    combinedData$type <<- "region"
+                } else {
+                    visible(lbl.sizeselect) <- TRUE
+                    visible(combobox.sizeselect) <- TRUE
+                    combinedData$type <<- "point"
+                }
+                updateOptions()
+            })
+
+            addHandlerChanged(combobox.sizeselect, function(h, ...) {
+                updateOptions()
+            })
+            
+            addHandlerChanged(radio.timevariable, function(h, ...) {
+                if(svalue(radio.timevariable, index = TRUE) == 1) {
+                    svalue(lbl.timevariablechoice) <- "Plot:"
+                    visible(combobox.aggregation) <- FALSE
+                    visible(combobox.separate) <- TRUE
+                } else {
+                    svalue(lbl.timevariablechoice) <- "Aggregation:"
+                    visible(combobox.aggregation) <- TRUE
+                    visible(combobox.separate) <- FALSE
+                }
+            })
+
+            ## Run after any options are changed in the GUI
+            updateOptions = function() {
+                ## Plot Options
+                plotTitle <<- svalue(edit.plottitle)
+                plotAxes <<- svalue(checkbox.axislabels)
+                plotXLab <<- svalue(edit.xaxis)
+                plotYLab <<- svalue(edit.yaxis)
+                plotDatumLines <<- svalue(checkbox.datum)            
+                ## TODO
+                print(proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"])
+                plotProjection <<- sf::st_crs(proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"])
+
+                ## Variable Options
+                mapVars <<- svalue(table.vars)
+                mapSizeVar <<- svalue(combobox.sizeselect)
+
+                if(length(mapVars) == 0) {
+                    mapVars <<- NULL
+                }
+
+                updatePlot()
+            }
+
+            updateOptions()
+        },
+        ## Update and plot the map given
+        updatePlot = function() {
+            if(length(mapVars) > 1) {
+                multiple.vars <- TRUE
+            } else {
+                multiple.vars <- FALSE
+            }
+            
+            dev.hold()
+            grid::grid.newpage()
+            grid::grid.draw(plot(combinedData, main = plotTitle,
+                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
+                 datum.lines = plotDatumLines, projection = plotProjection,
+                 multiple.vars = multiple.vars, fill.var = mapVars))
+            dev.flush()
+
+        }
+    ))
