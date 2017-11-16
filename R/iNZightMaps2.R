@@ -790,7 +790,8 @@ iNZightMap2Mod <- setRefClass(
             grid::grid.draw(plot(combinedData, main = plotTitle,
                  axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
                  datum.lines = plotDatumLines, projection = plotProjection,
-                 multiple.vars = multiple.vars, fill.var = mapVars))
+                 multiple.vars = multiple.vars, colour.var = mapVars,
+                 size.var = mapSizeVar))
             dev.flush()
 
         }
