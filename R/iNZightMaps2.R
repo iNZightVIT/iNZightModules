@@ -51,6 +51,18 @@ iNZightMap2Mod <- setRefClass(
             ## Configure the data / variables for mapping:
             activeData <<- GUI$getActiveData()
 
+            mapName <- ""
+            mapType <- NULL
+            mapVars <- NULL
+            mapSizeVar <- NULL
+
+            plotTitle <- ""
+            plotAxes <- FALSE
+            plotXLab <- FALSE
+            plotYLab <- FALSE
+            plotDatumLines <- FALSE
+            plotProjection <- NULL
+
             mapTypeDialog()
         },
 
