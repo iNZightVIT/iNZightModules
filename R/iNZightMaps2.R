@@ -51,17 +51,17 @@ iNZightMap2Mod <- setRefClass(
             ## Configure the data / variables for mapping:
             activeData <<- GUI$getActiveData()
 
-            mapName <- ""
-            mapType <- NULL
-            mapVars <- NULL
-            mapSizeVar <- NULL
+            mapName <<- ""
+            mapType <<- NULL
+            mapVars <<- NULL
+            mapSizeVar <<- NULL
 
-            plotTitle <- ""
-            plotAxes <- FALSE
-            plotXLab <- FALSE
-            plotYLab <- FALSE
-            plotDatumLines <- FALSE
-            plotProjection <- NULL
+            plotTitle <<- ""
+            plotAxes <<- FALSE
+            plotXLab <<- FALSE
+            plotYLab <<- FALSE
+            plotDatumLines <<- FALSE
+            plotProjection <<- NULL
 
             mapTypeDialog()
         },
@@ -95,7 +95,6 @@ iNZightMap2Mod <- setRefClass(
                 if(svalue(radioMapType, index = TRUE) == 1) {
                     print("Coordinate")
                 } else {
-                    mapType <<- "region"
                     dispose(w)
                     importDialog()
                 }
@@ -477,11 +476,15 @@ iNZightMap2Mod <- setRefClass(
                 data.var <- svalue(combobox.datavars)
                 map.var <- svalue(combobox.mapvars)
 
+                if (is.null(mapType)) {
+                    mapType <<- "region"
+                }
+
                 ## TODO: Simplification
                 simplify.level <- 0.01
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
-                                                             map = sf::st_simplify(mapData, dTolerance = simplify.level),
-                                                             ## map = mapData,
+                                                             map = sf::st_simplify(mapData,
+                                                                                   dTolerance = simplify.level),
                                                              type = "region",
                                                              by.data = data.var,
                                                              by.map = map.var)
@@ -495,7 +498,10 @@ iNZightMap2Mod <- setRefClass(
                     mapName <<- as.character(sub("^.*/([-\\._A-z0-9]+)\\.[A-z0-9]*$", "\\1", mapFilename))
                 }
                 
-                mapType <<- "region"
+                
+                ## TODO: Do this a better way
+                combinedData$type <<- mapType
+                
                 dispose(w.match)
                 initiateModule()
             })
@@ -513,7 +519,7 @@ iNZightMap2Mod <- setRefClass(
                 plotXLab <<- svalue(edit.xaxis)
                 plotYLab <<- svalue(edit.yaxis)
                 plotDatumLines <<- svalue(checkbox.datum)            
-                plotProjection <<- sf::st_crs(proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"])
+                plotProjection <<- proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"]
 
                 ## Variable Options
                 mapVars <<- svalue(table.vars)
@@ -526,10 +532,6 @@ iNZightMap2Mod <- setRefClass(
                 updatePlot()
             }
             
-            if(class(mainGrp) == "uninitializedField") {
-                first.interface <- TRUE
-            }
-
             GUI$initializeModuleWindow(.self)
             
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
@@ -593,7 +595,11 @@ iNZightMap2Mod <- setRefClass(
             
             lbl.mapproj <- glabel("Projection:")
             combobox.mapproj <- gcombobox(proj.df$Name)
-            
+
+            if(!is.null(plotProjection)) {
+                svalue(combobox.mapproj, index = TRUE) <- which(proj.df$PROJ4 == plotProjection) 
+            }
+                        
             tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
             tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
             tbl.mapoptions[2, 3:4, expand = TRUE] <- combobox.mapproj
@@ -605,13 +611,13 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions <- glayout()
             
             lbl.plottitle <- glabel("Plot Title:")
-            edit.plottitle <- gedit("")
-            checkbox.axislabels <- gcheckbox(text = "Axis Labels", checked = FALSE)
+            edit.plottitle <- gedit(plotTitle)
+            checkbox.axislabels <- gcheckbox(text = "Axis Labels", checked = plotAxes)
             lbl.xaxis <- glabel("x-axis Label:")
             lbl.yaxis <- glabel("y-axis Label:")
-            edit.xaxis <- gedit("Longitude")
-            edit.yaxis <- gedit("Latitude")
-            checkbox.datum <- gcheckbox("Grid Lines", checked = FALSE)
+            edit.xaxis <- gedit(plotXLab)
+            edit.yaxis <- gedit(plotYLab)
+            checkbox.datum <- gcheckbox("Grid Lines", checked = plotDatumLines)
             
             lbl.palette <- glabel("Map Theme (TODO):")
             combobox.palette <- gcombobox(c("Default", "Dark"))
@@ -638,10 +644,10 @@ iNZightMap2Mod <- setRefClass(
             
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
 
-            visible(lbl.xaxis) <- FALSE
-            visible(tbl.xaxisedit) <- FALSE
-            visible(lbl.yaxis) <- FALSE
-            visible(tbl.yaxisedit) <- FALSE
+            visible(lbl.xaxis) <- plotAxes
+            visible(tbl.xaxisedit) <- plotAxes
+            visible(lbl.yaxis) <- plotAxes
+            visible(tbl.yaxisedit) <- plotAxes
 
             addHandlerChanged(checkbox.axislabels, function (h, ...) {
                 if(svalue(checkbox.axislabels)) {
@@ -696,10 +702,23 @@ iNZightMap2Mod <- setRefClass(
             tbl.main <- glayout()
             
             table.vars <- gtable(colnames(activeData), multiple = TRUE)
+
+            if (!is.null(mapVars)) {
+                svalue(table.vars) <- mapVars
+            }
+            
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE)
+            radio.maptype <- gradio(c("Regions", "Centroids"),
+                                    horizontal = TRUE,
+                                    selected = (mapType == "point") + 1)
+            
+            
             lbl.sizeselect <- glabel("Size by:")
             combobox.sizeselect <- gcombobox(c("", colnames(activeData)))
+
+            if (!is.null(mapSizeVar)) {
+                svalue(combobox.sizeselect) <- mapSizeVar
+            }
             
             lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
             radio.timevariable <- gradio(c("Separate", "Aggregate"), horizontal = TRUE)
@@ -721,10 +740,10 @@ iNZightMap2Mod <- setRefClass(
             tbl.main[6, 2, expand = TRUE] <- combobox.aggregation
             tbl.main[6, 2, expand = TRUE] <- combobox.separate
             
-            visible(lbl.maptype) <- FALSE
-            visible(radio.maptype) <- FALSE
-            visible(lbl.sizeselect) <- FALSE
-            visible(combobox.sizeselect) <- FALSE
+            visible(lbl.maptype) <- !is.null(mapVars)
+            visible(radio.maptype) <- !is.null(mapVars)
+            visible(lbl.sizeselect) <- mapType == "point"
+            visible(combobox.sizeselect) <- mapType == "point"
             
             visible(separator.timevariable) <- FALSE
             visible(radio.timevariable) <- FALSE
@@ -760,10 +779,12 @@ iNZightMap2Mod <- setRefClass(
                     visible(lbl.sizeselect) <- FALSE
                     visible(combobox.sizeselect) <- FALSE
                     combinedData$type <<- "region"
+                    mapType <<- "region"
                 } else {
                     visible(lbl.sizeselect) <- TRUE
                     visible(combobox.sizeselect) <- TRUE
                     combinedData$type <<- "point"
+                    mapType <<- "point"
                 }
                 updateOptions()
             })
