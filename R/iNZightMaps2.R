@@ -103,6 +103,7 @@ iNZightMap2Mod <- setRefClass(
             visible(w) <- TRUE
         },
         importDialog = function() {
+            GUI$initializeModuleWindow(.self)
                                         # General variables
             
             ## Variables used later on in the merge variable selection section
@@ -115,8 +116,7 @@ iNZightMap2Mod <- setRefClass(
                                         # Create window, etc.
             
             ## Overall Layout
-            w.match <- gwindow("Import Map File", width = 500, height = 750, visible = FALSE)
-            gv.match <- gvbox(container = w.match, expand = TRUE, fill = TRUE)
+            gv.match <- gvbox(container = GUI$moduleWindow, expand = TRUE, fill = TRUE)
             gv.match$set_borderwidth(15)
             
             ## Expandable boxes 
@@ -502,11 +502,11 @@ iNZightMap2Mod <- setRefClass(
                 ## TODO: Do this a better way
                 combinedData$type <<- mapType
                 
-                dispose(w.match)
+                ## dispose(w.match)
                 initiateModule()
             })
 
-            visible(w.match) <- TRUE
+            ## visible(w.match) <- TRUE
         },
         ## Create the map object based on the options given in the importation dialog box
         createMapObject = function() {},
