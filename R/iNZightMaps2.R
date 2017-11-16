@@ -380,17 +380,19 @@ iNZightMap2Mod <- setRefClass(
                 data.var <- svalue(combobox.datavars)
                 map.var <- svalue(combobox.mapvars)
                 
-                data.is.na <- is.na(activeData[, data.var])
-                data.vect <- as.character(unique(activeData[!data.is.na, data.var]))
-                map.vect <-  as.character(as.data.frame(mapData)[, map.var])
+                match.list <- iNZightMaps::matchVariables(activeData[, data.var],
+                                                          as.data.frame(mapData)[, map.var])
+##                data.is.na <- is.na(activeData[, data.var])
+##                data.vect <- as.character(unique(activeData[!data.is.na, data.var]))
+##                map.vect <-  as.character(as.data.frame(mapData)[, map.var])
 
-                table.nonmatched[] <- data.vect
-                visible(table.nonmatched) <- !(data.vect %in% map.vect)
+                table.nonmatched[] <- match.list$data.vect
+                visible(table.nonmatched) <- !(match.list$matched)
                 
                 enabled(table.nonmatched) <- TRUE
                 
-                svalue(lbl.unmatchedcount) <- paste("Unmatched Count:", sum(visible(table.nonmatched)))
-                svalue(lbl.matchedcount) <- paste("Matched Count:", sum(!visible(table.nonmatched)))
+                svalue(lbl.unmatchedcount) <- paste("Unmatched Count:", sum(!match.list$matched))
+                svalue(lbl.matchedcount) <- paste("Matched Count:", sum(match.list$matched))
                 
                 if(any(visible(table.nonmatched))) {
                     visible(lbl.allmatched) <- FALSE
