@@ -10,6 +10,7 @@ iNZightMap2Mod <- setRefClass(
         combinedData = "ANY",
         staleMap = "logical",
         has.multipleobs = "logical",
+        mapFilename = "character",
 
         mapName = "character",
         mapType = "ANY",
@@ -306,8 +307,8 @@ iNZightMap2Mod <- setRefClass(
                     enabled(btn.finish) <- FALSE
                 }
                 
-                chosen.filename <- paste(svalue(mapInbuiltBrowse), collapse = "/")
-                chosen.desc <- mapdir.contents$description[which(mapdir.contents[, 1] == chosen.filename)]
+                mapFilename <<- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                chosen.desc <- mapdir.contents$description[which(mapdir.contents[, 1] == mapFilename)]
                 
                 if(length(chosen.desc) > 0 && !is.na(chosen.desc)) {
                     svalue(lbl.mapdesc) <- paste("Description:", chosen.desc)
@@ -466,10 +467,20 @@ iNZightMap2Mod <- setRefClass(
                 simplify.level <- 0.01
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
                                                              map = sf::st_simplify(mapData, dTolerance = simplify.level),
+                                                             ## map = mapData,
                                                              type = "region",
                                                              by.data = data.var,
                                                              by.map = map.var)
-                mapName <<- "Placeholder Map Name..."
+
+                ## If the given file has a name given in the metadata,
+                ## use that. Otherwise use the filename.
+                chosen.name <- mapdir.contents$tidy_filename[which(mapdir.contents[, 1] == mapFilename)]
+                if(length(chosen.name) > 0 && !is.na(chosen.name)) {
+                    mapName <<- as.character(chosen.name)
+                } else {
+                    mapName <<- as.character(sub("^.*/([-\\._A-z0-9]+)\\.[A-z0-9]*$", "\\1", mapFilename))
+                }
+                
                 mapType <<- "region"
                 dispose(w.match)
                 initiateModule()
