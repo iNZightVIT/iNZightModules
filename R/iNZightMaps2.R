@@ -83,8 +83,7 @@ iNZightMap2Mod <- setRefClass(
                 if(svalue(radioMapType, index = TRUE) == 1) {
                     print("Coordinate")
                 } else {
-                    print("Region")
-                    mapType <<- "Region"
+                    mapType <<- "region"
                     dispose(w)
                     importDialog()
                 }
@@ -140,7 +139,8 @@ iNZightMap2Mod <- setRefClass(
             read.mapmetadata <- function() {
                 metadata <- scan("h:/Documents/iNZightVIT/shapefiles/metadata",
                                  what = rep("character", 3), fill = TRUE,
-                                 comment.char = ";", sep = "\t")
+                                 comment.char = ";", sep = "\t",
+                                 fileEncoding = 'UTF-8')
                 metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
                 colnames(metadata) <- c("filepath", "tidy_filename", "description")
                 metadata
@@ -345,7 +345,7 @@ iNZightMap2Mod <- setRefClass(
                 
                 ## Only take variables in the shapefile that are unique to one
                 ## region in the map file
-                combobox.mapvars[] <- colnames(map.vars[, !(apply(map.vars, 2, anyDuplicated))])
+                combobox.mapvars[] <- colnames(map.vars[, !(apply(map.vars, 2, anyDuplicated, incomparables = c(NA, "")))])
                 staleMap <<- FALSE
                 
                 ## Find the pair of variables with the highest number of matches
@@ -492,8 +492,35 @@ iNZightMap2Mod <- setRefClass(
         createMapObject = function() {},
         ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
         initiateModule = function() {
+            updateOptions = function() {
+                ## Plot Options
+                plotTitle <<- svalue(edit.plottitle)
+                plotAxes <<- svalue(checkbox.axislabels)
+                plotXLab <<- svalue(edit.xaxis)
+                plotYLab <<- svalue(edit.yaxis)
+                plotDatumLines <<- svalue(checkbox.datum)            
+                plotProjection <<- sf::st_crs(proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"])
+
+                ## Variable Options
+                mapVars <<- svalue(table.vars)
+                mapSizeVar <<- svalue(combobox.sizeselect)
+
+                if(length(mapVars) == 0) {
+                    mapVars <<- NULL
+                }
+
+                updatePlot()
+            }
+            
+            if(class(mainGrp) == "uninitializedField") {
+                first.interface <- TRUE
+            }
+
             GUI$initializeModuleWindow(.self)
+            
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            visible(mainGrp) <<- FALSE
+
             mainGrp$set_borderwidth(5)
             
             addSpace(mainGrp, 10)
@@ -565,14 +592,14 @@ iNZightMap2Mod <- setRefClass(
             
             lbl.plottitle <- glabel("Plot Title:")
             edit.plottitle <- gedit("")
-            checkbox.axislabels <- gcheckbox(text = "Axis Labels", checked = TRUE)
+            checkbox.axislabels <- gcheckbox(text = "Axis Labels", checked = FALSE)
             lbl.xaxis <- glabel("x-axis Label:")
             lbl.yaxis <- glabel("y-axis Label:")
             edit.xaxis <- gedit("Longitude")
             edit.yaxis <- gedit("Latitude")
-            checkbox.datum <- gcheckbox("Grid Lines", checked = TRUE)
+            checkbox.datum <- gcheckbox("Grid Lines", checked = FALSE)
             
-            lbl.palette <- glabel("Map Theme:")
+            lbl.palette <- glabel("Map Theme (TODO):")
             combobox.palette <- gcombobox(c("Default", "Dark"))
             
             tbl.xaxisedit <- glayout()
@@ -596,7 +623,12 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
             
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
-            
+
+            visible(lbl.xaxis) <- FALSE
+            visible(tbl.xaxisedit) <- FALSE
+            visible(lbl.yaxis) <- FALSE
+            visible(tbl.yaxisedit) <- FALSE
+
             addHandlerChanged(checkbox.axislabels, function (h, ...) {
                 if(svalue(checkbox.axislabels)) {
                     visible(lbl.xaxis) <- TRUE
@@ -615,20 +647,36 @@ iNZightMap2Mod <- setRefClass(
             addHandlerChanged(edit.plottitle, function(h, ...) {
                 updateOptions()
             })
+
             addHandlerChanged(edit.xaxis, function(h, ...) {
                 updateOptions()
             })
+
             addHandlerChanged(edit.yaxis, function(h, ...) {
                 updateOptions()
             })
+            
             addHandlerChanged(checkbox.datum, function(h, ...) {
+                if(!svalue(checkbox.datum) && svalue(checkbox.axislabels)) {
+                    svalue(checkbox.axislabels) <- FALSE
+                } else {
+                    updateOptions()
+                }
+            })
+
+            addHandlerChanged(combobox.mapproj, function(h, ...) {
                 updateOptions()
+            })
+
+            addHandlerClicked(btn.changemap, function(h, ...) {
+                visible(mainGrp) <<- FALSE
+                importDialog()
             })
             
             ## Variable selection
             
             lbl.maintitle <- glabel("Select Variable/s to Display")
-            lbl.mainsubtitle <- glabel("(Use Ctrl to select multiple variables)")
+            lbl.mainsubtitle <- glabel("(Use Ctrl+Click to select multiple variables)")
             font(lbl.maintitle) <- list(weight = "bold", family = "normal", size = 10)
             
             tbl.main <- glayout()
@@ -723,29 +771,11 @@ iNZightMap2Mod <- setRefClass(
             })
 
             ## Run after any options are changed in the GUI
-            updateOptions = function() {
-                ## Plot Options
-                plotTitle <<- svalue(edit.plottitle)
-                plotAxes <<- svalue(checkbox.axislabels)
-                plotXLab <<- svalue(edit.xaxis)
-                plotYLab <<- svalue(edit.yaxis)
-                plotDatumLines <<- svalue(checkbox.datum)            
-                ## TODO
-                print(proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"])
-                plotProjection <<- sf::st_crs(proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"])
 
-                ## Variable Options
-                mapVars <<- svalue(table.vars)
-                mapSizeVar <<- svalue(combobox.sizeselect)
-
-                if(length(mapVars) == 0) {
-                    mapVars <<- NULL
-                }
-
-                updatePlot()
-            }
-
+            visible(mainGrp) <<- TRUE
             updateOptions()
+                
+                    
         },
         ## Update and plot the map given
         updatePlot = function() {
