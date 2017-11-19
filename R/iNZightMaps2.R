@@ -104,6 +104,10 @@ iNZightMap2Mod <- setRefClass(
         },
         importDialog = function() {
             GUI$initializeModuleWindow(.self)
+            lbl.inzightmaps <- glabel("iNZight Maps")
+            font(lbl.inzightmaps) <- list(weight = "bold",
+                                          family = "normal",
+                                          size   = 12)
                                         # General variables
             
             ## Variables used later on in the merge variable selection section
@@ -118,6 +122,8 @@ iNZightMap2Mod <- setRefClass(
             ## Overall Layout
             gv.match <- gvbox(container = GUI$moduleWindow, expand = TRUE, fill = TRUE)
             gv.match$set_borderwidth(15)
+            add(gv.match, lbl.inzightmaps, anchor = c(0, 0))
+            addSpace(gv.match, 10)
             
             ## Expandable boxes 
             frame.import <- gframe(horizontal = FALSE)
@@ -137,11 +143,22 @@ iNZightMap2Mod <- setRefClass(
             
             btn.finish <- gbutton("Finish")
             enabled(btn.finish) <- FALSE
+
+            btn.back <- gbutton("Cancel Map Change")
+            visible(btn.back) <- class(mapData) != "NULL"
+
+            addHandlerClicked(btn.back, function(h, ...) {
+                initiateModule()
+            })
+
+            tbl.buttons <- glayout()
+            tbl.buttons[1, 1, expand = TRUE] <- btn.back
+            tbl.buttons[1, 2, expand = TRUE] <- btn.finish
             
             ## Add all frames to window
             add(gv.match, frame.import, expand = TRUE)
             add(gv.match, frame.variables, expand = TRUE)
-            add(gv.match, btn.finish, fill = "x")
+            add(gv.match, tbl.buttons, fill = "x")
             
                                         # Map Source Box
             ## Function definitions
@@ -528,7 +545,27 @@ iNZightMap2Mod <- setRefClass(
                 initiateModule()
             })
 
-            ## visible(w.match) <- TRUE
+                                        # Bottom group of buttons
+            
+
+            btmGrp <- ggroup(container = gv.match)
+
+            helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
+                                  cont = btmGrp,
+                                  handler = function(h, ...) {
+                                      browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=maps")
+                                  })
+            homeButton <- gbutton("Home", expand = TRUE, fill = TRUE,
+                                  cont = btmGrp,
+                                  handler = function(h, ...) {
+                                      ## delete the module window
+                                      delete(GUI$leftMain)
+                                      delete(GUI$leftMain, GUI$leftMain$children[[2]])
+                                      ## display the default view (data, variable, etc.)
+                                      GUI$plotToolbar$restore()
+                                      visible(GUI$gp1) <<- TRUE
+                                  })
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot")
         },
         ## Create the map object based on the options given in the importation dialog box
         createMapObject = function() {},
@@ -573,7 +610,7 @@ iNZightMap2Mod <- setRefClass(
             frame.mapoptions <- gframe(horizontal = FALSE)
             group.mapoptions <- ggroup(spacing = 5)
             group.mapoptions$set_borderwidth(10)
-            expand.mapoptions <- gexpandgroup(text = "Map Options", horizontal = FALSE)
+            expand.mapoptions <- gexpandgroup(text = "Advanced Map Options", horizontal = FALSE)
             font(expand.mapoptions) <- list(weight = "bold", family = "normal", size = 10)
             
             add(mainGrp, frame.mapoptions)
@@ -583,7 +620,7 @@ iNZightMap2Mod <- setRefClass(
             frame.plotoptions <- gframe(horizontal = FALSE)
             group.plotoptions <- ggroup(spacing = 5)
             group.plotoptions$set_borderwidth(10)
-            expand.plotoptions <- gexpandgroup(text = "Plot Options", horizontal = FALSE)
+            expand.plotoptions <- gexpandgroup(text = "Advanced Plot Options", horizontal = FALSE)
             font(expand.plotoptions) <- list(weight = "bold", family = "normal", size = 10)
             
             add(mainGrp, frame.plotoptions)
@@ -827,12 +864,44 @@ iNZightMap2Mod <- setRefClass(
                 }
             })
 
-            ## Run after any options are changed in the GUI
+            btmGrp <- ggroup(container = mainGrp)
 
+            helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
+                                  cont = btmGrp,
+                                  handler = function(h, ...) {
+                                      browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=maps")
+                                  })
+            homeButton <- gbutton("Home", expand = TRUE, fill = TRUE,
+                                  cont = btmGrp,
+                                  handler = function(h, ...) {
+                                      ## delete the module window
+                                      delete(GUI$leftMain, GUI$leftMain$children[[2]])
+                                      ## display the default view (data, variable, etc.)
+                                      GUI$plotToolbar$restore()
+                                      visible(GUI$gp1) <<- TRUE
+                                  })
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot")
+
+            test.btn <- gbutton("interactivity", cont = mainGrp)
+            addHandlerClicked(test.btn, function(h, ...) {
+                
+                library(grid)
+                library(gridSVG)
+                grid.force()
+                regions <- grid::grid.grep("pathgrob", grep = TRUE, global = TRUE)
+                for (i in 1:length(regions)) {
+                    curr.region.tooltip <- paste0(mapData$NAME[i], " (", mapVars, ": ", activeData[i, mapVars], ")")
+                    grid.garnish(regions[[i]],
+                                 onmouseover = paste("showTooltip(evt, '", curr.region.tooltip, "')"),
+                                 onmouseout = "hideTooltip()")
+                }
+                
+                grid.script(filename = "tooltip.js", inline = TRUE)
+                grid.export("testinzight.svg")
+            })
+            
             visible(mainGrp) <<- TRUE
             updateOptions()
-                
-                    
         },
         ## Update and plot the map given
         updatePlot = function() {
