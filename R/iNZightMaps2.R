@@ -294,6 +294,10 @@ iNZightMap2Mod <- setRefClass(
                     enabled(frame.variables) <- FALSE
                     enabled(btn.finish) <- FALSE
                 }
+
+                plot(c(0, 1), c(0, 1), ann = FALSE, bty = "n", type = "n", xaxt = "n", yaxt = "n")
+                text(0.5, 0.5, "Preview unavailable for imported shapefiles")
+                ## plot(iNZightMaps::retrieveMap(svalue(mapSourceBrowse))$geometry)
             })
             
 ### If user changes the map file, hide the variable merging section
@@ -301,6 +305,7 @@ iNZightMap2Mod <- setRefClass(
             addHandlerSelectionChanged(mapInbuiltBrowse, function(h, ...) {
                 if(!staleMap) {
                     staleMap <<- TRUE
+                    ## plot.new()
                     visible(expand.variables) <- FALSE
                     enabled(frame.variables) <- FALSE
                     enabled(btn.finish) <- FALSE
@@ -312,6 +317,7 @@ iNZightMap2Mod <- setRefClass(
             addHandlerSelect(mapInbuiltBrowse, function(h, ...) {
                 if(!staleMap) {
                     staleMap <<- TRUE
+                    ## plot.new()
                     visible(expand.variables) <- FALSE
                     enabled(frame.variables) <- FALSE
                     visible(lbl.allmatched) <- FALSE
@@ -327,6 +333,14 @@ iNZightMap2Mod <- setRefClass(
                     svalue(lbl.mapdesc) <- "Description: No description available." 
                 }
                 font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
+
+                dev.hold()
+                inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
+                plot(iNZightMaps::retrieveMap(map.filename)$geometry,
+                     col = "#FFFFFF")
+                     ## main = "Map Preview")
+                dev.flush()
             })
             
 ### Import the map; update the relevant widgets in the variable
@@ -349,11 +363,13 @@ iNZightMap2Mod <- setRefClass(
                 ## Indicate to the user that the map is being loaded in case it is
                 ## large enough to seem like it is hanging
                 visible(lbl.loading) <- TRUE
+                plot(c(0, 1), c(0, 1), ann = FALSE, bty = "n", type = "n", xaxt = "n", yaxt = "n")
+                text(0.5, 0.5, "Please wait... Map is being imported")
                 
                 ## Import the map - either a shapefile or rds
                 mapData <<- iNZightMaps::retrieveMap(map.filename)
                 map.vars <- as.data.frame(mapData)[, !(colnames(mapData) %in% "geometry")]
-                
+
                 ## Only take variables in the shapefile that are unique to one
                 ## region in the map file
                 combobox.mapvars[] <- colnames(map.vars[, !(apply(map.vars, 2, anyDuplicated, incomparables = c(NA, "")))])
@@ -385,6 +401,8 @@ iNZightMap2Mod <- setRefClass(
             ## Function definitions
 ### Helper function that is called each time either combobox is
 ### changed. Updates the gtable of nonmatches.
+            matchplot.colours <- c("#d95f02", "#1b9e77", "#7570b3")
+            
             cb.change <- function(h, ...) {
                 enabled(table.nonmatched) <- FALSE
                 
@@ -393,17 +411,21 @@ iNZightMap2Mod <- setRefClass(
                 
                 match.list <- iNZightMaps::matchVariables(activeData[, data.var],
                                                           as.data.frame(mapData)[, map.var])
-##                data.is.na <- is.na(activeData[, data.var])
-##                data.vect <- as.character(unique(activeData[!data.is.na, data.var]))
-##                map.vect <-  as.character(as.data.frame(mapData)[, map.var])
-
+                
                 table.nonmatched[] <- match.list$data.vect
-                visible(table.nonmatched) <- !(match.list$matched)
+                visible(table.nonmatched) <- !(match.list$data.matched)
                 
                 enabled(table.nonmatched) <- TRUE
                 
-                svalue(lbl.unmatchedcount) <- paste("Unmatched Count:", sum(!match.list$matched))
-                svalue(lbl.matchedcount) <- paste("Matched Count:", sum(match.list$matched))
+                svalue(lbl.unmatchedcount) <- paste("Unmatched Count:", sum(!match.list$data.matched))
+                svalue(lbl.matchedcount) <- paste("Matched Count:", sum(match.list$data.matched))
+
+                dev.hold()
+                plot(mapData$geometry, col = matchplot.colours[match.list$map.matched + 1])
+                legend("topleft", legend = c("Data present for region",
+                                                "Data missing for region"),
+                       fill = matchplot.colours[2:1])
+                dev.flush()
                 
                 if(any(visible(table.nonmatched))) {
                     visible(lbl.allmatched) <- FALSE
