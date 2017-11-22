@@ -520,13 +520,12 @@ iNZightMap2Mod <- setRefClass(
                 }
 
                 ## TODO: Simplification
-                simplify.level <- 0.01
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
-                                                             map = sf::st_simplify(mapData,
-                                                                                   dTolerance = simplify.level),
+                                                             map = mapData, 
                                                              type = "region",
                                                              by.data = data.var,
-                                                             by.map = map.var)
+                                                             by.map = map.var,
+                                                             simplification.level = 0.01)
 
                 ## If the given file has a name given in the metadata,
                 ## use that. Otherwise use the filename.
