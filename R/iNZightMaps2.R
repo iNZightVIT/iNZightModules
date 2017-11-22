@@ -822,6 +822,13 @@ iNZightMap2Mod <- setRefClass(
             addHandlerSelectionChanged(table.vars, function(h, ...) {
                 visible(lbl.maptype) <- TRUE
                 visible(radio.maptype) <- TRUE
+
+                if(length(svalue(table.vars)) > 1) {
+                   svalue(edit.plottitle) <- ""
+                } else {
+                    svalue(edit.plottitle) <- svalue(table.vars)
+                }
+                
                 
                 if(has.multipleobs) {
                     visible(separator.timevariable) <- TRUE
