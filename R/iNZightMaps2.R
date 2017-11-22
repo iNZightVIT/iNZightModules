@@ -759,7 +759,9 @@ iNZightMap2Mod <- setRefClass(
             
             tbl.main <- glayout()
             
-            table.vars <- gtable(colnames(activeData), multiple = TRUE)
+            var.vect <- combinedData$vars
+            var.vect <- var.vect[var.vect != "geometry"]
+            table.vars <- gtable(var.vect, multiple = TRUE)
 
             if (!is.null(mapVars)) {
                 svalue(table.vars) <- mapVars
@@ -772,7 +774,7 @@ iNZightMap2Mod <- setRefClass(
             
             
             lbl.sizeselect <- glabel("Size by:")
-            combobox.sizeselect <- gcombobox(c("", colnames(activeData)))
+            combobox.sizeselect <- gcombobox(c("", var.vect))
 
             if (!is.null(mapSizeVar)) {
                 svalue(combobox.sizeselect) <- mapSizeVar
