@@ -519,6 +519,9 @@ iNZightMap2Mod <- setRefClass(
                     mapType <<- "region"
                 }
 
+                ## TODO: A bit more sophistication here...
+                message("Multiple obs? ", has.multipleobs)
+                
                 ## TODO: Simplification
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
                                                              map = mapData, 
@@ -587,10 +590,15 @@ iNZightMap2Mod <- setRefClass(
                     mapVars <<- NULL
                 }
 
+                if(length(mapSizeVar) == 0 || mapSizeVar == "") {
+                    mapSizeVar <<- NULL
+                }
+
                 updatePlot()
             }
             
             GUI$initializeModuleWindow(.self)
+            
             
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
             visible(mainGrp) <<- FALSE
@@ -759,16 +767,21 @@ iNZightMap2Mod <- setRefClass(
             
             tbl.main <- glayout()
             
-            var.vect <- combinedData$vars
-            var.vect <- var.vect[var.vect != "geometry"]
+            var.vect <- sort(iNZightMapVars(combinedData))
             table.vars <- gtable(var.vect, multiple = TRUE)
 
             if (!is.null(mapVars)) {
                 svalue(table.vars) <- mapVars
             }
+
+            if(combinedData$multiple.obs) {
+                maptype.vect <- c("Regions", "Centroids", "Sparklines")
+            } else {
+                maptype.vect <- c("Regions", "Centroids")
+            }
             
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(c("Regions", "Centroids"),
+            radio.maptype <- gradio(maptype.vect,
                                     horizontal = TRUE,
                                     selected = (mapType == "point") + 1)
             
@@ -780,45 +793,42 @@ iNZightMap2Mod <- setRefClass(
                 svalue(combobox.sizeselect) <- mapSizeVar
             }
             
+            separator.timevariable <- gseparator()
             lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
             radio.timevariable <- gradio(c("Separate", "Aggregate"), horizontal = TRUE)
             lbl.timevariablechoice <- glabel("Plot:")
             combobox.aggregation <- gcombobox(c("Average", "First Observation", "Median"))
             combobox.separate <- gcombobox(c("Separate Plots", "Sparklines", "Barchart"))
-            separator.timevariable <- gseparator()
             
             tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
-            tbl.main[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
-            tbl.main[2, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
-            tbl.main[3, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
-            tbl.main[3, 2, expand = TRUE] <- combobox.sizeselect
+            tbl.main[2, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+            tbl.main[2, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
+            tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+            tbl.main[3, 2,   expand = TRUE] <- combobox.sizeselect
             
             tbl.main[4, 1:3, expand = TRUE] <- separator.timevariable
-            tbl.main[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.timevariable
-            tbl.main[5, 2, expand = TRUE, anchor = c(-1, 0)] <- radio.timevariable
-            tbl.main[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.timevariablechoice
-            tbl.main[6, 2, expand = TRUE] <- combobox.aggregation
-            tbl.main[6, 2, expand = TRUE] <- combobox.separate
+            tbl.main[5, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariable
+            tbl.main[5, 2,   expand = TRUE, anchor = c(-1, 0)] <- radio.timevariable
+            tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariablechoice
+            tbl.main[6, 2,   expand = TRUE] <- combobox.aggregation
+            tbl.main[6, 2,   expand = TRUE] <- combobox.separate
             
             visible(lbl.maptype) <- !is.null(mapVars)
             visible(radio.maptype) <- !is.null(mapVars)
             visible(lbl.sizeselect) <- mapType == "point"
             visible(combobox.sizeselect) <- mapType == "point"
             
-            visible(separator.timevariable) <- FALSE
-            visible(radio.timevariable) <- FALSE
-            visible(lbl.timevariable) <- FALSE
-            visible(lbl.timevariablechoice) <- FALSE
+            visible(separator.timevariable) <- combinedData$multiple.obs
+            visible(radio.timevariable) <- combinedData$multiple.obs
+            visible(lbl.timevariable) <- combinedData$multiple.obs
+            visible(lbl.timevariablechoice) <- combinedData$multiple.obs
             visible(combobox.aggregation) <- FALSE
-            visible(combobox.separate) <- FALSE
+            visible(combobox.separate) <- combinedData$multiple.obs
             
             add(group.main, lbl.maintitle)
             add(group.main, lbl.mainsubtitle)
             add(group.main, tbl.main, expand = TRUE, fill = TRUE)
 
-########
-            has.multipleobs <<- FALSE
-            
             addHandlerSelectionChanged(table.vars, function(h, ...) {
                 visible(lbl.maptype) <- TRUE
                 visible(radio.maptype) <- TRUE
@@ -830,7 +840,7 @@ iNZightMap2Mod <- setRefClass(
                 }
                 
                 
-                if(has.multipleobs) {
+                if(combinedData$multiple.obs) {
                     visible(separator.timevariable) <- TRUE
                     visible(lbl.timevariable) <- TRUE
                     visible(radio.timevariable) <- TRUE
@@ -872,6 +882,19 @@ iNZightMap2Mod <- setRefClass(
                 }
             })
 
+            addHandlerChanged(combobox.separate, function(h, ...) {
+                if(svalue(combobox.separate) == "Sparklines") {
+                    mapType <<- "sparklines"
+                    combinedData$type <<- "sparklines"
+                } else {
+                    combinedData$type <<- "region"
+                    mapType <<- "region"
+                }
+                
+                updatePlot()    
+            })
+            
+
             btmGrp <- ggroup(container = mainGrp)
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
@@ -892,13 +915,16 @@ iNZightMap2Mod <- setRefClass(
 
             test.btn <- gbutton("interactivity", cont = mainGrp)
             addHandlerClicked(test.btn, function(h, ...) {
-                
                 library(grid)
                 library(gridSVG)
                 grid.force()
                 regions <- grid::grid.grep("pathgrob", grep = TRUE, global = TRUE)
+
                 for (i in 1:length(regions)) {
-                    curr.region.tooltip <- paste0(mapData$NAME[i], " (", mapVars, ": ", activeData[i, mapVars], ")")
+                    curr.region.tooltip <- paste0(combinedData$data$NAME[i],
+                                                  " (", mapVars, ": ", combinedData$data[i, mapVars], ")")
+                    curr.region.tooltip <- gsub("'", "\\\\'", curr.region.tooltip)
+                    curr.region.tooltip <- gsub('"', '\\\\"', curr.region.tooltip)
                     grid.garnish(regions[[i]],
                                  onmouseover = paste("showTooltip(evt, '", curr.region.tooltip, "')"),
                                  onmouseout = "hideTooltip()")
