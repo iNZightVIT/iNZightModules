@@ -774,15 +774,8 @@ iNZightMap2Mod <- setRefClass(
                 svalue(table.vars) <- mapVars
             }
 
-            if(combinedData$multiple.obs) {
-                maptype.vect <- c("Regions", "Centroids", "Sparklines")
-            } else {
-                maptype.vect <- c("Regions", "Centroids")
-            }
-            
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(maptype.vect,
-                                    horizontal = TRUE,
+            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE,
                                     selected = (mapType == "point") + 1)
             
             
@@ -795,23 +788,37 @@ iNZightMap2Mod <- setRefClass(
             
             separator.timevariable <- gseparator()
             lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
-            radio.timevariable <- gradio(c("Separate", "Aggregate"), horizontal = TRUE)
+            if (combinedData$multiple.obs) {
+            radio.maptype <- gradio(c("Regions", "Centroids", "Sparklines"), horizontal = TRUE,
+                                    selected = (mapType == "point") + 1)
+            } else {
+            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE,
+                                    selected = (mapType == "point") + 1)
+            }
+            
             lbl.timevariablechoice <- glabel("Plot:")
-            combobox.aggregation <- gcombobox(c("Average", "First Observation", "Median"))
+            ## combobox.aggregation <- gcombobox(c("Average", "First Observation", "Median"))
+            combobox.aggregation <- gcombobox(c("No Aggregation", "Average", "Median", "First Observation"))
             combobox.separate <- gcombobox(c("Separate Plots", "Sparklines", "Barchart"))
+
+            radio.timevariable <- gcombobox(c("Separate", "Aggregate"))
             
             tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
-            tbl.main[2, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
-            tbl.main[2, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
-            tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
-            tbl.main[3, 2,   expand = TRUE] <- combobox.sizeselect
+
+            tbl.main[2, 1:3, expand = TRUE] <- separator.timevariable
             
-            tbl.main[4, 1:3, expand = TRUE] <- separator.timevariable
-            tbl.main[5, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariable
-            tbl.main[5, 2,   expand = TRUE, anchor = c(-1, 0)] <- radio.timevariable
-            tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariablechoice
-            tbl.main[6, 2,   expand = TRUE] <- combobox.aggregation
-            tbl.main[6, 2,   expand = TRUE] <- combobox.separate
+            tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariable
+            tbl.main[3, 2,   expand = TRUE] <- combobox.aggregation
+            
+            tbl.main[4, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+            tbl.main[4, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
+
+            tbl.main[5, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+            tbl.main[5, 2,   expand = TRUE] <- combobox.sizeselect
+             
+            ## tbl.main[5, 2,   expand = TRUE, anchor = c(-1, 0)] <- radio.timevariable
+            ## tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariablechoice
+            ## tbl.main[6, 2,   expand = TRUE] <- combobox.separate
             
             visible(lbl.maptype) <- !is.null(mapVars)
             visible(radio.maptype) <- !is.null(mapVars)
@@ -822,7 +829,7 @@ iNZightMap2Mod <- setRefClass(
             visible(radio.timevariable) <- combinedData$multiple.obs
             visible(lbl.timevariable) <- combinedData$multiple.obs
             visible(lbl.timevariablechoice) <- combinedData$multiple.obs
-            visible(combobox.aggregation) <- FALSE
+            visible(combobox.aggregation) <- TRUE
             visible(combobox.separate) <- combinedData$multiple.obs
             
             add(group.main, lbl.maintitle)
@@ -852,16 +859,21 @@ iNZightMap2Mod <- setRefClass(
             })
             
             addHandlerChanged(radio.maptype, function(h, ...) {
-                if(svalue(radio.maptype, index = TRUE) == 1) {
+                if (svalue(radio.maptype, index = TRUE) == 1) {
                     visible(lbl.sizeselect) <- FALSE
                     visible(combobox.sizeselect) <- FALSE
                     combinedData$type <<- "region"
                     mapType <<- "region"
-                } else {
+                } else if (svalue(radio.maptype, index = TRUE) == 2) {
                     visible(lbl.sizeselect) <- TRUE
                     visible(combobox.sizeselect) <- TRUE
                     combinedData$type <<- "point"
                     mapType <<- "point"
+                } else if (svalue(radio.maptype, index = TRUE) == 3) {
+                    visible(lbl.sizeselect) <- FALSE
+                    visible(combobox.sizeselect) <- FALSE
+                    combinedData$type <<- "sparklines"
+                    mapType <<- "sparklines"
                 }
                 updateOptions()
             })
@@ -893,6 +905,12 @@ iNZightMap2Mod <- setRefClass(
                 
                 updatePlot()    
             })
+
+            ## addHandlerChanged(combobox.aggregate, function(h, ...) {
+                ## combinedData$aggregation <<- svalue(combobox.aggregate)
+                ## updatePlot()
+            ## })
+            
             
 
             btmGrp <- ggroup(container = mainGrp)
@@ -945,6 +963,9 @@ iNZightMap2Mod <- setRefClass(
                 multiple.vars <- FALSE
             }
             
+            grid::grid.rect(width = 0.25, height = 0.10, gp = gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+            grid::grid.text("Please wait... Loading...")
+
             dev.hold()
             grid::grid.newpage()
             grid::grid.draw(plot(combinedData, main = plotTitle,
