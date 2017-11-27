@@ -141,8 +141,10 @@ mapInbuiltBrowse <- gtree(offspring = offspring.files,
                           offspring.data = mapdir.contents[, 1],
                           chosen.col = "filename",
                           offspring.col = "has.children")
+mapInbuiltBrowse$widget$`headers-visible` <- FALSE
 
 lbl.mapdesc <- gtext("Description: No description available.")
+font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
 
 tblInbuiltfile[1, 1, expand = TRUE, fill = "both"] <- mapInbuiltBrowse
 tblInbuiltfile[2, 1, expand = TRUE, fill = "both"] <- lbl.mapdesc
@@ -230,6 +232,7 @@ addHandlerSelect(mapInbuiltBrowse, function(h, ...) {
     } else {
         svalue(lbl.mapdesc) <- "Description: No description available." 
     }
+    font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
 })
 
 ### Import the map; update the relevant widgets in the variable
@@ -327,6 +330,9 @@ cb.change <- function(h, ...) {
 
     enabled(table.nonmatched) <- TRUE
 
+    svalue(lbl.unmatchedcount) <- paste("Unmatched Count:", sum(visible(table.nonmatched)))
+    svalue(lbl.matchedcount) <- paste("Matched Count:", sum(!visible(table.nonmatched)))
+
     if(any(visible(table.nonmatched))) {
         visible(lbl.allmatched) <- FALSE
         visible(lbl.blank) <- TRUE
@@ -354,6 +360,12 @@ lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no correspond
 font(lbl.nonmatchedtitle) <- list(weight = "bold", family = "normal", size = 10)
 table.nonmatched <- gtable(nomatch.df)
 
+lbl.matchedcount <- glabel("Matched Count: 0")
+lbl.unmatchedcount <- glabel("Unmatched Count: 0")
+tbl.matchcounts <- glayout()
+tbl.matchcounts[1, 1, expand = TRUE] <- lbl.unmatchedcount
+tbl.matchcounts[1, 2, expand = TRUE] <- lbl.matchedcount
+
 lbl.allmatched <- glabel("All rows of data matched to a region!")
 lbl.loading <- glabel("Loading map... Please wait...")
 lbl.blank <- glabel("")
@@ -367,14 +379,12 @@ addSpace(expand.variables, 15)
 add(expand.variables, lbl.allmatched)
 add(expand.variables, lbl.loading)
 add(expand.variables, lbl.blank)
-#addSpace(expand.variables, 5)
 add(expand.variables, lbl.nonmatchedtitle)
 add(expand.variables, lbl.nonmatchedsubtitle)
 addSpace(expand.variables, 5)
 add(expand.variables, table.nonmatched, expand = TRUE)
+add(expand.variables, tbl.matchcounts)
 
-#visible(lbl.nonmatchedtitle) <- FALSE
-#visible(lbl.nonmatchedsubtitle) <- FALSE
 visible(table.nonmatched) <- FALSE
 
 visible(lbl.allmatched) <- FALSE
