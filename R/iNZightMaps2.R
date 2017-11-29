@@ -23,6 +23,9 @@ iNZightMap2Mod <- setRefClass(
         plotYLab = "ANY",
         plotDatumLines = "ANY",
         plotProjection = "ANY",
+        plotTheme = "ANY",
+
+        multipleObsOption = "character",
 
         codeHistory = "ANY"
     ),
@@ -62,6 +65,7 @@ iNZightMap2Mod <- setRefClass(
             plotYLab <<- FALSE
             plotDatumLines <<- FALSE
             plotProjection <<- NULL
+            plotTheme <<- "Default"
 
             mapTypeDialog()
         },
@@ -135,7 +139,7 @@ iNZightMap2Mod <- setRefClass(
             frame.variables <- gframe(horizontal = FALSE)
             group.variables <- ggroup(spacing = 5)
             group.variables$set_borderwidth(10)
-            expand.variables <- gexpandgroup(text = "Select Merge Variables", horizontal = FALSE)
+            expand.variables <- gexpandgroup(text = "Select Variables", horizontal = FALSE)
             font(expand.variables) <- font.header
             
             visible(expand.variables) <- FALSE
@@ -451,6 +455,11 @@ iNZightMap2Mod <- setRefClass(
                     visible(lbl.allmatched) <- TRUE
                     visible(lbl.blank) <- FALSE
                 }
+
+                visible(sep.multipleobs) <- match.list$multiple.obs
+                visible(lbl.multipleobs) <- match.list$multiple.obs
+                visible(tbl.sequencevar) <- match.list$multiple.obs
+                has.multipleobs <<- match.list$multiple.obs
             }
             
             ## Widget definitions
@@ -480,6 +489,14 @@ iNZightMap2Mod <- setRefClass(
             lbl.allmatched <- glabel("All rows of data matched to a region!")
             lbl.loading <- glabel("Loading map... Please wait...")
             lbl.blank <- glabel("")
+
+            sep.multipleobs <- gseparator()
+            lbl.multipleobs <- glabel("Multiple observations for each region were found!")
+            lbl.sequencevar <- glabel("Select sequence variable:")
+            combobox.sequencevar <- gcombobox(items = colnames(activeData))
+            tbl.sequencevar <- glayout()
+            tbl.sequencevar[1, 1, expand = TRUE] <- lbl.sequencevar
+            tbl.sequencevar[1, 2, expand = TRUE] <- combobox.sequencevar
             
             ## Add to frame
             add(frame.variables, group.variables, expand = TRUE)
@@ -495,12 +512,20 @@ iNZightMap2Mod <- setRefClass(
             addSpace(expand.variables, 5)
             add(expand.variables, table.nonmatched, expand = TRUE)
             add(expand.variables, tbl.matchcounts)
+            addSpace(expand.variables, 5)
+            add(expand.variables, sep.multipleobs)
+            add(expand.variables, lbl.multipleobs)
+            add(expand.variables, tbl.sequencevar)
             
             visible(table.nonmatched) <- FALSE
             
             visible(lbl.allmatched) <- FALSE
             visible(lbl.loading) <- FALSE
             visible(lbl.blank) <- FALSE
+
+            visible(sep.multipleobs) <- FALSE
+            visible(lbl.multipleobs) <- FALSE
+            visible(tbl.sequencevar) <- FALSE
             
             ## Event handlers
             addHandlerChanged(combobox.mapvars, handler = cb.change)
@@ -519,16 +544,15 @@ iNZightMap2Mod <- setRefClass(
                     mapType <<- "region"
                 }
 
-                ## TODO: A bit more sophistication here...
-                message("Multiple obs? ", has.multipleobs)
-                
                 ## TODO: Simplification
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
                                                              map = mapData, 
                                                              type = "region",
                                                              by.data = data.var,
                                                              by.map = map.var,
-                                                             simplification.level = 0.01)
+                                                             simplification.level = 0.01,
+                                                             multiple.obs = has.multipleobs,
+                                                             sequence.var = svalue(combobox.sequencevar))
 
                 ## If the given file has a name given in the metadata,
                 ## use that. Otherwise use the filename.
@@ -685,8 +709,15 @@ iNZightMap2Mod <- setRefClass(
             edit.yaxis <- gedit(plotYLab)
             checkbox.datum <- gcheckbox("Grid Lines", checked = plotDatumLines)
             
-            lbl.palette <- glabel("Map Theme (TODO):")
+            lbl.palette <- glabel("Map Theme:")
             combobox.palette <- gcombobox(c("Default", "Dark"))
+            svalue(combobox.palette) <- plotTheme
+
+            addHandlerChanged(combobox.palette, function(h, ...) {
+                plotTheme <<- svalue(combobox.palette)
+                updatePlot()
+            })
+            
             
             tbl.xaxisedit <- glayout()
             tbl.xaxisedit[1, 1, expand = TRUE] <- edit.xaxis
@@ -785,52 +816,99 @@ iNZightMap2Mod <- setRefClass(
             if (!is.null(mapSizeVar)) {
                 svalue(combobox.sizeselect) <- mapSizeVar
             }
-            
-            separator.timevariable <- gseparator()
-            lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
-            if (combinedData$multiple.obs) {
-            radio.maptype <- gradio(c("Regions", "Centroids", "Sparklines"), horizontal = TRUE,
-                                    selected = (mapType == "point") + 1)
-            } else {
-            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE,
-                                    selected = (mapType == "point") + 1)
-            }
-            
-            lbl.timevariablechoice <- glabel("Plot:")
-            ## combobox.aggregation <- gcombobox(c("Average", "First Observation", "Median"))
-            combobox.aggregation <- gcombobox(c("No Aggregation", "Average", "Median", "First Observation"))
-            combobox.separate <- gcombobox(c("Separate Plots", "Sparklines", "Barchart"))
 
-            radio.timevariable <- gcombobox(c("Separate", "Aggregate"))
-            
+            if (!combinedData$multiple.obs) {
+                tbl.main[2, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+                tbl.main[2, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
+                
+                tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+                tbl.main[3, 2,   expand = TRUE] <- combobox.sizeselect
+            } else {
+                separator.timevariable <- gseparator()
+                lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
+
+                radio.multipleobs <- gradio(c("Single Value", "All Values", "Aggregate"), horizontal = TRUE)
+
+                
+                unique.singlevals <- unique(as.data.frame(combinedData[["region.data"]])[, combinedData$sequence.var])
+                combobox.singleval <- gcombobox(unique.singlevals[!is.na(unique.singlevals)])
+
+                radio.allvalues <- gradio(c("Sparklines", "Grid (TODO)"), horizontal = TRUE)
+
+                combobox.aggregate <- gcombobox(c("Mean", "Median"))
+
+                tbl.main[2, 1:3] <- lbl.timevariable
+                tbl.main[3, 1:3] <- radio.multipleobs
+                tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.singleval
+                tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.aggregate
+                tbl.main[5, 1:3] <- separator.timevariable
+                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
+                tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
+                
+                tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+                tbl.main[7, 2,   expand = TRUE] <- combobox.sizeselect
+
+                visible(radio.allvalues) <- FALSE
+                visible(combobox.aggregate) <- FALSE
+
+                addHandlerChanged(radio.multipleobs, function(h, ...) {
+                    radio.choice <- svalue(radio.multipleobs, index = TRUE)
+
+                    if (radio.choice == 1) {
+                        multipleObsOption <<- "singleval"
+                        combinedData$type <<- mapType
+                        combinedData <<- iNZightMapAggregation(combinedData,
+                                                               "singlevalue",
+                                                               single.value = svalue(combobox.singleval))
+                    } else if (radio.choice == 2) {
+                        multipleObsOption <<- "allvalues"
+                        combinedData$type <<- "sparklines"
+                    } else if (radio.choice == 3) {
+                        multipleObsOption <<- "aggregate"
+                        combinedData$type <<- mapType
+                        combinedData <<- iNZightMapAggregation(combinedData,
+                                                               tolower(svalue(combobox.aggregate)))
+                    }
+
+                    visible(combobox.singleval) <- radio.choice == 1
+                    visible(radio.allvalues)    <- radio.choice == 2
+                    visible(combobox.aggregate) <- radio.choice == 3
+
+                    ## visible(lbl.maptype) <- radio.choice != 2
+                    visible(radio.maptype) <- radio.choice != 2
+                    visible(lbl.sizeselect) <- radio.choice != 2 && mapType == "point"
+                    visible(combobox.sizeselect) <- radio.choice != 2 && mapType == "point"
+
+                    updatePlot()
+                })
+
+                addHandlerChanged(combobox.singleval, function(h, ...) {
+                    combinedData <<- iNZightMapAggregation(combinedData, "singlevalue",
+                                                           single.value = svalue(combobox.singleval))
+                    updatePlot()
+                })
+
+                addHandlerChanged(radio.allvalues, function(h, ...) {
+                    combinedData$type <<- "sparklines"
+                })
+
+                addHandlerChanged(combobox.aggregate, function(h, ...) {
+                    combinedData <<- iNZightMapAggregation(combinedData,
+                                                           tolower(svalue(combobox.aggregate)))
+                    updatePlot()
+                })
+                
+                
+            }
+
             tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
 
-            tbl.main[2, 1:3, expand = TRUE] <- separator.timevariable
-            
-            tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariable
-            tbl.main[3, 2,   expand = TRUE] <- combobox.aggregation
-            
-            tbl.main[4, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
-            tbl.main[4, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
-
-            tbl.main[5, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
-            tbl.main[5, 2,   expand = TRUE] <- combobox.sizeselect
              
-            ## tbl.main[5, 2,   expand = TRUE, anchor = c(-1, 0)] <- radio.timevariable
-            ## tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.timevariablechoice
-            ## tbl.main[6, 2,   expand = TRUE] <- combobox.separate
-            
             visible(lbl.maptype) <- !is.null(mapVars)
             visible(radio.maptype) <- !is.null(mapVars)
             visible(lbl.sizeselect) <- mapType == "point"
             visible(combobox.sizeselect) <- mapType == "point"
-            
-            visible(separator.timevariable) <- combinedData$multiple.obs
-            visible(radio.timevariable) <- combinedData$multiple.obs
-            visible(lbl.timevariable) <- combinedData$multiple.obs
-            visible(lbl.timevariablechoice) <- combinedData$multiple.obs
-            visible(combobox.aggregation) <- TRUE
-            visible(combobox.separate) <- combinedData$multiple.obs
             
             add(group.main, lbl.maintitle)
             add(group.main, lbl.mainsubtitle)
@@ -846,15 +924,6 @@ iNZightMap2Mod <- setRefClass(
                     svalue(edit.plottitle) <- svalue(table.vars)
                 }
                 
-                
-                if(combinedData$multiple.obs) {
-                    visible(separator.timevariable) <- TRUE
-                    visible(lbl.timevariable) <- TRUE
-                    visible(radio.timevariable) <- TRUE
-                    visible(lbl.timevariablechoice) <- TRUE
-                    visible(combobox.separate) <- TRUE
-                }
-
                 updateOptions()
             })
             
@@ -869,11 +938,6 @@ iNZightMap2Mod <- setRefClass(
                     visible(combobox.sizeselect) <- TRUE
                     combinedData$type <<- "point"
                     mapType <<- "point"
-                } else if (svalue(radio.maptype, index = TRUE) == 3) {
-                    visible(lbl.sizeselect) <- FALSE
-                    visible(combobox.sizeselect) <- FALSE
-                    combinedData$type <<- "sparklines"
-                    mapType <<- "sparklines"
                 }
                 updateOptions()
             })
@@ -882,37 +946,6 @@ iNZightMap2Mod <- setRefClass(
                 updateOptions()
             })
             
-            addHandlerChanged(radio.timevariable, function(h, ...) {
-                if(svalue(radio.timevariable, index = TRUE) == 1) {
-                    svalue(lbl.timevariablechoice) <- "Plot:"
-                    visible(combobox.aggregation) <- FALSE
-                    visible(combobox.separate) <- TRUE
-                } else {
-                    svalue(lbl.timevariablechoice) <- "Aggregation:"
-                    visible(combobox.aggregation) <- TRUE
-                    visible(combobox.separate) <- FALSE
-                }
-            })
-
-            addHandlerChanged(combobox.separate, function(h, ...) {
-                if(svalue(combobox.separate) == "Sparklines") {
-                    mapType <<- "sparklines"
-                    combinedData$type <<- "sparklines"
-                } else {
-                    combinedData$type <<- "region"
-                    mapType <<- "region"
-                }
-                
-                updatePlot()    
-            })
-
-            ## addHandlerChanged(combobox.aggregate, function(h, ...) {
-                ## combinedData$aggregation <<- svalue(combobox.aggregate)
-                ## updatePlot()
-            ## })
-            
-            
-
             btmGrp <- ggroup(container = mainGrp)
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
@@ -962,8 +995,14 @@ iNZightMap2Mod <- setRefClass(
             } else {
                 multiple.vars <- FALSE
             }
+
+            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
+                aggregation <- TRUE
+            } else {
+                aggregation <- FALSE
+            }
             
-            grid::grid.rect(width = 0.25, height = 0.10, gp = gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+            grid::grid.rect(width = 0.25, height = 0.10, gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
             grid::grid.text("Please wait... Loading...")
 
             dev.hold()
@@ -972,7 +1011,8 @@ iNZightMap2Mod <- setRefClass(
                  axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
                  datum.lines = plotDatumLines, projection = plotProjection,
                  multiple.vars = multiple.vars, colour.var = mapVars,
-                 size.var = mapSizeVar))
+                 size.var = mapSizeVar, aggregate = aggregation,
+                 theme = plotTheme))
             dev.flush()
 
         }
