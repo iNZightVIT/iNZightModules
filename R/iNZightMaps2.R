@@ -25,7 +25,7 @@ iNZightMap2Mod <- setRefClass(
         plotProjection = "ANY",
         plotTheme = "ANY",
 
-        multipleObsOption = "character",
+        multipleObsOption = "ANY",
 
         codeHistory = "ANY"
     ),
@@ -61,11 +61,13 @@ iNZightMap2Mod <- setRefClass(
 
             plotTitle <<- ""
             plotAxes <<- FALSE
-            plotXLab <<- FALSE
-            plotYLab <<- FALSE
+            plotXLab <<- "Longitude"
+            plotYLab <<- "Latitude"
             plotDatumLines <<- FALSE
             plotProjection <<- NULL
             plotTheme <<- "Default"
+
+            multipleObsOption <<- NULL
 
             mapTypeDialog()
         },
@@ -360,7 +362,6 @@ iNZightMap2Mod <- setRefClass(
                 map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
                 plot(iNZightMaps::retrieveMap(map.filename)$geometry,
                      col = "#FFFFFF")
-                     ## main = "Map Preview")
                 dev.flush()
             })
             
@@ -605,6 +606,7 @@ iNZightMap2Mod <- setRefClass(
                 plotYLab <<- svalue(edit.yaxis)
                 plotDatumLines <<- svalue(checkbox.datum)            
                 plotProjection <<- proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"]
+                plotTheme <<- svalue(combobox.palette)
 
                 ## Variable Options
                 mapVars <<- svalue(table.vars)
@@ -714,8 +716,7 @@ iNZightMap2Mod <- setRefClass(
             svalue(combobox.palette) <- plotTheme
 
             addHandlerChanged(combobox.palette, function(h, ...) {
-                plotTheme <<- svalue(combobox.palette)
-                updatePlot()
+                updateOptions()
             })
             
             
@@ -829,9 +830,13 @@ iNZightMap2Mod <- setRefClass(
 
                 radio.multipleobs <- gradio(c("Single Value", "All Values", "Aggregate"), horizontal = TRUE)
 
+                if (isTRUE(is.null(multipleObsOption))) {
+                    multipleObsOption <<- "singleval"
+                }
                 
                 unique.singlevals <- unique(as.data.frame(combinedData[["region.data"]])[, combinedData$sequence.var])
                 combobox.singleval <- gcombobox(unique.singlevals[!is.na(unique.singlevals)])
+                svalue(combobox.singleval, index = TRUE) <- length(combobox.singleval)
 
                 radio.allvalues <- gradio(c("Sparklines", "Grid (TODO)"), horizontal = TRUE)
 
@@ -855,6 +860,22 @@ iNZightMap2Mod <- setRefClass(
                 addHandlerChanged(radio.multipleobs, function(h, ...) {
                     radio.choice <- svalue(radio.multipleobs, index = TRUE)
 
+                    visible(combobox.singleval) <- radio.choice == 1
+                    visible(combobox.aggregate) <- radio.choice == 3
+
+                    if (isTRUE(!is.null(mapVars))) {
+                        visible(radio.allvalues) <- radio.choice == 2
+                        visible(radio.maptype) <- radio.choice != 2
+                        visible(lbl.sizeselect) <- radio.choice != 2 && mapType == "point"
+                        visible(combobox.sizeselect) <- radio.choice != 2 && mapType == "point"
+                    } else {
+                        visible(radio.allvalues) <- FALSE
+                        visible(radio.maptype) <- FALSE
+                        visible(lbl.sizeselect) <- FALSE
+                        visible(combobox.sizeselect) <- FALSE
+                        visible(lbl.maptype) <- FALSE
+                    }
+
                     if (radio.choice == 1) {
                         multipleObsOption <<- "singleval"
                         combinedData$type <<- mapType
@@ -864,23 +885,23 @@ iNZightMap2Mod <- setRefClass(
                     } else if (radio.choice == 2) {
                         multipleObsOption <<- "allvalues"
                         combinedData$type <<- "sparklines"
+                        if (isTRUE(!is.null(mapVars))) {
+                            vars.to.keep <- sapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], is.numeric)
+                            print(vars.to.keep)
+                            print(mapVars[vars.to.keep])
+                            if (sum(vars.to.keep) > 0) {
+                                svalue(table.vars) <- mapVars[vars.to.keep]
+                            } else {
+                                svalue(table.vars, index = TRUE) <- 0
+                            }
+                        }
                     } else if (radio.choice == 3) {
                         multipleObsOption <<- "aggregate"
                         combinedData$type <<- mapType
                         combinedData <<- iNZightMapAggregation(combinedData,
                                                                tolower(svalue(combobox.aggregate)))
                     }
-
-                    visible(combobox.singleval) <- radio.choice == 1
-                    visible(radio.allvalues)    <- radio.choice == 2
-                    visible(combobox.aggregate) <- radio.choice == 3
-
-                    ## visible(lbl.maptype) <- radio.choice != 2
-                    visible(radio.maptype) <- radio.choice != 2
-                    visible(lbl.sizeselect) <- radio.choice != 2 && mapType == "point"
-                    visible(combobox.sizeselect) <- radio.choice != 2 && mapType == "point"
-
-                    updatePlot()
+                    updateOptions()
                 })
 
                 addHandlerChanged(combobox.singleval, function(h, ...) {
@@ -915,14 +936,42 @@ iNZightMap2Mod <- setRefClass(
             add(group.main, tbl.main, expand = TRUE, fill = TRUE)
 
             addHandlerSelectionChanged(table.vars, function(h, ...) {
-                visible(lbl.maptype) <- TRUE
-                visible(radio.maptype) <- TRUE
-
-                if(length(svalue(table.vars)) > 1) {
-                   svalue(edit.plottitle) <- ""
+                if (isTRUE(length(svalue(table.vars)) > 0)) {
+                    visible(lbl.maptype) <- TRUE
+                    print(multipleObsOption)
+                    if (isTRUE(multipleObsOption != "allvalues")) {
+                        visible(radio.maptype) <- TRUE
+                        visible(radio.allvalues) <- FALSE
+                    } else {
+                        visible(radio.maptype) <- FALSE
+                        visible(radio.allvalues) <- TRUE
+                    }
                 } else {
-                    svalue(edit.plottitle) <- svalue(table.vars)
+                    visible(radio.allvalues) <- FALSE
+                    visible(radio.maptype) <- FALSE
+                    visible(lbl.sizeselect) <- FALSE
+                    visible(combobox.sizeselect) <- FALSE
+                    visible(lbl.maptype) <- FALSE
                 }
+
+                if (combinedData$type == "sparklines") {
+                    vars.numeric <- combinedData$var.types[svalue(table.vars)] %in% c("numeric", "integer")
+                    print(vars.numeric)
+                    if (isTRUE(any(!vars.numeric))) {
+                        galert("Categorical variables cannot be used with sparklines")
+                        if (sum(vars.numeric) > 0) {
+                            svalue(table.vars) <- svalue(table.vars)[vars.numeric]
+                        } else {
+                            svalue(table.vars, index = TRUE) <- 0
+                        }
+                    }
+                }
+
+                ## if(length(svalue(table.vars)) > 1) {
+                   ## svalue(edit.plottitle) <- ""
+                ## } else {
+                    ## svalue(edit.plottitle) <- svalue(table.vars)
+                ## }
                 
                 updateOptions()
             })
@@ -962,7 +1011,7 @@ iNZightMap2Mod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot")
+            ## GUI$plotToolbar$update(NULL, refresh = "updatePlot")
 
             test.btn <- gbutton("interactivity", cont = mainGrp)
             addHandlerClicked(test.btn, function(h, ...) {
@@ -1001,8 +1050,13 @@ iNZightMap2Mod <- setRefClass(
             } else {
                 aggregation <- FALSE
             }
+
+            print(mapVars)
             
-            grid::grid.rect(width = 0.25, height = 0.10, gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+            print("updating plot...")
+            print(sys.calls())
+            grid::grid.rect(width = 0.25, height = 0.10,
+                            gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
             grid::grid.text("Please wait... Loading...")
 
             dev.hold()
