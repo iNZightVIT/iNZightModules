@@ -860,8 +860,8 @@ iNZightMap2Mod <- setRefClass(
             
             tbl.main <- glayout()
             
-            var.vect <- sort(iNZightMapVars(combinedData))
-            table.vars <- gtable(var.vect, multiple = TRUE)
+            var.vect <- iNZightMapVars(combinedData)
+            table.vars <- gtable(sort(var.vect), multiple = TRUE)
             table.vars$widget$`headers-visible` <- FALSE
 
             if (!is.null(mapVars)) {
@@ -874,7 +874,8 @@ iNZightMap2Mod <- setRefClass(
             
             
             lbl.sizeselect <- glabel("Size by:")
-            combobox.sizeselect <- gcombobox(c("", var.vect))
+            numericvar.vect <- c("", sort(var.vect[combinedData$var.types %in% c("numeric", "integer")]))
+            combobox.sizeselect <- gcombobox(numericvar.vect)
 
             if (!is.null(mapSizeVar)) {
                 svalue(combobox.sizeselect) <- mapSizeVar
