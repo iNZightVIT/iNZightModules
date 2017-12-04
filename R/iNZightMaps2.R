@@ -391,16 +391,19 @@ iNZightMap2Mod <- setRefClass(
                 } else {
                     svalue(lbl.mapdesc) <- "Description: No description available." 
                 }
+
                 font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
 
                 inbuilt.path <- mapdir.contents[chosen.map, "x"]
-                mapFilename <<- inbuilt.path
-                map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
-
-                dev.hold()
-                plot(iNZightMaps::retrieveMap(map.filename)$geometry,
-                     col = "#FFFFFF")
-                dev.flush()
+                if (isTRUE(length(inbuilt.path) > 0 && grepl("\\.[A-z0-9]+$", inbuilt.path))) {
+                    mapFilename <<- inbuilt.path
+                    map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
+                    
+                    dev.hold()
+                    plot(iNZightMaps::retrieveMap(map.filename)$geometry,
+                         col = "#FFFFFF")
+                    dev.flush()
+                }
             })
             
 ### Import the map; update the relevant widgets in the variable
