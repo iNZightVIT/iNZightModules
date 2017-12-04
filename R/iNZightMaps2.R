@@ -11,6 +11,7 @@ iNZightMap2Mod <- setRefClass(
         staleMap = "logical",
         has.multipleobs = "logical",
         mapFilename = "character",
+        mapSequenceVar = "ANY",
 
         mapName = "character",
         mapType = "ANY",
@@ -58,6 +59,7 @@ iNZightMap2Mod <- setRefClass(
             mapType <<- NULL
             mapVars <<- NULL
             mapSizeVar <<- NULL
+            mapSequenceVar <<- NULL
 
             plotTitle <<- ""
             plotAxes <<- FALSE
@@ -495,6 +497,16 @@ iNZightMap2Mod <- setRefClass(
             lbl.multipleobs <- glabel("Multiple observations for each region were found!")
             lbl.sequencevar <- glabel("Select sequence variable:")
             combobox.sequencevar <- gcombobox(items = colnames(activeData))
+
+            if (!isTRUE(is.null(mapSequenceVar))) {
+                svalue(combobox.sequencevar) <- mapSequenceVar
+            }
+            
+            timevar <- grepl("(year|date)", colnames(activeData), ignore.case = TRUE)
+            if (any(timevar)) {
+                svalue(combobox.sequencevar) <- colnames(activeData)[timevar][1]
+            }
+
             tbl.sequencevar <- glayout()
             tbl.sequencevar[1, 1, expand = TRUE] <- lbl.sequencevar
             tbl.sequencevar[1, 2, expand = TRUE] <- combobox.sequencevar
