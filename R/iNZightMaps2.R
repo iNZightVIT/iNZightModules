@@ -178,7 +178,7 @@ iNZightMap2Mod <- setRefClass(
                 metadata <- scan("h:/Documents/iNZightVIT/shapefiles/metadata",
                                  what = rep("character", 3), fill = TRUE,
                                  comment.char = ";", sep = "\t",
-                                 fileEncoding = 'UTF-8')
+                                 fileEncoding = "UTF-8")
                 metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
                 colnames(metadata) <- c("filepath", "tidy_filename", "description")
                 metadata
@@ -862,6 +862,7 @@ iNZightMap2Mod <- setRefClass(
             
             var.vect <- sort(iNZightMapVars(combinedData))
             table.vars <- gtable(var.vect, multiple = TRUE)
+            table.vars$widget$`headers-visible` <- FALSE
 
             if (!is.null(mapVars)) {
                 svalue(table.vars) <- mapVars
@@ -948,8 +949,6 @@ iNZightMap2Mod <- setRefClass(
                         combinedData$type <<- "sparklines"
                         if (isTRUE(!is.null(mapVars))) {
                             vars.to.keep <- sapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], is.numeric)
-                            print(vars.to.keep)
-                            print(mapVars[vars.to.keep])
                             if (sum(vars.to.keep) > 0) {
                                 svalue(table.vars) <- mapVars[vars.to.keep]
                             } else {
@@ -999,25 +998,29 @@ iNZightMap2Mod <- setRefClass(
             addHandlerSelectionChanged(table.vars, function(h, ...) {
                 if (isTRUE(length(svalue(table.vars)) > 0)) {
                     visible(lbl.maptype) <- TRUE
-                    print(multipleObsOption)
-                    if (isTRUE(multipleObsOption != "allvalues")) {
-                        visible(radio.maptype) <- TRUE
-                        visible(radio.allvalues) <- FALSE
+                    if (has.multipleobs) {
+                        if (isTRUE(multipleObsOption != "allvalues")) {
+                            visible(radio.maptype) <- TRUE
+                            visible(radio.allvalues) <- FALSE
+                        } else {
+                            visible(radio.maptype) <- FALSE
+                            visible(radio.allvalues) <- TRUE
+                        }
                     } else {
-                        visible(radio.maptype) <- FALSE
-                        visible(radio.allvalues) <- TRUE
+                        visible(radio.maptype) <- TRUE
                     }
                 } else {
-                    visible(radio.allvalues) <- FALSE
-                    visible(radio.maptype) <- FALSE
-                    visible(lbl.sizeselect) <- FALSE
-                    visible(combobox.sizeselect) <- FALSE
                     visible(lbl.maptype) <- FALSE
+                    visible(radio.maptype) <- FALSE
+                    if (has.multipleobs) {
+                        visible(radio.allvalues) <- FALSE
+                        visible(lbl.sizeselect) <- FALSE
+                        visible(combobox.sizeselect) <- FALSE
+                    }
                 }
 
                 if (combinedData$type == "sparklines") {
                     vars.numeric <- combinedData$var.types[svalue(table.vars)] %in% c("numeric", "integer")
-                    print(vars.numeric)
                     if (isTRUE(any(!vars.numeric))) {
                         galert("Categorical variables cannot be used with sparklines")
                         if (sum(vars.numeric) > 0) {
@@ -1112,10 +1115,6 @@ iNZightMap2Mod <- setRefClass(
                 aggregation <- FALSE
             }
 
-            print(mapVars)
-            
-            print("updating plot...")
-            print(sys.calls())
             grid::grid.rect(width = 0.25, height = 0.10,
                             gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
             grid::grid.text("Please wait... Loading...")
