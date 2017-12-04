@@ -211,6 +211,35 @@ iNZightMap2Mod <- setRefClass(
                 ## Replace first directories with capitals
                 sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
             }
+
+            decodeMapDir2 <- function(mapdir.mat) {
+                country.isos <- data.frame(iso = c("NZL", "USA", "AUS"),
+                                           name = c("New Zealand", "United States", "Australia"),
+                                           stringsAsFactors = FALSE)
+                have.tidy <- !is.na(mapdir.mat[, "tidy_filename"])
+                
+                dir.vect <- as.character(mapdir.mat[, "x"])
+                
+                for (i in 1:length(dir.vect)) {
+                    dir.vect[i] <- sub("/[-_\\df.A-z0-9]+\\.[A-z]+",
+                                       paste0("/",mapdir.mat[i, "tidy_filename"]),
+                                       dir.vect[i])
+                }
+                
+                which.countries <- which(grepl("^countries/", dir.vect))
+                
+                for (i in which.countries) {
+                    curr.code.ind <- regexpr("/(...)/", dir.vect[i])
+                    curr.code <- substr(dir.vect[i], curr.code.ind + 1, curr.code.ind + 3)
+                    curr.name <- country.isos[country.isos$iso == toupper(curr.code), "name"]
+                    dir.vect[i] <- sub("/(...)/", paste0("/", curr.name, "/"), dir.vect[i])
+                }
+                
+                dir.vect <- sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
+                
+                mapdir.mat[, "tidy_filepath"] <- dir.vect
+                mapdir.mat
+            }
             
 ### Helper function for gtree()
             offspring.files <- function(path, obj) {
@@ -249,7 +278,10 @@ iNZightMap2Mod <- setRefClass(
             
             mapdir.contents <- merge(stored.shapefiles, metadata,
                                      by.x = 1, by.y = 1, all.x = TRUE)
-            
+
+            mapdir.contents <- decodeMapDir2(mapdir.contents)
+            mapdir.contents <- sapply(mapdir.contents, as.character)
+
             ## Heading area
             lbl <- glabel("Map Source:")
             mapSource <- gradio(c("Use Inbuilt Map", "Import Shapefile"),
@@ -259,7 +291,7 @@ iNZightMap2Mod <- setRefClass(
             tblInbuiltfile <- glayout()
             
             mapInbuiltBrowse <- gtree(offspring = offspring.files,
-                                      offspring.data = mapdir.contents[, 1],
+                                      offspring.data = mapdir.contents[, "tidy_filepath"],
                                       chosen.col = "filename",
                                       offspring.col = "has.children")
             mapInbuiltBrowse$widget$`headers-visible` <- FALSE
@@ -344,15 +376,15 @@ iNZightMap2Mod <- setRefClass(
             addHandlerSelect(mapInbuiltBrowse, function(h, ...) {
                 if(!staleMap) {
                     staleMap <<- TRUE
-                    ## plot.new()
                     visible(expand.variables) <- FALSE
                     enabled(frame.variables) <- FALSE
                     visible(lbl.allmatched) <- FALSE
                     enabled(btn.finish) <- FALSE
                 }
                 
-                mapFilename <<- paste(svalue(mapInbuiltBrowse), collapse = "/")
-                chosen.desc <- mapdir.contents$description[which(mapdir.contents[, 1] == mapFilename)]
+                chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                chosen.map <- which(mapdir.contents[, "tidy_filepath"] == chosen.filepath)
+                chosen.desc <- mapdir.contents[chosen.map, "description"]
                 
                 if(length(chosen.desc) > 0 && !is.na(chosen.desc)) {
                     svalue(lbl.mapdesc) <- paste("Description:", chosen.desc)
@@ -361,9 +393,11 @@ iNZightMap2Mod <- setRefClass(
                 }
                 font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
 
-                dev.hold()
-                inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                inbuilt.path <- mapdir.contents[chosen.map, "x"]
+                mapFilename <<- inbuilt.path
                 map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
+
+                dev.hold()
                 plot(iNZightMaps::retrieveMap(map.filename)$geometry,
                      col = "#FFFFFF")
                 dev.flush()
@@ -376,7 +410,9 @@ iNZightMap2Mod <- setRefClass(
             addHandlerClicked(btn.import, handler = function(h, ...) {
                 ## Extract the true filename from inputs
                 if(svalue(mapSource, index = TRUE) == 1) {
-                    inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                    chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                    chosen.map <- which(mapdir.contents[, "tidy_filepath"] == chosen.filepath)
+                    inbuilt.path <- mapdir.contents[chosen.map, "x"]
                     map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
                 } else {
                     map.filename <- svalue(mapSourceBrowse)
@@ -569,9 +605,11 @@ iNZightMap2Mod <- setRefClass(
                                                              multiple.obs = has.multipleobs,
                                                              sequence.var = svalue(combobox.sequencevar))
 
+                mapSequenceVar <<- svalue(combobox.sequencevar)
+
                 ## If the given file has a name given in the metadata,
                 ## use that. Otherwise use the filename.
-                chosen.name <- mapdir.contents$tidy_filename[which(mapdir.contents[, 1] == mapFilename)]
+                chosen.name <- mapdir.contents[which(mapdir.contents[, "x"] == mapFilename), "tidy_filename"]
                 if(length(chosen.name) > 0 && !is.na(chosen.name)) {
                     mapName <<- as.character(chosen.name)
                 } else {
