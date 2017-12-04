@@ -25,6 +25,7 @@ iNZightMap2Mod <- setRefClass(
         plotDatumLines = "ANY",
         plotProjection = "ANY",
         plotTheme = "ANY",
+        plotConstantAlpha = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -68,6 +69,7 @@ iNZightMap2Mod <- setRefClass(
             plotDatumLines <<- FALSE
             plotProjection <<- NULL
             plotTheme <<- "Default"
+            plotConstantAlpha <<- 1.0
 
             multipleObsOption <<- NULL
 
@@ -619,6 +621,7 @@ iNZightMap2Mod <- setRefClass(
                 plotDatumLines <<- svalue(checkbox.datum)            
                 plotProjection <<- proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"]
                 plotTheme <<- svalue(combobox.palette)
+                plotConstantAlpha <<- svalue(slider.constalpha)
 
                 ## Variable Options
                 mapVars <<- svalue(table.vars)
@@ -751,6 +754,14 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
             tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
             tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
+
+            slider.constalpha <- gcombobox(seq(1, 0, by = -0.1))
+
+            tbl.plotoptions[7, 2:4, expand = TRUE] <- slider.constalpha
+
+            addHandlerChanged(slider.constalpha, function(h, ...) {
+                updateOptions()
+            })
             
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
 
@@ -1078,7 +1089,7 @@ iNZightMap2Mod <- setRefClass(
                  datum.lines = plotDatumLines, projection = plotProjection,
                  multiple.vars = multiple.vars, colour.var = mapVars,
                  size.var = mapSizeVar, aggregate = aggregation,
-                 theme = plotTheme))
+                 theme = plotTheme, alpha.const = plotConstantAlpha))
             dev.flush()
 
         }
