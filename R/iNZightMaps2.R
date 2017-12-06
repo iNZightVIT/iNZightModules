@@ -880,7 +880,7 @@ iNZightMap2Mod <- setRefClass(
             
             
             lbl.sizeselect <- glabel("Size by:")
-            numericvar.vect <- c("", sort(var.vect[combinedData$var.types %in% c("numeric", "integer")]))
+            numericvar.vect <- c("", sort(iNZightMapVars(combinedData, TRUE)[combinedData$var.types %in% c("numeric", "integer")]))
             combobox.sizeselect <- gcombobox(numericvar.vect)
 
             if (!is.null(mapSizeVar)) {
