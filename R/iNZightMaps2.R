@@ -213,19 +213,22 @@ iNZightMap2Mod <- setRefClass(
             }
 
             decodeMapDir2 <- function(mapdir.mat) {
-                country.isos <- data.frame(iso = c("NZL", "USA", "AUS"),
-                                           name = c("New Zealand", "United States", "Australia"),
+                country.isos <- read.csv("h:/Documents/iNZightVIT/shapefiles/iso.csv",
                                            stringsAsFactors = FALSE)
+                
                 have.tidy <- !is.na(mapdir.mat[, "tidy_filename"])
                 
                 dir.vect <- as.character(mapdir.mat[, "x"])
                 
-                for (i in 1:length(dir.vect)) {
-                    dir.vect[i] <- sub("/[-_\\df.A-z0-9]+\\.[A-z]+",
+                for (i in which(have.tidy)) {
+                    dir.vect[i] <- sub("/[-_\\df.A-z0-9]+\\.[A-z]+$",
                                        paste0("/",mapdir.mat[i, "tidy_filename"]),
                                        dir.vect[i])
                 }
                 
+                for (i in which(!have.tidy)) {
+                    dir.vect[i] <- sub("\\.[A-z]+$", "", dir.vect[i])
+                }
                 which.countries <- which(grepl("^countries/", dir.vect))
                 
                 for (i in which.countries) {
