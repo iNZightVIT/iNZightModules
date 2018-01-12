@@ -52,9 +52,9 @@ iNZightMap2Mod <- setRefClass(
                     return(NULL)
                 }
             }
-            
+
             ## Configure the data / variables for mapping:
-            activeData <<- GUI$getActiveData()
+            activeData <<- as.data.frame(GUI$getActiveData())
 
             mapName <<- ""
             mapType <<- NULL
