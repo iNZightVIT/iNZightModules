@@ -7,8 +7,8 @@ else
 	Rdev := R-devel
 endif
 
-default:
-	@$(RCMD) -f templates/importTemplates.R
+default: document
+	#@$(RCMD) -f templates/importTemplates.R
 
 document:
 	@$(RCMD) -e "devtools::document()"
