@@ -26,11 +26,6 @@ iNZightMapMod <- setRefClass(
     #     - activeData: imported data retrieved from the main iNZight GUI
     #   + Can change names
     #   + Set as many fields as needed
-    #   + Additional fields:
-    #     - map.vars : extra variables stored about the map plot object
-    #     - map.object : the plot itself (plus additional layers)
-    #     - [R] map.type : what type of plot it is
-    #     - grpTbl : sidebar gtable
     # =================================================================================
     fields = list(
         GUI         = "ANY",
@@ -39,7 +34,7 @@ iNZightMapMod <- setRefClass(
         map.vars    = "ANY",
         map.object  = "ANY",
         map.type    = "ANY",
-        # extra.args  = "list",
+        extra.args  = "list",
         grpTbl      = "ANY"
     ),
 
@@ -48,20 +43,6 @@ iNZightMapMod <- setRefClass(
     # METHOD DEFINITION
     #   + Pre-defined method:
     #     - initialize(): all that relate to module window GUI should be defined here
-    #   + Additonal Methods:
-    #     - [R] setVars()   : set extra variables to control plot appearance
-    #     - createMapObject(): Creates the map object based on details from 
-    #                          initialisation dialog
-    #     - numericVars() : vector of numeric variables in activeData 
-    #     - characterVars() : vector of character variables in activeData
-    #     - initiateModule() : initiate map module into GUI - set up sidebar, plot 
-    #                          area, etc. 
-    #     - [R] canIZoom() : 
-    #     - createSlider() : create the facetting slider based on the variable chosen
-    #                        in the dropdown box
-    #     - deleteSlider() : delete a facetting slider
-    #     - [R]changePlotSettings() : update plotting attributes with extra.args
-    #     - updatePlot() : updates the plot with any new mappings or layers
     # ================================================================================
     methods = list(
         ## Function with all GUI specifications
@@ -69,7 +50,7 @@ iNZightMapMod <- setRefClass(
             ## GUI
             initFields(GUI = GUI)
 
-            if (!requireNamespace("iNZightMaps2", quietly = TRUE)) {
+            if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
                 resp <- gconfirm("The Maps package isn't installed. Do you want to install it now?",
                                  title = "Install Maps package", icon = "question", parent = GUI$win)
 
@@ -85,13 +66,15 @@ iNZightMapMod <- setRefClass(
                 }
             }
             
+            
             ## Configure the data / variables for mapping:
             ## activeData
             activeData <<- GUI$getActiveData()
 
-            w <- gwindow("Define Geographical Variables", width = 400, height = 500, parent = GUI$win, visible = FALSE)
+            w <- gwindow("Define Geographical Variables", width = 400, height = 300, parent = GUI$win, visible = FALSE)
             gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
             gv$set_borderwidth(15)
+
 
             lbl <- glabel("Type of Map Data")
             font(lbl) <- list(weight = "bold", size = 12, family = "normal")
@@ -100,87 +83,13 @@ iNZightMapMod <- setRefClass(
             add(gv, lbl)
             add(gv, mapType)
 
-            coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
-            svalue(mapType, index = TRUE) <- if(coord.or.region) 1 else 2
-
             addSpace(gv, 10)
-            
-            #################################################
 
-            # TODO: Fix problem of inputs moving slightly
-            
-            lbl <- glabel("Map Source")
-            font(lbl) <- list(weight = "bold", size = 12, family = "normal")
-            mapSource <- gradio(c("Use Inbuilt Map", "Import Shapefile"))
-            add(gv, lbl)
-            add(gv, mapSource)
-
-            tblShapefile <- glayout()
-            tblInbuiltfile <- glayout()
-            
-            mapSourceBrowse <- gfilebrowse(text = "Open Shapefile...", 
-                                           type = "open",
-                                           filter = list("All supported formats" = list(patterns = c("*.shp", "*.json", "*.geojson")),
-                                                         "Shapefile" = list(patterns = c("*.shp")),
-                                                         "GeoJSON" = list(patterns = c("*.json", "*.geojson")))
-                                           )
-            
-            tblShapefile[1, 1, expand = TRUE] <- mapSourceBrowse
-            
-            stored.shapefiles <- list.files("~/iNZightVIT/shapefiles/", recursive = TRUE, pattern = ".shp$")
-            
-            offspring.files <- function(path, obj) {
-                if(length(path) > 0) {
-                    path.pattern <- paste0("^", paste(path, collapse = "/"), "/")
-                } else {
-                    path.pattern <- ""
-                }
-                
-                files.list <- obj[grepl(path.pattern, obj)]
-                
-                files.list <- sub(path.pattern, "", files.list)
-
-                slash.loc <- regexpr("/", files.list)
-                has.children <- slash.loc != -1
-                
-                filenames <- files.list
-                filenames[!has.children] <- files.list[!has.children]
-                
-                filenames[has.children] <- substring(files.list[has.children], 
-                                                     first = 1, 
-                                                     last = slash.loc[has.children] - 1)
-                
-                unique.ind <- !duplicated(filenames)
-                
-                data.frame(filename = filenames[unique.ind], has.children = has.children[unique.ind])
-            }
-
-            mapInbuiltBrowse <- gtree(offspring = offspring.files, 
-                                      offspring.data = stored.shapefiles, 
-                                      chosen.col = "filename",
-                                      offspring.col = "has.children")
-
-            tblInbuiltfile[1, 1, expand = TRUE, fill = "both"] <- mapInbuiltBrowse
-            
-            add(gv, tblShapefile, fill = "x")
-            add(gv, tblInbuiltfile, expand = TRUE)
-            
-            visible(tblInbuiltfile) <- TRUE
-            visible(tblShapefile) <- FALSE
-            
-            addHandlerChanged(mapSource, function(h, ...) {
-              v <- svalue(mapSource, index = TRUE)
-              visible(tblShapefile) <- v == 2
-              visible(tblInbuiltfile) <- v == 1
-            })
-            
-            addSpace(gv, 10)
-            
-            #################################################
 
             title <- glabel("Mapping Variables")
             font(title) <- list(weight = "bold", size = 12, family = "normal")
-            add(gv, title)
+            add(gv, title, anchor = c(-1, 0))
+
 
             ## latitude and longitude
             tbl <- glayout(homogeneous = FALSE)
@@ -205,18 +114,35 @@ iNZightMapMod <- setRefClass(
             lon.match <- grep("lon", tolower(vars))
             if (length(lon.match)) svalue(lonVar, index = TRUE) <- lon.match[1] + 1
 
-            visible(tbl) <- coord.or.region
-            visible(title) <- coord.or.region
+
+            ## shape file and region variable
+            tbl2 <- glayout(homogeneous = FALSE)
+            ii <- 1
+
+            lbl <- "Map Location :"
+            mapLoc <- gcombobox(c("", "world"))
+            tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+            tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- mapLoc
+            ii <- ii + 1
+
+            lbl <- "Location Variable :"
+            locVar <- gcombobox(c("", characterVars()))
+            tbl2[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+            tbl2[ii, 2:4, anchor = c(-1, 0), expand = TRUE] <- locVar
+            ii <- ii + 1
+            
+            visible(tbl2) <- FALSE
 
             addSpace(gv, 10)
             add(gv, tbl, expand = TRUE, fill = TRUE)
+            add(gv, tbl2, expand = TRUE, fill = TRUE)
             addSpring(gv)
 
             ## switch between them using radio buttons
             addHandlerChanged(mapType, function(h, ...) {
                                   v <- svalue(mapType, index = TRUE)
                                   visible(tbl) <- v == 1
-                                  visible(title) <- v == 1
+                                  visible(tbl2) <- v == 2
                               })
 
             ## OK Button
@@ -226,55 +152,36 @@ iNZightMapMod <- setRefClass(
             okbtn <- gbutton("OK", expand = TRUE,
                              cont = btnGrp,
                              handler = function(h, ...) {
-                                 ## mapSource == 2 -> Shapefile
-                                 ## mapSource == 1 -> Inbuilt
-                                 ## Error checking
-                                 if(svalue(mapSource, index = TRUE) == 2) {
-                                     if(length(svalue(mapSourceBrowse)) == 0) {
-                                         gmessage("Please select a shapefile", parent = w)
-                                         return(NULL)
-                                     } else {
-                                         if(!file.exists(svalue(mapSourceBrowse))) {
-                                             gmessage("Shapefile does not exist", parent = w)
-                                             return(NULL)
-                                         }
-                                         
-                                         shapefile <- svalue(mapSourceBrowse)
-                                     }
-                                 } else {
-                                     # TODO: Replace with a less fixed path
-                                     inbuilt.path <- paste(svalue(mapInbuiltBrowse), collapse = "/")
-                                     if(grepl(".shp$", inbuilt.path)) {
-                                         shapefile <- paste0("~/iNZightVIT/shapefiles/", inbuilt.path)
-                                     } else {
-                                         gmessage("Please choose a shapefile", parent = w)
-                                         return(NULL)
-                                     }
-                                 }
-                                 print(shapefile)
-                                 
                                  if (svalue(mapType, index = TRUE) == 1) {
                                      if (svalue(latVar, TRUE) > 1 && svalue(lonVar, TRUE) > 1) {
                                          setVars(list(latitude = svalue(latVar),
-                                                      longitude = svalue(lonVar),
-                                                      shapefile = shapefile),
+                                                      longitude = svalue(lonVar)),
                                                  type = "points")
                                          initiateModule()
                                          dispose(w)
                                      } else {
-                                         gmessage("Please select a variable for latitude and longitude", parent = w)
+                                         gmessage("Please select a variable for latitude and longitude")
                                      }
                                  } else {
-                                     matchingDialog(shapefile = shapefile, sender = w)
+                                     if (svalue(mapLoc, TRUE) > 1 && svalue(locVar, TRUE) > 1) {
+                                         setVars(list(location = svalue(mapLoc),
+                                                      location.var = svalue(locVar)),
+                                                 type = "shape")
+                                         initiateModule(shape = TRUE)
+                                         dispose(w)
+                                     } else {
+                                         gmessage("Please select a map location and variable")
+                                     }
                                  }
                              })
-
             cnclBtn <- gbutton("Cancel", expand = TRUE, cont = btnGrp,
                                handler = function(h, ...) {
                                   dispose(w)
                                })
 
+
             visible(w) <- TRUE
+
 
         },
 
@@ -282,37 +189,26 @@ iNZightMapMod <- setRefClass(
         ##   - Can create as many as needed
         setVars = function(names, type) {
             map.vars <<- names
-            map.type <<- ifelse(type == "shape", "shape", "point")
+            map.type <<- ifelse(type == "shape", "shape", "roadmap")
 
             ## defaults:
             map.vars$alpha <<- 1
             map.vars$cex.pt <<- 1
-            # extra.args <<- list()
+            extra.args <<- list()
 
             createMapObject()
         },
         createMapObject = function() {
-            simplify.level <- 0.01
             map.object <<-
                 if (map.type == "shape") {
-                  map.obj <- sf::st_read(map.vars$shapefile)
-                  map.obj <- sf::st_simplify(map.obj, dTolerance = simplify.level)
-                  iNZightMaps2::iNZightMapPlot(data = activeData,
-                                               map = map.obj, 
-                                               type = "region",
-                                               by.data = map.vars$location.var,
-                                               by.map = map.vars$map.var)
-                  # map.vars$orig.crs <<- sf::st_crs(map.obj)
-                  
+                    iNZightMaps::iNZightShapeMap(data = activeData,
+                                                 location = map.vars$location,
+                                                 data.region = map.vars$location.var)
                 } else {
-                  map.obj <- sf::st_read(map.vars$shapefile)
-                  map.obj <- sf::st_simplify(map.obj, dTolerance = simplify.level)
-                    iNZightMaps2::iNZightMapPlot(data = activeData,
-                                                 map = map.obj,
-                                                 type = "point",
-                                                 coord = c(map.vars$longitude, map.vars$latitude),
-                                                 crs = 4326)
-                  # map.vars$orig.crs <<- 4326
+                    iNZightMaps::iNZightMap(lat = eval(parse(text = paste("~", map.vars$latitude))),
+                                            lon = eval(parse(text = paste("~", map.vars$longitude))),
+                                            data = activeData,
+                                            name = GUI$dataNameWidget$datName)
                 }
         },
         ## get only numeric type variables
@@ -365,88 +261,40 @@ iNZightMapMod <- setRefClass(
 
             zoomBtn <- gimage(stock.id = "zoom-in", size = "button")
             zoomOutBtn <- gimage(stock.id = "zoom-out", size = "button")
-            zoomFitBtn <- gimage(stock.id = "zoom-fit", size = "button")
-            
             if (map.type == "shape") {                
                 addHandlerClicked(zoomBtn, function(h, ...) {
-                    test.pt <- grid::grid.locator("npc")
-                    
-                    print(test.pt)
-                    
-                    mp.build <- ggplot2::ggplot_build(plot(map.object))
-                    
-                    test.xlim <- mp.build$layout$panel_params[[1]]$x_range
-                    test.ylim <- mp.build$layout$panel_params[[1]]$y_range
-                    
-                    test.xrange <- diff(test.xlim)
-                    test.yrange <- diff(test.ylim)
-                    
-                    x.centre <- test.xlim[1] + as.numeric(test.pt$x) * test.xrange
-                    y.centre <- test.ylim[1] + as.numeric(test.pt$y) * test.yrange
-                    
-                    zoom.xlim <- x.centre + c(-1, 1) * (1/2) * (1/2) * test.xrange
-                    zoom.ylim <- y.centre + c(-1, 1) * (1/2) * (1/2) * test.yrange
-                    
-                    map.object <<- addLayer.iNZightMapPlot(map.object, 
-                                                           "map", 
-                                                           "coordlims",
-                                                           ggplot2::coord_sf(xlim = zoom.xlim,
-                                                                             ylim = zoom.ylim,
-                                                                             datum = map.object$crs))
-                    updateEverything()
-                })
+                                      if (canIZoom()) {
+                                          zoom <- iNZightMaps::sClickOnZoom(3/4)
+                                      } else {
+                                          gmessage("Cannot zoom when displaying multiple subsets.")
+                                      }
+                                  })
                 addHandlerClicked(zoomOutBtn, function(h, ...) {
-                    test.pt <- grid::grid.locator("npc")
-                    
-                    print(test.pt)
-                    
-                    mp.build <- ggplot2::ggplot_build(plot(map.object))
-                    
-                    test.xlim <- mp.build$layout$panel_params[[1]]$x_range
-                    test.ylim <- mp.build$layout$panel_params[[1]]$y_range
-                    
-                    test.xrange <- diff(test.xlim)
-                    test.yrange <- diff(test.ylim)
-                    
-                    x.centre <- test.xlim[1] + as.numeric(test.pt$x) * test.xrange
-                    y.centre <- test.ylim[1] + as.numeric(test.pt$y) * test.yrange
-                    
-                    zoom.xlim <- x.centre + c(-1, 1) * (1/2) * (2/1) * test.xrange
-                    zoom.ylim <- y.centre + c(-1, 1) * (1/2) * (2/1) * test.yrange
-
-                    map.object <<- addLayer.iNZightMapPlot(map.object, 
-                                                        "map", 
-                                                        "coordlims",
-                                                        ggplot2::coord_sf(xlim = zoom.xlim,
-                                                                          ylim = zoom.ylim,
-                                                                          datum = map.object$crs))
-                    updateEverything()
-                })
-                
-                addHandlerClicked(zoomFitBtn, function(h, ...) {
-                    map.object <<- removeLayer.iNZightMapPlot(map.object, 
-                                                           "map", 
-                                                           "coordlims")
-                    updateEverything()
-                })
+                                      if (canIZoom()) {
+                                          iNZightMaps::sClickOnZoom(4/3)
+                                      } else {
+                                          gmessage("Cannot zoom when displaying multiple subsets.")
+                                      }
+                                  })
             } else {
                 addHandlerClicked(zoomBtn, function(h, ...) {
-                    zoom.point <- grid.locator()
-                    print(zoom.point)
-                })
+                                      if (canIZoom()) {
+                                          iNZightMaps::ClickOnZoom(3/4)
+                                      } else {
+                                          gmessage("Cannot zoom when displaying multiple subsets.")
+                                      }
+                                  })
                 addHandlerClicked(zoomOutBtn, function(h, ...) {
-                    zoom.point <- grid.locator()
-                    print(zoom.point)
-                })
+                                      if (canIZoom()) {
+                                          iNZightMaps::ClickOnZoom(4/3)
+                                      } else {
+                                          gmessage("Cannot zoom when displaying multiple subsets.")
+                                      }
+                                  })
             }
-
-            addtoplotBtn <- gimage(stock.id="edit", size = "button",
-                                         tooltip = "Add to Plot")
-            addHandlerClicked(addtoplotBtn, function(h, ...) {
-              
-            })
-
-            GUI$plotToolbar$update(NULL, extra = list(addtoplotBtn, zoomFitBtn, zoomBtn, zoomOutBtn, aboutBtn))
+            
+            
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(zoomBtn, zoomOutBtn, aboutBtn))
 
             ## mainGrp
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
@@ -464,82 +312,61 @@ iNZightMapMod <- setRefClass(
 
             tbl <- glayout(homogeneous = FALSE)
             ii <- 1
-            
-            ## Options common to both regions and points
-            
-            lbl <- glabel("Code Variables")
-            font(lbl) <- list(weight = "bold", size = 11)
-            tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
-            ii <- ii + 1
 
-            lbl <- glabel("Colour by :")
-            tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-
-            if(map.type == "shape") {
-              combobox.varFill <- gcombobox(c("", colnames(activeData)))
-              tbl[ii, 3:6, expand = TRUE] <- combobox.varFill
-
-              addHandlerChanged(combobox.varFill, handler = function(h, ...)  {
-                if(!is.null(map.vars$constFill)) {
-                  svalue(combobox.constFill, index = TRUE) <- 1
-                }
-                updateEverything()
-              })
-            } else if (map.type == "point") {
-              combobox.varColour <- gcombobox(c("", colnames(activeData)))
-              tbl[ii, 3:6, expand = TRUE] <- combobox.varColour
-
-              addHandlerChanged(combobox.varColour, handler = function(h, ...)  {
-                if(!is.null(map.vars$constColour)) {
-                  svalue(combobox.constColour, index = TRUE) <- 1
-                }
-                updateEverything()
-              })
+            if (map.type == "shape") {
+                yVarList <- gcombobox(
+                    c("Select Variable", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
+                    selected = ifelse(
+                        is.null(map.vars$y),
+                        1, which(rszNames == map.vars$y)[1] + 1
+                        )
+                    )
+                tbl[ii, 1:6, expand = TRUE] <- yVarList
+                ii <- ii + 1
+            } else {
+                lbl <- glabel("Code Variables")
+                font(lbl) <- list(weight = "bold", size = 11)
+                tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
+                ii <- ii + 1
+                
+                lbl <- glabel("Colour by :")
+                colVarList <- gcombobox(c("", names(GUI$getActiveData())),
+                                        selected = ifelse(
+                                            is.null(map.vars$colby),
+                                            1, which(names(GUI$getActiveData()) ==
+                                                         map.vars$colby)[1] + 1
+                                            )
+                                        )
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 3:6, expand = TRUE] <- colVarList
+                ii <- ii + 1                
+                
+                lbl <- glabel("Size by :")
+                rszVarList <- gcombobox(
+                    c("", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
+                    selected = ifelse(
+                        is.null(map.vars$sizeby),
+                        1, which(rszNames == map.vars$sizeby)[1] + 1
+                        )
+                    )
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 3:6, expand = TRUE] <- rszVarList
+                ii <- ii + 1
+                
+                
+                lbl <- glabel("Opacify by :")
+                opctyVarList <- gcombobox(
+                    c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
+                    selected = ifelse(
+                        is.null(map.vars$opacity),
+                        1, which(numNames == map.vars$opacity)[1] + 1
+                        )
+                    )
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 3:6, expand = TRUE] <- opctyVarList
+                ii <- ii + 1
             }
-            ii <- ii + 1
-
-            if(map.type == "shape") {
-              ## lbl <- glabel("Opacify by:")
-              ## combobox.varAlpha <- gcombobox(c("", colnames(activeData)))
-              ## tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-              ## tbl[ii, 3:6, expand = TRUE] <- combobox.varAlpha
-            } else if (map.type == "point") {
-              lbl <- glabel("Size by:")
-              combobox.varSize <- gcombobox(c("", colnames(activeData)))
-              tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-              tbl[ii, 3:6, expand = TRUE] <- combobox.varSize
-
-              addHandlerChanged(combobox.varSize, handler = function(h, ...) updateEverything()) 
-            }
-            ii <- ii + 1
-
-            ##if (map.type == "shape") {
-            ##  lbl <- glabel("Opacify by :")
-            ##  opctyVarList <- gcombobox(
-            ##    c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
-            ##    selected = ifelse(
-            ##      is.null(map.vars$opacity),
-            ##      1, which(numNames == map.vars$opacity)[1] + 1
-            ##    )
-            ##  )
-            ##  tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-            ##  tbl[ii, 3:6, expand = TRUE] <- opctyVarList
-            ##  ii <- ii + 1
-            ##} else {
-            ##    lbl <- glabel("Size by :")
-            ##    rszVarList <- gcombobox(
-            ##        c("", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
-            ##        selected = ifelse(
-            ##            is.null(map.vars$sizeby),
-            ##            1, which(rszNames == map.vars$sizeby)[1] + 1
-            ##            )
-            ##        )
-            ##    tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-            ##    tbl[ii, 3:6, expand = TRUE] <- rszVarList
-            ##    ii <- ii + 1
-            ##}
-            ##
-
+            
             ii <- ii + 1
             ii <- ii + 1
             lbl <- glabel("Plot Options")
@@ -547,383 +374,184 @@ iNZightMapMod <- setRefClass(
             tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
             ii <- ii + 1
 
-  ##           if (map.type != "shape") {
-  ##               lbl <- glabel("Map type :")
-  ##               typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
-  ##               typeList <- gcombobox(typeOpts)
-  ##               tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-  ##               tbl[ii, 3:6, expand = TRUE] <- typeList
-  ##               ii <- ii + 1
-  ##           }
-
-
-            if (map.type == "shape") {
-              lbl.constFill <- glabel("Fill Colour:")
-              lbl.constColour <- glabel("Border Colour:")
-              lbl.constAlpha <- glabel("Opacity:")
-
-              combobox.constFill <- gcombobox(c("", "red", "blue"))
-              combobox.constColour <- gcombobox(c("", "red", "blue"))
-              ## combobox.constAlpha <- gcombobox(seq(1, 0, by = -0.1))
-              slider.constAlpha <- gslider(from = 0, to = 1, by = 0.05, value = 1)
-
-              tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.constFill
-              tbl[ii, 3:6, expand = TRUE] <- combobox.constFill
-              ii <- ii + 1
-
-              tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.constColour
-              tbl[ii, 3:6, expand = TRUE] <- combobox.constColour
-              ii <- ii + 1
-
-              tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.constAlpha
-              tbl[ii, 3:6, expand = TRUE] <- slider.constAlpha
-              ii <- ii + 1
-
-              addHandlerChanged(combobox.constFill, handler = function(h, ...) {
-                if(!is.null(map.vars$varFill) &&
-                   map.vars$varFill != "" &&
-                   svalue(combobox.constFill, index = TRUE) > 1) {
-                  gmessage("Colours already specified by variable")
-                  svalue(combobox.constFill, index = TRUE) <- 1
-                } else {
-                  updateEverything()
-                }
-              })
-              addHandlerChanged(combobox.constColour, handler = function(h, ...) updateEverything())
-
-              timer.constAlpha <- NULL
-              addHandlerChanged(slider.constAlpha, handler = function(h, ...) {
-                if(!is.null(timer.constAlpha)) timer.constAlpha$stop_timer()
-                timer.constAlpha <- gtimer(500, one.shot = TRUE, FUN = function(...) updateEverything())
-              })
-            } else if (map.type == "point") {
-              lbl.constColour <- glabel("Point Colour:")
-
-              combobox.constColour <- gcombobox(c("", "red", "blue"))
-
-              tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.constColour
-              tbl[ii, 3:6, expand = TRUE] <- combobox.constColour
-              ii <- ii + 1
- 
-              addHandlerChanged(combobox.constColour, handler = function(h, ...) {
-                if(!is.null(map.vars$varColour) &&
-                   map.vars$varColour != "" &&
-                   svalue(combobox.constColour, index = TRUE) > 1) {
-                  gmessage("Colours already specified by variable")
-                  svalue(combobox.constColour, index = TRUE) <- 1
-                } else {
-                  updateEverything()
-                }
-              })
+            
+            if (map.type != "shape") {
+                lbl <- glabel("Map type :")
+                typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
+                typeList <- gcombobox(typeOpts)
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 3:6, expand = TRUE] <- typeList
+                ii <- ii + 1
             }
 
-             ## COLOUR
-             ## lbl <- glabel("Colour :")
-             ## if (map.type == "shape") {
-             ##     pointCols <- c("red", "darkblue", "darkgreen", "darkmagenta",
-             ##                    "darkslateblue", "hotpink4", "lightsalmon2",
-             ##                    "palegreen3", "steelblue3",
-             ##                    "heat", "terrain")
-             ##     symbolColList <- gcombobox(pointCols, editable = FALSE)
 
-             ##     ## naFillCol <- gcombobox(
-             ##     ##     c("grey50", "lightslategrey", "white", "black", "red"),
-             ##     ##     selected = ifelse(
-             ##     ##         is.na(which(pointCols == map.vars$col.pt)[1]),
-             ##     ##         1,
-             ##     ##         which(pointCols == map.vars$col.pt)[1]),
-             ##     ##     editable = FALSE)
-             ## } else {
-             ##     pointCols <- c("", colours())
-             ##     symbolColList <- gcombobox(pointCols, editable = TRUE)
-             ## }
+            ## COLOUR
+            lbl <- glabel("Colour :")
+            if (map.type == "shape") {
+                pointCols <- c("red", "darkblue", "darkgreen", "darkmagenta",
+                               "darkslateblue", "hotpink4", "lightsalmon2",
+                               "palegreen3", "steelblue3",
+                               "heat", "terrain")
+                symbolColList <- gcombobox(
+                    pointCols,
+                    selected = ifelse(
+                        is.na(which(pointCols == map.vars$col.pt)[1]),
+                        1,
+                        which(pointCols == map.vars$col.pt)[1]),
+                    editable = FALSE)
 
-             ## tbl[ii,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-             ## tbl[ii,  3:6, expand = TRUE] <- symbolColList
-             ## ii <- ii + 1
+                naFillCol <- gcombobox(
+                    c("grey50", "lightslategrey", "white", "black", "red"),
+                    selected = ifelse(
+                        is.na(which(pointCols == map.vars$col.pt)[1]),
+                        1,
+                        which(pointCols == map.vars$col.pt)[1]),
+                    editable = FALSE)
+            } else {
+                pointCols <- c("grey50", "black", "darkblue", "darkgreen",
+                               "darkmagenta", "darkslateblue", "hotpink4",
+                               "lightsalmon2", "palegreen3", "steelblue3")
+                symbolColList <- gcombobox(
+                    pointCols,
+                    selected = ifelse(
+                        is.na(which(pointCols == map.vars$col.pt)[1]),
+                        1,
+                        which(pointCols == map.vars$col.pt)[1]),
+                    editable = TRUE)
+            }
 
-##             if (map.type == "shape") {
-##                 tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- glabel("Missing value colour :")
-##                 tbl[ii, 3:6, expand = TRUE] <- naFillCol
-##             }
+            tbl[ii,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+            tbl[ii,  3:6, expand = TRUE] <- symbolColList
+            ii <- ii + 1
+
+            if (map.type == "shape") {
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- glabel("Missing value colour :")
+                tbl[ii, 3:6, expand = TRUE] <- naFillCol
+            }
 
 
-           ##  if (map.type != "shape") {
-           ##      ## Point sizes
-           ##      lbl <- glabel("Point size :")
-           ##      cexSlider <- gslider(from = 0.05, to = 3.5,
-           ##                           by = 0.05, value = map.vars$cex.pt)
-           ##      tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-           ##      tbl[ii, 3:6, expand = TRUE] <- cexSlider
-           ##      ii <- ii + 1
-           ##      
-           ##      ## Transparency
-           ##      lbl <- glabel("Transparency :")
-           ##       transpSlider <- gslider(from = 0, to = 100,
-           ##                              by = 1, value = 100 * (1 - map.vars$alpha))
-           ##      tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-           ##      tbl[ii, 3:6, expand = TRUE] <- transpSlider
-           ##      ii <- ii + 1
+            if (map.type != "shape") {
+                ## Point sizes
+                lbl <- glabel("Point size :")
+                cexSlider <- gslider(from = 0.05, to = 3.5,
+                                     by = 0.05, value = map.vars$cex.pt)
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 3:6, expand = TRUE] <- cexSlider
+                ii <- ii + 1
+                
+                ## Transparency
+                lbl <- glabel("Transparency :")
+                transpSlider <- gslider(from = 0, to = 100,
+                                        by = 1, value = 100 * (1 - map.vars$alpha))
+                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 3:6, expand = TRUE] <- transpSlider
+                ii <- ii + 1
 
-           ##      ## Connect by lines
-           ##      joinPts <- gcheckbox("Connect points by lines", checked = FALSE)
-           ##      if (!is.null(map.vars$join)) svalue(joinPts) <- map.vars$join
-           ##      
-           ##      joinCols <- c("red", "black", "blue", "green4",
-           ##                    "yellow", "pink", "grey", "orange")
-           ##      joinCol <- gcombobox(joinCols)
-           ##      if (!is.null(map.vars$col.line))
-           ##          if (map.vars$col.line %in% joinCols)
-           ##              svalue(joinCol) <- which(joinCols == map.vars$col.line)
-           ##      enabled(joinCol) <- svalue(colVarList, TRUE) == 1
-           ##      tbl[ii, 1:3, expand = TRUE, anchor = c(-1, 0)] <- joinPts
-           ##      tbl[ii, 4:6, expand = TRUE] <- joinCol
-           ##      addHandlerChanged(joinPts, function(h, ...) updateEverything())
-           ##      addHandlerChanged(joinCol, function(h, ...) updateEverything())
-           ##  }
+                ## Connect by lines
+                joinPts <- gcheckbox("Connect points by lines", checked = FALSE)
+                if (!is.null(map.vars$join)) svalue(joinPts) <- map.vars$join
+                
+                joinCols <- c("red", "black", "blue", "green4",
+                              "yellow", "pink", "grey", "orange")
+                joinCol <- gcombobox(joinCols)
+                if (!is.null(map.vars$col.line))
+                    if (map.vars$col.line %in% joinCols)
+                        svalue(joinCol) <- which(joinCols == map.vars$col.line)
+                enabled(joinCol) <- svalue(colVarList, TRUE) == 1
+                tbl[ii, 1:3, expand = TRUE, anchor = c(-1, 0)] <- joinPts
+                tbl[ii, 4:6, expand = TRUE] <- joinCol
+                addHandlerChanged(joinPts, function(h, ...) updateEverything())
+                addHandlerChanged(joinCol, function(h, ...) updateEverything())
+            }
 
 
             ## Labels
-            ## if (map.type == "shape") {
-            ##     ii <- ii + 1
-            ##     
-            ##     lbl <- glabel("Plot labels :")
-            ##     mapLbls <- gcombobox(c("None", paste(map.vars$location.var, "name"), "Value", "Both"))
-            ##     tbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            ##     tbl[ii, 2, expand = TRUE] <- mapLbls
-            ##     ii <- ii + 1
-            ##     
-            ##     addHandlerChanged(mapLbls, function(h, ...) updateEverything())                                  
-            ## }
+            if (map.type == "shape") {
+                ii <- ii + 1
+                
+                lbl <- glabel("Plot labels :")
+                mapLbls <- gcombobox(c("None", paste(map.vars$location.var, "name"), "Value", "Both"))
+                tbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl[ii, 2, expand = TRUE] <- mapLbls
+                ii <- ii + 1
+                
+                addHandlerChanged(mapLbls, function(h, ...) updateEverything())                                  
+            }
+
+
+
 
             ## Maintain a single function that is called whenever anything is updated:
             updateEverything <- function() {
-              print(map.type)
                 if (map.type == "shape") {
-                    # map.vars$y <<- svalue(colVarList)
-                    # map.vars$opacity <<- svalue(opctyVarList)
-                    # map.vars$colconst <<- svalue(symbolColList)
-
-                    map.vars$constFill <<- svalue(combobox.constFill)
-                    map.vars$constColour <<- svalue(combobox.constColour)
-                    map.vars$constAlpha <<- svalue(slider.constAlpha)
-
-                    #map.vars$varFill <<- svalue(combobox.varFill)
-                    map.vars$varFill <<- ifelse(svalue(V1box, index = TRUE) > 1, svalue(V1box), "")
-                    ## map.vars$varAlpha <<- svalue(combobox.varAlpha)
+                    map.vars$y <<- svalue(yVarList)
+                    map.vars$col <<- svalue(symbolColList)
+                    map.vars$na.fill <<- svalue(naFillCol)
+                    map.vars$map.labels <<- svalue(mapLbls, index = TRUE)
                 } else {
-                    map.vars$constColour <<- svalue(combobox.constColour)
-                    # map.vars$varColour <<- svalue(combobox.varColour)
-                    map.vars$varColour <<- ifelse(svalue(V1box, index = TRUE) > 1, svalue(V1box), "")
-                    map.vars$varSize <<- ifelse(svalue(V2box, index = TRUE) > 1, svalue(V2box), "")
-                    # map.vars$varSize <<- svalue(combobox.varSize)
-  ##                  if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
-  ##                  if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
-  ##                  # if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
-  ##                  if (svalue(symbolColList, TRUE) > 1) map.vars$colconst <<- svalue(symbolColList) else map.vars$colconst <<- NULL
-                    # map.vars$col.pt <<- svalue(symbolColList)
-                    # map.vars$cex.pt <<- svalue(cexSlider)
-                    # map.vars$alpha <<- 1 - svalue(transpSlider) / 100
-                    # map.vars$join <<- svalue(joinPts)
-                    # map.vars$col.line <<- svalue(joinCol)
-                    # map.type <<- svalue(typeList)
+                    if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
+                    if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
+                    if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
+                    
+                    map.vars$col.pt <<- svalue(symbolColList)
+                    map.vars$cex.pt <<- svalue(cexSlider)
+                    map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    map.vars$join <<- svalue(joinPts)
+                    map.vars$col.line <<- svalue(joinCol)
+                    
+                    map.type <<- svalue(typeList)
                 }
-              print("Projection")
-              print(svalue(combobox.proj, index = TRUE))
-              print("-----")
-                map.vars$plot.title <<- svalue(addPlotTitle)
-                if(is.na(svalue(combobox.proj, index = TRUE))) {
-                  map.vars$crs <<- as.numeric(svalue(combobox.proj))
-                } else if (svalue(combobox.proj, index = TRUE) > 1) {
-                  map.vars$crs <<- as.numeric(proj.df[svalue(combobox.proj, index = TRUE), "epsg"])
-                } else {
-                 map.vars$crs <<- 4326
-                }
-
-                print(map.vars)
+                
                 updatePlot()
             }
 
             ## in this case, no point in having a separate "show" button
-            ## if (map.type == "shape") {
-            ##     addHandlerChanged(combobox.varFill, handler = function(h, ...)  {
-            ##         if(!is.null(map.vars$constFill)) {
-            ##             svalue(combobox.constFill, index = TRUE) <- 1
-            ##         }
-            ##         updateEverything()
-            ##         })
-            ##     # addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
-            ##     # addHandlerChanged(combobox.varAlpha, handler = function(h, ...) updateEverything())
-            ## } else {
-            ##     addHandlerChanged(combobox.varColour, handler = function(h, ...)  {
-            ##         if(!is.null(map.vars$constColour)) {
-            ##             svalue(combobox.constColour, index = TRUE) <- 1
-            ##         }
-            ##         updateEverything()
-            ##     })
-            ##     addHandlerChanged(combobox.varSize, handler = function(h, ...) updateEverything())
-            ##     # addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
-            ## }
+            if (map.type == "shape") {
+                addHandlerChanged(yVarList, handler = function(h, ...) if (svalue(h$obj, TRUE) > 1) updateEverything())
+                addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
+            } else {
+                addHandlerChanged(colVarList, handler = function(h, ...) {
+                                      enabled(joinCol) <- svalue(colVarList, TRUE) == 1
+                                      updateEverything()
+                                  })
+                addHandlerChanged(rszVarList, handler = function(h, ...) updateEverything())
+                addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
+                addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
+            }
 
-            ##addHandlerChanged(combobox.constColour,
-            ##                  handler = function(h, ...) {
-            ##                      if(map.vars$varColour != "" && svalue(combobox.constColour, index = TRUE) > 1) {
-            ##                          gmessage("Colours already specified by variable")
-            ##                          svalue(combobox.constColour, index = TRUE) <- 1
-            ##                      } else {
-            ##                          updateEverything()
-            ##                      }
-            ##                  })
-            
-            ##if (map.type != "shape") {
-                # cextimer <- NULL
-                # addHandlerChanged(cexSlider,
-                #                   handler = function(h, ...) {
-                #                       if (!is.null(cextimer))
-                #                           cextimer$stop_timer()
-                #                       cextimer <- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
-                #                   })
-                # 
-                # transptimer <- NULL
-                # addHandlerChanged(transpSlider,
-                #                   handler = function(h, ...) {
-                #                       if (!is.null(transptimer))
-                #                           transptimer$stop_timer()
-                #                       transptimer <- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
-                #                   })
-            # }
+            pcoltimer <- NULL
+            addHandlerChanged(symbolColList,
+                              handler = function(h, ...) {
+                                  if (!is.null(pcoltimer))
+                                      pcoltimer$stop_timer()
+                                  pcoltimer <- gtimer(200, function(...) {
+                                                          if (nchar(svalue(symbolColList)) >= 3)
+                                                              updateEverything()
+                                                      }, one.shot = TRUE)
+                              })
+
+            if (map.type != "shape") {
+                cextimer <- NULL
+                addHandlerChanged(cexSlider,
+                                  handler = function(h, ...) {
+                                      if (!is.null(cextimer))
+                                          cextimer$stop_timer()
+                                      cextimer <- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                                  })
+                
+                transptimer <- NULL
+                addHandlerChanged(transpSlider,
+                                  handler = function(h, ...) {
+                                      if (!is.null(transptimer))
+                                          transptimer$stop_timer()
+                                      transptimer <- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                                  })
+            }
 
 
             add(mainGrp, tbl)
             
-            title.tbl <- glayout()
-            
-            addPlotLabel <- glabel("Plot Title")
-            title.tbl[1, 1:2, anchor = c(1, 0), expand = TRUE] <- addPlotLabel
-            addPlotTitle <- gedit("")
-            title.tbl[1, 4:5, expand = TRUE] <- addPlotTitle
-            addPlotTitleBtn <- gbutton("Add Title")
-            title.tbl[1, 6] <- addPlotTitleBtn
-            
-            addHandlerClicked(addPlotTitleBtn, handler = function(h, ...) {
-                updateEverything()
-            })
-            
-            add(mainGrp, title.tbl)
-            
-            addCentresBtn <- gbutton("Region Centres")
-            addHandlerClicked(addCentresBtn, handler = function(h, ...) {
-                                        # Find centres
-              map.object <<- regionPoints.iNZightMapPlot(map.object)
-              map.type <<- "point"
-              print(map.object)
-
-              
-              updateEverything()
-            })
-            add(mainGrp, addCentresBtn)
-
-            tbl.proj <- glayout()
-            proj.df <- data.frame(name = c("", "WGS84", "NAD83", "NAD27", "UTM (Zone 10)", "WGS84 Web Mercator", "World Robinson", "World Mollweide", "US National Atlas Equal Area"),
-                                  epsg = c("", 4326, 4269, 4267, 32610, 3857, 54030, 54009, 2163),
-                                  stringsAsFactors = FALSE)
-            lbl.proj <- glabel("Map Projection (EPSG):")
-            combobox.proj <- gcombobox(proj.df$name, editable = TRUE)
-            btn.proj <- gbutton("Project")
-            tbl.proj[1, 1:2, expand = TRUE] <- lbl.proj
-            tbl.proj[1, 3:5, expand = TRUE] <- combobox.proj
-            tbl.proj[1, 6] <- btn.proj
-            add(mainGrp, tbl.proj)
-
-            addHandlerClicked(btn.proj, handler = function(h, ...) updateEverything())
-
-            ## Palette Chooser
-            palette.vect <- c("Set2" = "Contrast", "Set1" = "Bright", "Set3" = "Light")
-           combobox.palette <- gcombobox(palette.vect, cont = mainGrp)
-
-            addHandlerChanged(combobox.palette, handler = function(h, ...) {
-              palette.name <- names(palette.vect)[svalue(combobox.palette, index = TRUE)]
-
-              if(map.type == "shape") {
-                if(is.numeric(activeData[,map.vars$varFill])) {
-                  new.palette <- ggplot2::scale_fill_distiller(palette = palette.name)
-                } else {
-                  new.palette <- ggplot2::scale_fill_brewer(palette = palette.name)
-                }
-              map.object <<- addLayer.iNZightMapPlot(map.object,
-                                                     "map",
-                                                     "fill.palette",
-                                                     new.palette)
-              } else if (map.type == "point") {
-                if(is.numeric(activeData[,map.vars$varColour])) {
-                  new.palette <- ggplot2::scale_colour_distiller(palette = palette.name)
-                  new.palette2 <- ggplot2::scale_fill_distiller(palette = palette.name)
-                } else {
-                  new.palette <- ggplot2::scale_colour_brewer(palette = palette.name)
-                  new.palette2 <- ggplot2::scale_fill_brewer(palette = palette.name)
-                }
-              map.object <<- addLayer.iNZightMapPlot(map.object,
-                                                     "map",
-                                                     "colour.palette",
-                                                     new.palette)
-              map.object <<- addLayer.iNZightMapPlot(map.object,
-                                                     "map",
-                                                     "fill.palette",
-                                                     new.palette2)
-              }
-              # summary(map.object)
-              # print(names(palette.vect)[svalue(combobox.palette, index = TRUE)])
-              updateEverything()
-            })
-
-            ## timer.proj <- NULL
-            ## addHandlerChanged(combobox.proj, handler = function(h, ...) {
-            ##   if(!is.null(timer.proj)) timer.proj$stop_timer()
-            ##   timer.proj <- gtimer(1500, one.shot = TRUE, FUN = function(...) updateEverything())
-            ## })
-
             addSpring(mainGrp)
-
-            ########################################################
-
-            varWidget <- gtable(colnames(activeData), expand = TRUE)
-            add(mainGrp, varWidget, expand = TRUE)
-            addDropSource(varWidget, handler = function(h, ...) {
-                    svalue(h$obj)
-            })
-
-            V1box <- gcombobox(c("Select/Drag-drop Variable 1", colnames(activeData)))
-            add(mainGrp, V1box, expand = TRUE)
-
-            addDropTarget(
-                V1box,
-                handler = function(h, ...) {
-                    svalue(h$obj) <- h$dropdata
-                })
-
-            addHandlerChanged(
-                V1box,
-                handler = function(h, ...) {
-                   updateEverything()
-                })
-
-            V2box <- gcombobox(c("Select/Drag-drop Variable 2", colnames(activeData)))
-            add(mainGrp, V2box, expand = TRUE)
-
-            addDropTarget(
-                V2box,
-                handler = function(h, ...) {
-                    svalue(h$obj) <- h$dropdata
-                })
-
-            addHandlerChanged(
-                V2box,
-                handler = function(h, ...) {
-                   updateEverything()
-                })
-
-            ################################################################
-
             ## --------------------------------------------------  SLIDERS
             grpTbl <<- glayout(expand = FALSE, cont = mainGrp)
             G1box <- gcombobox(c("Select Subset Variable 1", colnames(activeData)))
@@ -962,15 +590,21 @@ iNZightMapMod <- setRefClass(
                         if (svalue(G1box, index = TRUE) > 1) {
                             val <- svalue(G1box)
                             ds <- if (map.type == "shape") map.object$data else activeData
-                            map.object <<- addFacet(map.object, val)
-                            updatePlot() ############### CHECK FUNCTION
-                            
                             createSlider(pos = 2, val)
-                            
+                            changePlotSettings(list(
+                                g1 = iNZightPlots:::convert.to.factor(
+                                    ds[val][[1]]
+                                    ),
+                                g1.level = "_MULTI",
+                                varnames = list(
+                                    g1 = val)
+                                ))
                         } else {
-                            map.type.temp <- if(map.type == "shape") "map" else "point"
-                            map.object <<- removeLayer.iNZightMapPlot(map.object, map.type.temp, "facet")
-                            updatePlot()
+                            changePlotSettings(list(g1 = NULL,
+                                                    g1.level = NULL,
+                                                    varnames = list(
+                                                        g1 = NULL)
+                                                    ), reset = TRUE)
                         }
                     }
                 })
@@ -1065,7 +699,7 @@ iNZightMapMod <- setRefClass(
             ## build the level names that are used for the slider
             ds <- if (map.type == "shape") map.object$data else activeData
             grpData <- ds[dropdata][[1]]
-            # grpData <- iNZightPlots:::convert.to.factor(grpData)
+            grpData <- iNZightPlots:::convert.to.factor(grpData)
             if (pos == 2)
                 lev <- c("_MULTI", levels(grpData))
             else
@@ -1080,9 +714,16 @@ iNZightMapMod <- setRefClass(
                 grp = "g2"
             ## update the plot settings whenever the slider changes
             addHandlerChanged(slider, handler = function(h, ...) {
-                map.vars$facet.var <<- as.character(svalue(h$obj))
-                print(map.vars$facet.var)
-                updatePlot()
+                                  lbl <- paste(grp, "level", sep = ".")
+                                  changePlotSettings(
+                                      structure(list(
+                                          as.character(svalue(h$obj)),
+                                          structure(list(as.character(svalue(h$obj))),
+                                                    .Names = lbl
+                                                    )),
+                                                .Names = c(lbl, "varnames")
+                                                )
+                                      )
                           })
             lbl <- levels(grpData)
             ## if the level names are too long, replace them with nr
@@ -1097,7 +738,29 @@ iNZightMapMod <- setRefClass(
             if (sum(nchar(lbl)) + 3 * length(lbl) < 50)
                 add(sliderGrp, glabel(paste(lbl, collapse = "   ")))
 
+            ## Play button
+            ## playBtn <- gbutton("Play", expand = FALSE,
+            ##                 handler = function(h, ...) {
+            ##                     oldSet <- GUI$getActiveDoc()$getSettings()
+            ##                     for (i in 1:length(levels(grpData))) {
+            ##                         changePlotSettings(
+            ##                             structure(list(i),
+            ##                                       .Names = paste(
+            ##                                           grp,
+            ##                                           "level",
+            ##                                           sep = ".")
+            ##                                       )
+            ##                             )
+            ##                       # This effectively freezes the R session,
+            ##                       # and therefore iNZight --- so increase with
+            ##                       # discression!!!!!
+            ##                         Sys.sleep(0.6)
+            ##                     }
+            ##                     changePlotSettings(oldSet)
+            ##                 })
             add(hzGrp, sliderGrp, expand = TRUE)
+
+            ## tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
 
         },
         deleteSlider = function(pos) {
@@ -1119,210 +782,80 @@ iNZightMapMod <- setRefClass(
             map.vars <<- modifyList(map.vars, set$varnames)
 
             set$varnames <- NULL
-            # if (reset)
-            #     extra.args <<- set
-            # else
-            #     extra.args <<- iNZight:::modifyList(extra.args, set, keep.null = TRUE)
+            if (reset)
+                extra.args <<- set
+            else
+                extra.args <<- iNZight:::modifyList(extra.args, set, keep.null = TRUE)
 
             updatePlot()
         },
         ## update plot function
         updatePlot = function() {
-          args <- list(x = map.object, varnames = list())
-          map.object$crs <<- map.vars$crs
-          
-          if (map.type == "shape") {
-            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object, 
-                                                                   layer.set = "map", 
-                                                                   layer.name = "baselayer", 
-                                                                   aes.name = "fill", 
-                                                                   aes.var = map.vars$varFill)
-            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
-                                                                   layer.set = "map",
-                                                                   layer.name = "baselayer",
-                                                                   aes.name = "alpha",
-                                                                   aes.var = map.vars$varAlpha)
+            args <- list(x = map.object, varnames = list())
+            if (map.type == "shape") {
+                if (!is.null(map.vars$y)) {
+                    args$variable <- eval(parse(text = paste("~", map.vars$y)))
+                    args$varnames$x = map.vars$y
+                    args$varnames$y = map.vars$location.var
+                } else return(invisible(NULL))
 
-            map.object <<- iNZightMaps2::setConstant.iNZightMapPlot(map.object,
-                                                                    layer.set = "map",
-                                                                    layer.name = "baselayer",
-                                                                    aes.name = "fill",
-                                                                    aes.val = map.vars$constFill)
-            map.object <<- iNZightMaps2::setConstant.iNZightMapPlot(map.object,
-                                                                    layer.set = "map",
-                                                                    layer.name = "baselayer",
-                                                                    aes.name = "colour",
-                                                                    aes.val = map.vars$constColour)
-            map.object <<- iNZightMaps2::setConstant.iNZightMapPlot(map.object,
-                                                                    layer.set = "map",
-                                                                    layer.name = "baselayer",
-                                                                    aes.name = "alpha",
-                                                                    aes.val = map.vars$constAlpha)
-          } else {
-           # Point plotting updates 
-            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
-                                                                   layer.set = "point",
-                                                                   layer.name = "baselayer",
-                                                                   aes.name = "colour",
-                                                                   aes.var = map.vars$varColour)
+                switch(map.vars$col,
+                       "heat" = ,
+                       "terrain" = {
+                           args$col.fun <- map.vars$col
+                       },
+                       {
+                           args$col.fun <- NULL
+                           args$col <- map.vars$col
+                       })
+                
+                args$na.fill <- map.vars$na.fill
+
+                args$name <- switch(map.vars$map.labels,
+                                    "", "r", "v", "b")
+
+            } else {
+                if (!is.null(map.vars$colby)) {
+                    args$colby <- activeData[[map.vars$colby]]
+                    args$varnames$colby = map.vars$colby
+                }
+                if (!is.null(map.vars$sizeby)) {
+                    args$sizeby <- activeData[[map.vars$sizeby]]
+                    args$varnames$sizeby = map.vars$sizeby
+                }
+                if (!is.null(map.vars$opacity)) {
+                    args$opacity <- map.vars$opacity
+                    args$varnames$opacity = map.vars$opacity
+                }
+
+                args$col.pt <- map.vars$col.pt
+                args$cex.pt <- map.vars$cex.pt
+                args$alpha <- map.vars$alpha
+                args$join <- map.vars$join
+                args$col.line <- map.vars$col.line
+                
+                args$type <- map.type
+            }
+
             
-            # Add a fill aesthetic too - this makes the legend more informative
-            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
-                                                                   layer.set = "point",
-                                                                   layer.name = "baselayer",
-                                                                   aes.name = "fill",
-                                                                   aes.var = map.vars$varColour)
-            
-            map.object <<- iNZightMaps2::setMapping.iNZightMapPlot(map.object,
-                                                                   layer.set = "point",
-                                                                   layer.name = "baselayer",
-                                                                   aes.name = "size",
-                                                                   aes.var = map.vars$varSize)
-            
-            map.object <<- iNZightMaps2::setConstant.iNZightMapPlot(map.object,
-                                                                    layer.set = "point",
-                                                                    layer.name = "baselayer",
-                                                                    aes.name = "colour",
-                                                                    aes.val = map.vars$constColour)
-            
-          }
-          
-          if(!is.null(map.vars$plot.title)) {
-              map.object <<- iNZightMaps2::addLayer.iNZightMapPlot(map.object,
-                                                                   layer.set = "map",
-                                                                   layer.name = "title",
-                                                                   ggplot2::ggtitle(map.vars$plot.title)
-              )
-          }
-          
-          dev.hold()
-          if(is.null(map.vars$facet.var)) {
-              pl <- plot(map.object)
-          } else {
-              pl <- plot(map.object, facet = map.vars$facet.var)
-          }
-          dev.flush()
-          
-          return(invisible(pl))
-        },
-        matchingDialog = function(shapefile, sender) {
-          map.obj <- sf::st_read(shapefile)
-          
-          w.match <- gwindow("Match Variables", width = 700, height = 500, visible = FALSE, parent = sender)
-          gv.match <- gvbox(cont = w.match, expand = TRUE, fill = TRUE)
-          gv.match$set_borderwidth(15)
-          
-          map.obj.vars <- as.data.frame(map.obj)[, !(colnames(map.obj) %in% "geometry")]
-          
-          mapvarBox <- gcombobox(items = colnames(map.obj.vars))
-          datavarBox <- gcombobox(items = colnames(activeData))
+            if (!is.null(map.vars$g1)) {
+                args$varnames$g1 = map.vars$g1
+                if (!is.null(map.vars$g1.level))
+                    args$varnames$g1.level <- map.vars$g1.level
+            }
+            if (!is.null(map.vars$g2)) {
+                args$varnames$g2 = map.vars$g2
+                if (!is.null(map.vars$g2.level))
+                    args$varnames$g2.level <- map.vars$g2.level
+            }            
 
-          iscountryDataCheck <- gcheckbox(text = "Convert to ISO Code")
-          iscountryMapCheck <- gcheckbox(text = "Convert to ISO Code")
-          
-          tblmap <- glayout()
-          tblmap[1, 1] <- glabel("Map Variable: ")
-          tblmap[1, 2, expand = TRUE] <- mapvarBox
-          tblmap[1, 3] <- iscountryMapCheck
-          
-          tbldata <- glayout()
-          tbldata[1, 1] <- glabel("Data Variable: ")
-          tbldata[1, 2, expand = TRUE] <- datavarBox
-          tbldata[1, 3] <- iscountryDataCheck
-          
-          add(gv.match, tbldata)
-          add(gv.match, tblmap)
-          
-          generateMatchDf <- function(mapvar, datavar) {
-            mapvar.unq <- unique(as.character(unlist(map.obj.vars[, mapvar])))
-            datavar.unq <- unique(as.character(unlist(activeData[, datavar])))
+            if (!is.null(extra.args))
+                args <- c(args, extra.args)
 
-            datamatch <- if(svalue(iscountryDataCheck)) {
-                           countrycode::countrycode(datavar.unq, origin = "country.name", destination = "iso3c")
-                           } else  { datavar.unq }
+            pl <- do.call(plot, args)
 
-            mapmatch <- if(svalue(iscountryDataCheck)) {
-                           countrycode::countrycode(mapvar.unq, origin = "country.name", destination = "iso3c")
-                           } else  { mapvar.unq }
-
-            mapvar.unq.tbl <- data.frame(mapname = mapvar.unq,
-                                         matchvar = mapmatch,
-                                         stringsAsFactors = FALSE)
-
-            datavar.unq.tbl <- data.frame(dataname = datavar.unq,
-                                          matchvar = datamatch,
-                                          stringsAsFactors = FALSE)
-
-            join.df <- dplyr::full_join(datavar.unq.tbl, mapvar.unq.tbl, by = "matchvar")
-            nonmatches.df <- dplyr::filter(join.df, !is.na(dataname), is.na(mapname))
-            matches.df <- dplyr::filter(join.df, !is.na(dataname), !is.na(mapname))
-            list(nonmatches = nonmatches.df, matches = matches.df)
-          }
-          
-          addHandlerChanged(mapvarBox, handler = function(h, ...) {
-            visible(datavarBox) <- FALSE
-            visible(mapvarBox) <- FALSE
-            mapvar <- svalue(mapvarBox)
-            datavar <- svalue(datavarBox)
-            match.list <- generateMatchDf(mapvar, datavar)
-            match.tbl[] <- match.list$nonmatches
-            matches.tbl[] <- match.list$matches
-            visible(datavarBox) <- TRUE
-            visible(mapvarBox) <- TRUE
-          })
-
-          addHandlerChanged(datavarBox, handler = function(h, ...) {
-            visible(datavarBox) <- FALSE
-            visible(mapvarBox) <- FALSE
-            mapvar <- svalue(mapvarBox)
-            datavar <- svalue(datavarBox)
-            match.list <- generateMatchDf(mapvar, datavar)
-            match.tbl[] <- match.list$nonmatches
-            matches.tbl[] <- match.list$matches
-            visible(datavarBox) <- TRUE
-            visible(mapvarBox) <- TRUE
-          })
-
-          mapvar <- svalue(mapvarBox)
-          datavar <- svalue(datavarBox)
-          match.list <- generateMatchDf(mapvar, datavar)
-
-          unmatched.lbl <- glabel("Unmatched Data Rows")
-          add(gv.match, unmatched.lbl)
-          match.tbl <- gdf(match.list$nonmatches)
-          add(gv.match, match.tbl, expand = TRUE, fill = TRUE)
-
-          matched.lbl <- glabel("Matched Data Rows")
-          add(gv.match, matched.lbl)
-          matches.eg <- gexpandgroup(cont = gv.match, expand = TRUE)
-          matches.tbl <- gdf(match.list$matches, cont = matches.eg, expand = TRUE)
-          
-          match.btnGrp <- ggroup(cont = gv.match)
-          
-          ## addSpring(match.btnGrp)
-          
-          match.confirm.btn <- gbutton("OK", handler = function(h, ...) {
-            setVars(list(location.var = svalue(datavarBox),
-                         map.var = svalue(mapvarBox),
-                         shapefile = shapefile),
-                    type = "shape")
-            
-            initiateModule(shape = TRUE)
-            dispose(w.match)
-            dispose(sender)
-          })
-          
-          match.cancel.btn <- gbutton("Back", handler = function(h, ...) {
-              dispose(w.match)
-          })
-          
-          add(match.btnGrp, match.confirm.btn)
-          add(match.btnGrp, match.cancel.btn)
-          
-          visible(w.match) <- TRUE
+            return(invisible(pl))
         }
-  
-      )
-
+    )
 
 )
