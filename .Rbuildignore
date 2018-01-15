@@ -1,2 +1,4 @@
 ^Makefile$
 ^.*\.md$
+^.*\.Rproj$
+^\.Rproj\.user$
