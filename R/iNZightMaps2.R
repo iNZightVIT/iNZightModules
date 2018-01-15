@@ -6,7 +6,7 @@ iNZightMap2Mod <- setRefClass(
         mainGrp = "ANY",
 
         activeData = "data.frame",
-        mapData = "sf",
+        mapData = "ANY",
         combinedData = "ANY",
         staleMap = "logical",
         has.multipleobs = "logical",
@@ -41,14 +41,30 @@ iNZightMap2Mod <- setRefClass(
             initFields(GUI = GUI)
 
             ## TODO: Check package name, details, etc.
-            if (!requireNamespace("iNZightMaps2", quietly = TRUE)) {
+            if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
                 resp <- gconfirm("The Maps package isn't installed. Do you want to install it now?",
                                  title = "Install Maps package", icon = "question", parent = GUI$win)
 
                 if (resp) {
-                    utils::install.packages("iNZightMaps2", repos = c("http://cran.stat.auckland.ac.nz",
+                    utils::install.packages("iNZightMaps", repos = c("http://cran.stat.auckland.ac.nz",
                                                                "http://r.docker.stat.auckland.ac.nz/R"))
-                    if (!requireNamespace("iNZightMaps2", quietly = TRUE)) {
+                    if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
+                        gmessage("Unable to install package. Please check the website.")
+                        return(NULL)
+                    }
+                } else {
+                    return(NULL)
+                }
+            }
+
+            if (packageVersion("iNZightMaps") < "2.0-0") {
+                resp <- gconfirm("A later version of the Maps package is required. Do you want to install it now?",
+                                 title = "Install Maps package", icon = "question", parent = GUI$win)
+
+                if (resp) {
+                    utils::install.packages("iNZightMaps", repos = c("http://cran.stat.auckland.ac.nz",
+                                                               "http://r.docker.stat.auckland.ac.nz/R"))
+                    if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
                         gmessage("Unable to install package. Please check the website.")
                         return(NULL)
                     }
@@ -367,7 +383,7 @@ iNZightMap2Mod <- setRefClass(
 
                 plot(c(0, 1), c(0, 1), ann = FALSE, bty = "n", type = "n", xaxt = "n", yaxt = "n")
                 text(0.5, 0.5, "Preview unavailable for imported shapefiles")
-                ## plot(iNZightMaps2::retrieveMap(svalue(mapSourceBrowse))$geometry)
+                ## plot(iNZightMaps::retrieveMap(svalue(mapSourceBrowse))$geometry)
             })
 
 ### If user changes the map file, hide the variable merging section
@@ -411,7 +427,7 @@ iNZightMap2Mod <- setRefClass(
                     map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
 
                     dev.hold()
-                    plot(iNZightMaps2::retrieveMap(map.filename)$geometry,
+                    plot(iNZightMaps::retrieveMap(map.filename)$geometry,
                          col = "#FFFFFF")
                     dev.flush()
                 }
@@ -456,7 +472,7 @@ iNZightMap2Mod <- setRefClass(
                 text(0.5, 0.5, "Please wait... Map is being imported")
 
                 ## Import the map - either a shapefile or rds
-                mapData <<- iNZightMaps2::retrieveMap(map.filename)
+                mapData <<- iNZightMaps::retrieveMap(map.filename)
                 map.vars <- as.data.frame(mapData)[, !(colnames(mapData) %in% "geometry"), drop = FALSE]
 
                 ## Only take variables in the shapefile that are unique to one
@@ -465,7 +481,7 @@ iNZightMap2Mod <- setRefClass(
                 staleMap <<- FALSE
 
                 ## Find the pair of variables with the highest number of matches
-                best.vars <- iNZightMaps2::findBestMatch(activeData, map.vars)
+                best.vars <- iNZightMaps::findBestMatch(activeData, map.vars)
                 best.data.var <- best.vars[1]
                 best.map.var <-  best.vars[2]
 
@@ -498,7 +514,7 @@ iNZightMap2Mod <- setRefClass(
                 data.var <- svalue(combobox.datavars)
                 map.var <- svalue(combobox.mapvars)
 
-                match.list <- iNZightMaps2::matchVariables(activeData[, data.var],
+                match.list <- iNZightMaps::matchVariables(activeData[, data.var],
                                                           as.data.frame(mapData)[, map.var])
 
                 table.nonmatched[] <- match.list$data.vect
@@ -629,7 +645,7 @@ iNZightMap2Mod <- setRefClass(
                 }
 
                 ## TODO: Simplification
-                combinedData <<- iNZightMaps2::iNZightMapPlot(data = activeData,
+                combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
                                                              map = mapData,
                                                              type = "region",
                                                              by.data = data.var,
