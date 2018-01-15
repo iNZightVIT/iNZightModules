@@ -1,3 +1,14 @@
+##' iNZight Mapping Module 2
+##'
+##' Opens a UI for visualising geographical data
+##'
+##' @title iNZight Maps Module 2
+##'
+##' @author Daniel Barnett
+##'
+##' @export iNZightMap2Mod
+##' @exportClass iNZightMap2Mod
+
 iNZightMap2Mod <- setRefClass(
     "iNZightMap2Mod",
 
@@ -237,6 +248,7 @@ iNZightMap2Mod <- setRefClass(
             }
 
             decodeMapDir2 <- function(mapdir.mat) {
+                country.isos <- iNZightMaps::iNZightMapCountryISO()
                 ## country.isos <- read.csv("h:/Documents/iNZightVIT/shapefiles/iso.csv",
                                            ## stringsAsFactors = FALSE)
 
@@ -778,6 +790,7 @@ iNZightMap2Mod <- setRefClass(
             tbl.mapoptions[1, 4] <- btn.changemap
 
 #####
+            proj.df <- iNZightMaps::iNZightMapProjections()
             ## proj.df <- read.csv("H:/echome/inzightwork/package/iNZightMaps/projections.csv",
                                 ## stringsAsFactors = FALSE)
 
@@ -932,7 +945,7 @@ iNZightMap2Mod <- setRefClass(
 
             tbl.main <- glayout()
 
-            var.vect <- iNZightMapVars(combinedData)
+            var.vect <- iNZightMaps::iNZightMapVars(combinedData)
             table.vars <- gtable(sort(var.vect), multiple = TRUE)
             table.vars$widget$`headers-visible` <- FALSE
 
@@ -946,7 +959,7 @@ iNZightMap2Mod <- setRefClass(
 
 
             lbl.sizeselect <- glabel("Size by:")
-            numericvar.vect <- c("", sort(iNZightMapVars(combinedData, TRUE)[combinedData$var.types %in% c("numeric", "integer")]))
+            numericvar.vect <- c("", sort(iNZightMaps::iNZightMapVars(combinedData, TRUE)[combinedData$var.types %in% c("numeric", "integer")]))
             combobox.sizeselect <- gcombobox(numericvar.vect)
 
             if (!is.null(mapSizeVar)) {
