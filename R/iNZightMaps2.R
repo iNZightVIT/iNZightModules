@@ -259,6 +259,26 @@ iNZightMap2Mod <- setRefClass(
                 metadata
             }
 
+            download.shapefiles <- function(dirURL, currPath) {
+                message("Searching... ", dirURL)
+                curr.links <- XML::getHTMLLinks(RCurl::getURL(dirURL, dirlistonly = TRUE))
+                curr.dirs <- curr.links[grep("/$", curr.links)]
+                curr.files <- curr.links[grep("\\.(rds|shp)", curr.links)]
+                if (!dir.exists(currPath) && !dir.create(currPath))
+                    stop("Failed to create directory")
+                for (filename in curr.files) {
+                    if (!file.exists(file.path(currPath, filename))) {
+                        download.file(paste0(dirURL, filename),
+                                      file.path(currPath, filename))
+                    }
+                }
+
+                for (dir in curr.dirs[-1]) {
+                    download.shapefiles(paste0(dirURL, dir),
+                                        file.path(currPath, dir))
+                }
+            }
+
 ### Change filesystem directory names to more readable names (i.e. nzl
 ### to New Zealand)
 ### --- UNFINISHED ---
@@ -352,6 +372,21 @@ iNZightMap2Mod <- setRefClass(
             stored.shapefiles <- list.files(shapefileDir,
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
+
+            if (length(stored.shapefiles) == 0) {
+                shapefileDL <- gconfirm("Download shapefiles?")
+
+                if (shapefileDL) {
+                    tryCatch(download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
+                                                 shapefileDir),
+                             error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
+                             )
+                    stored.shapefiles <- list.files(shapefileDir,
+                                                    recursive = TRUE,
+                                                    pattern = ".(shp|rds)$")
+
+                }
+            }
 
             metadata <- read.mapmetadata()
 
