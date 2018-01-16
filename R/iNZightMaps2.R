@@ -21,7 +21,6 @@ iNZightMap2Mod <- setRefClass(
         combinedData = "ANY",
         staleMap = "logical",
         has.multipleobs = "logical",
-        ## mapFilename = "character",
         mapSequenceVar = "ANY",
 
         mapName = "character",
@@ -44,7 +43,8 @@ iNZightMap2Mod <- setRefClass(
 
         multipleObsOption = "ANY",
 
-        codeHistory = "ANY"
+        codeHistory = "ANY",
+        iNZightDir = "ANY"
     ),
 
     methods = list(
@@ -107,6 +107,31 @@ iNZightMap2Mod <- setRefClass(
             timer <<- NULL
 
             multipleObsOption <<- NULL
+            OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
+            iNZightDir <<- switch(OS,
+                       "windows" = {
+                           if (file.exists(file.path("~", "iNZightVIT"))) {
+                               path <- file.path("~", "iNZightVIT")
+                           } else {
+                               path <- file.path("~")
+                           }
+
+                           path
+                       },
+                       "mac" = {
+                           if (file.exists(file.path("~", "Documents", "iNZightVIT"))) {
+                               path <- file.path("~", "Documents", "iNZightVIT")
+                           } else {
+                               path <- file.path("~")
+                           }
+
+                           path
+                       },
+                       "linux" = {
+                           path <- file.path("~")
+
+                           path
+                       })
 
             mapTypeDialog()
         },
@@ -208,9 +233,11 @@ iNZightMap2Mod <- setRefClass(
                                         # Map Source Box
             ## Function definitions
 
+
 ### Read descriptions from ~/iNZightVIT/shapefiles/metadata
+            print(file.path(iNZightDir, "shapefiles", "metadata"))
             read.mapmetadata <- function() {
-                metadata <- scan("h:/Documents/iNZightVIT/shapefiles/metadata",
+                metadata <- scan(file.path(iNZightDir, "shapefiles", "metadata"),
                                  what = rep("character", 3), fill = TRUE,
                                  comment.char = ";", sep = "\t",
                                  fileEncoding = "UTF-8")
@@ -309,7 +336,7 @@ iNZightMap2Mod <- setRefClass(
             }
 
             ## Variable definitions
-            stored.shapefiles <- list.files("H:/Documents/iNZightVIT/shapefiles/",
+            stored.shapefiles <- list.files(file.path(iNZightDir, "shapefiles"),
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
 
@@ -421,7 +448,7 @@ iNZightMap2Mod <- setRefClass(
                     enabled(btn.finish) <- FALSE
                 }
 
-                chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = .Platform$file.sep)
                 chosen.map <- which(mapdir.contents[, "tidy_filepath"] == chosen.filepath)
                 chosen.desc <- mapdir.contents[chosen.map, "description"]
 
@@ -436,7 +463,8 @@ iNZightMap2Mod <- setRefClass(
                 inbuilt.path <- mapdir.contents[chosen.map, "x"]
                 if (isTRUE(length(inbuilt.path) > 0 && grepl("\\.[A-z0-9]+$", inbuilt.path))) {
                     ## mapFilename <<- inbuilt.path
-                    map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
+                    map.filename <- file.path(iNZightDir, "shapefiles", inbuilt.path)
+                    print(map.filename)
 
                     dev.hold()
                     plot(iNZightMaps::retrieveMap(map.filename)$geometry,
@@ -452,10 +480,10 @@ iNZightMap2Mod <- setRefClass(
             addHandlerClicked(btn.import, handler = function(h, ...) {
                 ## Extract the true filename from inputs
                 if(svalue(mapSource, index = TRUE) == 1) {
-                    chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = "/")
+                    chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = .Platform$file.sep)
                     chosen.map <- which(mapdir.contents[, "tidy_filepath"] == chosen.filepath)
                     inbuilt.path <- mapdir.contents[chosen.map, "x"]
-                    map.filename <- paste0("H:/Documents/iNZightVIT/shapefiles/", inbuilt.path)
+                    map.filename <- file.path(iNZightDir, "shapefiles", inbuilt.path)
 
                     chosen.name <- mapdir.contents[which(mapdir.contents[, "x"] == inbuilt.path), "tidy_filename"]
                     if(length(chosen.name) > 0 && !is.na(chosen.name)) {
