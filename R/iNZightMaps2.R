@@ -237,48 +237,6 @@ iNZightMap2Mod <- setRefClass(
 
                                         # Map Source Box
             ## Function definitions
-
-
-### Read descriptions from ~/iNZightVIT/shapefiles/metadata
-            read.mapmetadata <- function() {
-                if (file.exists(file.path(shapefileDir, "metadata"))) {
-                    metadata <- scan(file.path(shapefileDir, "metadata"),
-                                     what = rep("character", 3), fill = TRUE,
-                                     comment.char = ";", sep = "\t",
-                                     fileEncoding = "UTF-8")
-                } else {
-                    tryCatch(download.file("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/metadata",
-                                       file.path(shapefileDir, "metadata")),
-                        error = function(e) gmessage("Cannot download metadata file.")
-                    )
-                    metadata <- c(NA, NA, NA)
-                }
-
-                metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
-                colnames(metadata) <- c("filepath", "tidy_filename", "description")
-                metadata
-            }
-
-            download.shapefiles <- function(dirURL, currPath) {
-                message("Searching... ", dirURL)
-                curr.links <- XML::getHTMLLinks(RCurl::getURL(dirURL, dirlistonly = TRUE))
-                curr.dirs <- curr.links[grep("/$", curr.links)]
-                curr.files <- curr.links[grep("\\.(rds|shp)", curr.links)]
-                if (!dir.exists(currPath) && !dir.create(currPath))
-                    stop("Failed to create directory")
-                for (filename in curr.files) {
-                    if (!file.exists(file.path(currPath, filename))) {
-                        download.file(paste0(dirURL, filename),
-                                      file.path(currPath, filename))
-                    }
-                }
-
-                for (dir in curr.dirs[-1]) {
-                    download.shapefiles(paste0(dirURL, dir),
-                                        file.path(currPath, dir))
-                }
-            }
-
 ### Change filesystem directory names to more readable names (i.e. nzl
 ### to New Zealand)
 ### --- UNFINISHED ---
@@ -305,39 +263,6 @@ iNZightMap2Mod <- setRefClass(
 
                 ## Replace first directories with capitals
                 sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
-            }
-
-            decodeMapDir2 <- function(mapdir.mat) {
-                country.isos <- iNZightMaps::iNZightMapCountryISO()
-                ## country.isos <- read.csv("h:/Documents/iNZightVIT/shapefiles/iso.csv",
-                                           ## stringsAsFactors = FALSE)
-
-                have.tidy <- !is.na(mapdir.mat[, "tidy_filename"])
-
-                dir.vect <- as.character(mapdir.mat[, "x"])
-
-                for (i in which(have.tidy)) {
-                    dir.vect[i] <- sub("/[-_\\df.A-z0-9]+\\.[A-z]+$",
-                                       paste0("/",mapdir.mat[i, "tidy_filename"]),
-                                       dir.vect[i])
-                }
-
-                for (i in which(!have.tidy)) {
-                    dir.vect[i] <- sub("\\.[A-z]+$", "", dir.vect[i])
-                }
-                which.countries <- which(grepl("^countries/", dir.vect))
-
-                for (i in which.countries) {
-                    curr.code.ind <- regexpr("/(...)/", dir.vect[i])
-                    curr.code <- substr(dir.vect[i], curr.code.ind + 1, curr.code.ind + 3)
-                    curr.name <- country.isos[country.isos$iso == toupper(curr.code), "name"]
-                    dir.vect[i] <- sub("/(...)/", paste0("/", curr.name, "/"), dir.vect[i])
-                }
-
-                dir.vect <- sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
-
-                mapdir.mat[, "tidy_filepath"] <- dir.vect
-                mapdir.mat
             }
 
 ### Helper function for gtree()
@@ -377,8 +302,8 @@ iNZightMap2Mod <- setRefClass(
                 shapefileDL <- gconfirm("Download shapefiles?")
 
                 if (shapefileDL) {
-                    tryCatch(download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
-                                                 shapefileDir),
+                    tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
+                                                 shapefileDir, shapefileDir),
                              error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
                              )
                     stored.shapefiles <- list.files(shapefileDir,
@@ -388,12 +313,19 @@ iNZightMap2Mod <- setRefClass(
                 }
             }
 
-            metadata <- read.mapmetadata()
+            metadata <- tryCatch(iNZightMaps::read.mapmetadata(shapefileDir),
+                                 error = function(e) {
+                                     gmessage("Could not download metadata file")
+                                     metadata <- c(NA, NA, NA)
+                                     metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
+                                     colnames(metadata) <- c("filepath", "tidy_filename", "description")
+                                     metadata
+                                 })
 
             mapdir.contents <- merge(stored.shapefiles, metadata,
                                      by.x = 1, by.y = 1, all.x = TRUE)
 
-            mapdir.contents <- decodeMapDir2(mapdir.contents)
+            mapdir.contents <- iNZightMaps::decodeMapDir(mapdir.contents)
             mapdir.contents <- vapply(mapdir.contents, as.character, character(nrow(mapdir.contents)))
 
             ## Heading area
