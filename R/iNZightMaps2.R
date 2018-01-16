@@ -44,7 +44,7 @@ iNZightMap2Mod <- setRefClass(
         multipleObsOption = "ANY",
 
         codeHistory = "ANY",
-        iNZightDir = "ANY"
+        shapefileDir = "ANY"
     ),
 
     methods = list(
@@ -108,7 +108,7 @@ iNZightMap2Mod <- setRefClass(
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
-            iNZightDir <<- switch(OS,
+            iNZightDir <- switch(OS,
                        "windows" = {
                            if (file.exists(file.path("~", "iNZightVIT"))) {
                                path <- file.path("~", "iNZightVIT")
@@ -132,6 +132,11 @@ iNZightMap2Mod <- setRefClass(
 
                            path
                        })
+            shapefileDir <<- file.path(iNZightDir, "shapefiles")
+
+            if (!dir.exists(shapefileDir) && !dir.create(shapefileDir))
+                gmessage('Cannot create shape directory to load/save shapefiles.',
+                         title='Cannot load shapefiles', icon = 'error')
 
             mapTypeDialog()
         },
@@ -235,12 +240,21 @@ iNZightMap2Mod <- setRefClass(
 
 
 ### Read descriptions from ~/iNZightVIT/shapefiles/metadata
-            print(file.path(iNZightDir, "shapefiles", "metadata"))
+            print(file.path(shapefileDir, "metadata"))
             read.mapmetadata <- function() {
-                metadata <- scan(file.path(iNZightDir, "shapefiles", "metadata"),
-                                 what = rep("character", 3), fill = TRUE,
-                                 comment.char = ";", sep = "\t",
-                                 fileEncoding = "UTF-8")
+                if (file.exists(file.path(shapefileDir, "metadata"))) {
+                    metadata <- scan(file.path(shapefileDir, "metadata"),
+                                     what = rep("character", 3), fill = TRUE,
+                                     comment.char = ";", sep = "\t",
+                                     fileEncoding = "UTF-8")
+                } else {
+                    tryCatch(download.file("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/metadata",
+                                       file.path(shapefileDir, "metadata")),
+                        error = function(e) gmessage("Cannot download metadata file.")
+                    )
+                    metadata <- c(NA, NA, NA)
+                }
+
                 metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
                 colnames(metadata) <- c("filepath", "tidy_filename", "description")
                 metadata
@@ -336,7 +350,7 @@ iNZightMap2Mod <- setRefClass(
             }
 
             ## Variable definitions
-            stored.shapefiles <- list.files(file.path(iNZightDir, "shapefiles"),
+            stored.shapefiles <- list.files(shapefileDir,
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
 
@@ -463,7 +477,7 @@ iNZightMap2Mod <- setRefClass(
                 inbuilt.path <- mapdir.contents[chosen.map, "x"]
                 if (isTRUE(length(inbuilt.path) > 0 && grepl("\\.[A-z0-9]+$", inbuilt.path))) {
                     ## mapFilename <<- inbuilt.path
-                    map.filename <- file.path(iNZightDir, "shapefiles", inbuilt.path)
+                    map.filename <- file.path(shapefileDir, inbuilt.path)
                     print(map.filename)
 
                     dev.hold()
@@ -483,7 +497,7 @@ iNZightMap2Mod <- setRefClass(
                     chosen.filepath <- paste(svalue(mapInbuiltBrowse), collapse = .Platform$file.sep)
                     chosen.map <- which(mapdir.contents[, "tidy_filepath"] == chosen.filepath)
                     inbuilt.path <- mapdir.contents[chosen.map, "x"]
-                    map.filename <- file.path(iNZightDir, "shapefiles", inbuilt.path)
+                    map.filename <- file.path(shapefileDir, inbuilt.path)
 
                     chosen.name <- mapdir.contents[which(mapdir.contents[, "x"] == inbuilt.path), "tidy_filename"]
                     if(length(chosen.name) > 0 && !is.na(chosen.name)) {
