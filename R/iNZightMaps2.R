@@ -240,7 +240,6 @@ iNZightMap2Mod <- setRefClass(
 
 
 ### Read descriptions from ~/iNZightVIT/shapefiles/metadata
-            print(file.path(shapefileDir, "metadata"))
             read.mapmetadata <- function() {
                 if (file.exists(file.path(shapefileDir, "metadata"))) {
                     metadata <- scan(file.path(shapefileDir, "metadata"),
@@ -360,7 +359,7 @@ iNZightMap2Mod <- setRefClass(
                                      by.x = 1, by.y = 1, all.x = TRUE)
 
             mapdir.contents <- decodeMapDir2(mapdir.contents)
-            mapdir.contents <- sapply(mapdir.contents, as.character)
+            mapdir.contents <- vapply(mapdir.contents, as.character, character(nrow(mapdir.contents)))
 
             ## Heading area
             lbl <- glabel("Map Source:")
@@ -369,6 +368,7 @@ iNZightMap2Mod <- setRefClass(
 
             ## Inbuilt Map Data
             tblInbuiltfile <- glayout()
+
 
             mapInbuiltBrowse <- gtree(offspring = offspring.files,
                                       offspring.data = mapdir.contents[, "tidy_filepath"],
@@ -478,7 +478,6 @@ iNZightMap2Mod <- setRefClass(
                 if (isTRUE(length(inbuilt.path) > 0 && grepl("\\.[A-z0-9]+$", inbuilt.path))) {
                     ## mapFilename <<- inbuilt.path
                     map.filename <- file.path(shapefileDir, inbuilt.path)
-                    print(map.filename)
 
                     dev.hold()
                     plot(iNZightMaps::retrieveMap(map.filename)$geometry,
