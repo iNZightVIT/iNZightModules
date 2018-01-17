@@ -220,7 +220,7 @@ iNZightMap2Mod <- setRefClass(
             enabled(btn.finish) <- FALSE
 
             btn.back <- gbutton("Cancel Map Change")
-            visible(btn.back) <- class(mapData) != "NULL"
+            visible(btn.back) <- class(mapData) != "uninitializedField"
 
             addHandlerClicked(btn.back, function(h, ...) {
                 initiateModule()
@@ -810,8 +810,8 @@ iNZightMap2Mod <- setRefClass(
             }
 
             tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
-            tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
-            tbl.mapoptions[2, 3:4, expand = TRUE] <- combobox.mapproj
+            ## tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
+            tbl.mapoptions[2, 2:4, expand = TRUE] <- combobox.mapproj
 
             add(expand.mapoptions, tbl.mapoptions, expand = TRUE, fill = TRUE)
 
