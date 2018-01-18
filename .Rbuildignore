@@ -2,3 +2,4 @@
 ^.*\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.travis\.yml$
