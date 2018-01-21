@@ -867,7 +867,7 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
             tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
 
-            slider.constalpha <- gslider(1, 0, by = -0.1)
+            slider.constalpha <- gslider(1, 0.1, by = -0.1)
             slider.constsize <- gslider(1, 10, by = 1)
 
             lbl.constalpha <- glabel("Transparency:")
@@ -1049,6 +1049,8 @@ iNZightMap2Mod <- setRefClass(
                         multipleObsOption <<- "allvalues"
                         combinedData$type <<- "sparklines"
                         plotCurrentSeqVal <<- NULL
+                        visible(lbl.constsize) <- TRUE
+                        visible(slider.constsize) <- TRUE
                         if (isTRUE(!is.null(mapVars))) {
                             vars.to.keep <- sapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], is.numeric)
                             if (sum(vars.to.keep) > 0) {
@@ -1120,7 +1122,7 @@ iNZightMap2Mod <- setRefClass(
                         svalue(edit.plottitle) <- ""
                     } else {
                         if (isTRUE(has.multipleobs && multipleObsOption == "aggregate")) {
-                            svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.singleval), ")")
+                            svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.aggregate), ")")
                         } else {
                             svalue(edit.plottitle) <- svalue(table.vars)
                         }
@@ -1243,26 +1245,26 @@ iNZightMap2Mod <- setRefClass(
                                   })
             ## GUI$plotToolbar$update(NULL, refresh = "updatePlot")
 
-            test.btn <- gbutton("interactivity", cont = mainGrp)
-            addHandlerClicked(test.btn, function(h, ...) {
-                library(grid)
-                library(gridSVG)
-                grid.force()
-                regions <- grid::grid.grep("pathgrob", grep = TRUE, global = TRUE)
-
-                for (i in 1:length(regions)) {
-                    curr.region.tooltip <- paste0(combinedData$data$NAME[i],
-                                                  " (", mapVars, ": ", combinedData$data[i, mapVars], ")")
-                    curr.region.tooltip <- gsub("'", "\\\\'", curr.region.tooltip)
-                    curr.region.tooltip <- gsub('"', '\\\\"', curr.region.tooltip)
-                    grid.garnish(regions[[i]],
-                                 onmouseover = paste("showTooltip(evt, '", curr.region.tooltip, "')"),
-                                 onmouseout = "hideTooltip()")
-                }
-
-                grid.script(filename = "tooltip.js", inline = TRUE)
-                grid.export("testinzight.svg")
-            })
+            ## test.btn <- gbutton("interactivity", cont = mainGrp)
+            ## addHandlerClicked(test.btn, function(h, ...) {
+                ## library(grid)
+                ## library(gridSVG)
+                ## grid.force()
+                ## regions <- grid::grid.grep("pathgrob", grep = TRUE, global = TRUE)
+##
+                ## for (i in 1:length(regions)) {
+                    ## curr.region.tooltip <- paste0(combinedData$data$NAME[i],
+                                                  ## " (", mapVars, ": ", combinedData$data[i, mapVars], ")")
+                    ## curr.region.tooltip <- gsub("'", "\\\\'", curr.region.tooltip)
+                    ## curr.region.tooltip <- gsub('"', '\\\\"', curr.region.tooltip)
+                    ## grid.garnish(regions[[i]],
+                                 ## onmouseover = paste("showTooltip(evt, '", curr.region.tooltip, "')"),
+                                 ## onmouseout = "hideTooltip()")
+                ## }
+##
+                ## grid.script(filename = "tooltip.js", inline = TRUE)
+                ## grid.export("testinzight.svg")
+            ## })
 
             visible(mainGrp) <<- TRUE
             updateOptions()
