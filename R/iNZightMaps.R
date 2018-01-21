@@ -853,7 +853,7 @@ iNZightMapMod <- setRefClass(
                 args <- c(args, extra.args)
 
             pl <- do.call(plot, args)
-
+            GUI$plotType <<- map.type #attr(pl, "plottype")
             return(invisible(pl))
         }
     )
