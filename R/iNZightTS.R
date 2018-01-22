@@ -483,16 +483,16 @@ iNZightTSMod <- setRefClass(
                 plot.new()
             } else if (inherits(tsObj, "iNZightMTS")) { ## multiple vars
                 switch(compare,
-                       compareplot(tsObj, multiplicative = (patternType == 1),
+                       plot(tsObj, multiplicative = (patternType == 1),
                                    xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t),
-                       multiseries(tsObj, multiplicative = (patternType == 1),
-                                   xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t))
+                       plot(tsObj, multiplicative = (patternType == 1),
+                                   xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t, compare=FALSE))
             } else { ## single var
                 switch(plottype, {
                     ## 1 >> standard plot
                     ## patternType = 1 >> 'multiplicative'; 2 >> 'additive'
-                    iNZightTS::rawplot(tsObj, multiplicative = (patternType == 1),
-                                       ylab = svalue(yLab), xlab = svalue(xLab), animate = animate, t = smooth.t)
+                    plot(tsObj, multiplicative = (patternType == 1),
+                                    ylab = svalue(yLab), xlab = svalue(xLab), animate = animate, t = smooth.t)
                 }, {
                     ## 2 >> decomposed plot
                     decomp <<- iNZightTS::decompositionplot(tsObj, multiplicative = (patternType == 1),
