@@ -26,12 +26,13 @@ iNZightTSMod <- setRefClass(
         compare     = "numeric",
         animateBtn  = "ANY", pauseBtn = "ANY",
         recomposeBtn = "ANY", recomposeResBtn = "ANY", decomp = "ANY",
-        forecastBtn = "ANY", forecasts   = "ANY"
+        forecastBtn = "ANY", forecasts   = "ANY",
+        timer = "ANY"
     ),
     methods = list(
         initialize = function(GUI) {
             initFields(GUI = GUI, patternType = 1, smoothness = 10, tsObj = NULL,
-                       plottype = 1, compare = 1, timeFreq = 1, timeStart = c(1, 1))
+                       plottype = 1, compare = 1, timeFreq = 1, timeStart = c(1, 1), timer = NULL)
 
             dat = GUI$getActiveData()
             activeData <<- tsData(dat)
@@ -229,7 +230,11 @@ iNZightTSMod <- setRefClass(
             smthSlider <<- gslider(0, 100, by = 0.1, value = smoothness,
                                    handler = function(h, ...) {
                                        smoothness <<- svalue(h$obj)
-                                       updatePlot()
+                                       if (!is.null(timer))
+                                           if (timer$started) timer$stop_timer()
+                                       timer <<- gtimer(200, function(...) {
+                                           updatePlot()
+                                       }, one.shot = TRUE)
                                    })
 
             g2_layout[2, 1, anchor = c(1, 0), expand = TRUE] <- glabel("Smoothness :")
@@ -395,8 +400,20 @@ iNZightTSMod <- setRefClass(
             xLab <<- gedit(ifelse(!is.na(timeVar), timeVar, ""))
             yLab <<- gedit("")
 
-            addHandlerKeystroke(xLab, function(h, ...) updatePlot())
-            addHandlerKeystroke(yLab, function(h, ...) updatePlot())
+            addHandlerKeystroke(xLab, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(200, function(...) {
+                    updatePlot()
+                }, one.shot = TRUE)
+            })
+            addHandlerKeystroke(yLab, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(200, function(...) {
+                    updatePlot()
+                }, one.shot = TRUE)
+            })
 
             #size(xLab) <<- c(150, 21)
             #size(yLab) <<- c(150, 21)
@@ -483,16 +500,16 @@ iNZightTSMod <- setRefClass(
                 plot.new()
             } else if (inherits(tsObj, "iNZightMTS")) { ## multiple vars
                 switch(compare,
-                       compareplot(tsObj, multiplicative = (patternType == 1),
+                       plot(tsObj, multiplicative = (patternType == 1),
                                    xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t),
-                       multiseries(tsObj, multiplicative = (patternType == 1),
-                                   xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t))
+                       plot(tsObj, multiplicative = (patternType == 1),
+                                   xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t, compare=FALSE))
             } else { ## single var
                 switch(plottype, {
                     ## 1 >> standard plot
                     ## patternType = 1 >> 'multiplicative'; 2 >> 'additive'
-                    iNZightTS::rawplot(tsObj, multiplicative = (patternType == 1),
-                                       ylab = svalue(yLab), xlab = svalue(xLab), animate = animate, t = smooth.t)
+                    plot(tsObj, multiplicative = (patternType == 1),
+                                    ylab = svalue(yLab), xlab = svalue(xLab), animate = animate, t = smooth.t)
                 }, {
                     ## 2 >> decomposed plot
                     decomp <<- iNZightTS::decompositionplot(tsObj, multiplicative = (patternType == 1),
