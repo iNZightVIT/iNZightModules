@@ -718,7 +718,9 @@ iNZightMap2Mod <- setRefClass(
                 plotXLab <<- svalue(edit.xaxis)
                 plotYLab <<- svalue(edit.yaxis)
                 plotDatumLines <<- svalue(checkbox.datum)
-                plotProjection <<- proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"]
+
+                plotProjection <<- ifelse(svalue(combobox.mapproj) == "Default", "Default", proj.df[svalue(combobox.mapproj, index = TRUE) - 1, "PROJ4"])
+
                 plotTheme <<- svalue(checkbox.darktheme)
                 plotPalette <<- svalue(combobox.palette)
                 plotConstantAlpha <<- svalue(slider.constalpha)
@@ -803,10 +805,10 @@ iNZightMap2Mod <- setRefClass(
                                 ## stringsAsFactors = FALSE)
 
             lbl.mapproj <- glabel("Projection:")
-            combobox.mapproj <- gcombobox(proj.df$Name)
+            combobox.mapproj <- gcombobox(c("Default", proj.df$Name))
 
             if(!is.null(plotProjection)) {
-                svalue(combobox.mapproj, index = TRUE) <- which(proj.df$PROJ4 == plotProjection)
+                svalue(combobox.mapproj) <- proj.df[which(proj.df$PROJ4 == plotProjection), "Name"]
             }
 
             tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
