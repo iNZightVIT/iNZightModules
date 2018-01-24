@@ -1041,7 +1041,7 @@ iNZightMap2Mod <- setRefClass(
                     if (radio.choice == 1) {
                         multipleObsOption <<- "singleval"
                         combinedData$type <<- mapType
-                        combinedData <<- iNZightMapAggregation(combinedData,
+                        combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                "singlevalue",
                                                                single.value = svalue(combobox.singleval))
                         plotCurrentSeqVal <<- svalue(combobox.singleval)
@@ -1063,7 +1063,7 @@ iNZightMap2Mod <- setRefClass(
                         multipleObsOption <<- "aggregate"
                         plotCurrentSeqVal <<- svalue(combobox.aggregate)
                         combinedData$type <<- mapType
-                        combinedData <<- iNZightMapAggregation(combinedData,
+                        combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                tolower(svalue(combobox.aggregate)))
                     }
 
@@ -1091,7 +1091,7 @@ iNZightMap2Mod <- setRefClass(
 #                     if (timer$started) timer$stop_timer()
 #                   timer <<- gtimer(1000, function(...) {
 
-                    combinedData <<- iNZightMapAggregation(combinedData, "singlevalue",
+                    combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData, "singlevalue",
                                                            single.value = svalue(combobox.singleval))
                     plotCurrentSeqVal <<- svalue(combobox.singleval)
 
@@ -1114,7 +1114,7 @@ iNZightMap2Mod <- setRefClass(
                 })
 
                 addHandlerChanged(combobox.aggregate, function(h, ...) {
-                    combinedData <<- iNZightMapAggregation(combinedData,
+                    combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                            tolower(svalue(combobox.aggregate)))
                     plotCurrentSeqVal <<- svalue(combobox.aggregate)
 
