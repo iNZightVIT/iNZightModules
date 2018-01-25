@@ -8,7 +8,6 @@ else
 endif
 
 default: document
-	#@$(RCMD) -f templates/importTemplates.R
 
 document:
 	@$(RCMD) -e "devtools::document()"
