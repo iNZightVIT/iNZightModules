@@ -39,6 +39,7 @@ iNZightMap2Mod <- setRefClass(
         plotConstantAlpha = "ANY",
         plotConstantSize = "ANY",
         plotCurrentSeqVal = "ANY",
+        plotSparklinesType = "ANY",
         timer = "ANY",
 
         multipleObsOption = "ANY",
@@ -104,6 +105,7 @@ iNZightMap2Mod <- setRefClass(
             plotConstantAlpha <<- 1.0
             plotConstantSize <<- 1.0
             plotCurrentSeqVal <<- NULL
+            plotSparklinesType <<- "Absolute"
             timer <<- NULL
 
             multipleObsOption <<- NULL
@@ -719,7 +721,9 @@ iNZightMap2Mod <- setRefClass(
                 plotYLab <<- svalue(edit.yaxis)
                 plotDatumLines <<- svalue(checkbox.datum)
 
-                plotProjection <<- ifelse(svalue(combobox.mapproj) == "Default", "Default", proj.df[svalue(combobox.mapproj, index = TRUE) - 1, "PROJ4"])
+                plotProjection <<- ifelse(svalue(combobox.mapproj) == "Default",
+                                          "Default",
+                                          proj.df[svalue(combobox.mapproj, index = TRUE) - 1, "PROJ4"])
 
                 plotTheme <<- svalue(checkbox.darktheme)
                 plotPalette <<- svalue(combobox.palette)
@@ -736,6 +740,11 @@ iNZightMap2Mod <- setRefClass(
 
                 if(length(mapSizeVar) == 0 || mapSizeVar == "") {
                     mapSizeVar <<- NULL
+                }
+
+                ## Sparklines Options
+                if (combinedData$multiple.obs) {
+                    plotSparklinesType <<- svalue(combobox.sparkline)
                 }
 
                 updatePlot()
@@ -994,29 +1003,36 @@ iNZightMap2Mod <- setRefClass(
                 }
 
                 unique.singlevals <- unique(as.data.frame(combinedData[["region.data"]])[, combinedData$sequence.var])
-                # combobox.singleval <- gcombobox(unique.singlevals[!is.na(unique.singlevals)])
                 combobox.singleval <- gslider(unique.singlevals[!is.na(unique.singlevals)])
                 svalue(combobox.singleval) <- combobox.singleval$items[length(combobox.singleval$items)]
 
-                radio.allvalues <- gradio(c("Sparklines", "Grid (TODO)"), horizontal = TRUE)
+                # radio.allvalues <- gradio(c("Sparklines", "Grid (TODO)"), horizontal = TRUE)
+                radio.allvalues <- gradio(c("Sparklines"), horizontal = TRUE)
 
                 # Relative       [ ]
                 # Percent change [ ]
                 # Starting/Ending positions |----[]-------|
                 combobox.aggregate <- gcombobox(c("Mean", "Median"))
+                lbl.sparkline <- glabel("Line Chart Type:")
                 combobox.sparkline <- gcombobox(c("Absolute", "Relative"))
 
                 tbl.main[2, 1:3] <- lbl.timevariable
+
                 tbl.main[3, 1:3] <- radio.multipleobs
+
                 tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.singleval
                 tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.aggregate
+
                 tbl.main[5, 1:3] <- separator.timevariable
-                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
+
                 tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
                 tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
 
                 tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
                 tbl.main[7, 2,   expand = TRUE] <- combobox.sizeselect
+                tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
+                tbl.main[7, 2,   expand = TRUE] <- combobox.sparkline
 
                 visible(radio.allvalues) <- FALSE
                 visible(combobox.aggregate) <- FALSE
@@ -1024,35 +1040,52 @@ iNZightMap2Mod <- setRefClass(
                 addHandlerChanged(radio.multipleobs, function(h, ...) {
                     radio.choice <- svalue(radio.multipleobs, index = TRUE)
 
-                    visible(combobox.singleval) <- radio.choice == 1
-                    visible(combobox.aggregate) <- radio.choice == 3
-
                     if (isTRUE(!is.null(mapVars))) {
+                        visible(combobox.singleval) <- radio.choice == 1
                         visible(radio.allvalues) <- radio.choice == 2
+                        visible(combobox.aggregate) <- radio.choice == 3
+
+                        visible(lbl.maptype) <- TRUE
                         visible(radio.maptype) <- radio.choice != 2
+
                         visible(lbl.sizeselect) <- radio.choice != 2 && mapType == "point"
                         visible(combobox.sizeselect) <- radio.choice != 2 && mapType == "point"
+
+                        visible(lbl.constsize) <- mapType == "point" || radio.choice == 2
+                        visible(slider.constsize) <- mapType == "point" || radio.choice == 2
+
+                        visible(lbl.constalpha) <- mapType == "point" || radio.choice == 2
+                        visible(slider.constalpha) <- mapType == "point" || radio.choice == 2
+
+                        visible(lbl.sparkline) <- radio.choice == 2
+                        visible(combobox.sparkline) <- radio.choice == 2
                     } else {
+                        visible(combobox.singleval) <- FALSE
                         visible(radio.allvalues) <- FALSE
+                        visible(combobox.aggregate) <- FALSE
+                        visible(lbl.maptype) <- FALSE
                         visible(radio.maptype) <- FALSE
                         visible(lbl.sizeselect) <- FALSE
                         visible(combobox.sizeselect) <- FALSE
-                        visible(lbl.maptype) <- FALSE
+                        visible(lbl.constsize) <- FALSE
+                        visible(slider.constsize) <- FALSE
+                        visible(lbl.constalpha) <- FALSE
+                        visible(slider.constalpha) <- FALSE
+                        visible(lbl.sparkline) <- FALSE
+                        visible(combobox.sparkline) <- FALSE
                     }
 
                     if (radio.choice == 1) {
                         multipleObsOption <<- "singleval"
                         combinedData$type <<- mapType
+                        plotCurrentSeqVal <<- svalue(combobox.singleval)
                         combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                "singlevalue",
                                                                single.value = svalue(combobox.singleval))
-                        plotCurrentSeqVal <<- svalue(combobox.singleval)
                     } else if (radio.choice == 2) {
                         multipleObsOption <<- "allvalues"
                         combinedData$type <<- "sparklines"
                         plotCurrentSeqVal <<- NULL
-                        visible(lbl.constsize) <- TRUE
-                        visible(slider.constsize) <- TRUE
                         if (isTRUE(!is.null(mapVars))) {
                             vars.to.keep <- sapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], is.numeric)
                             if (sum(vars.to.keep) > 0) {
@@ -1063,8 +1096,8 @@ iNZightMap2Mod <- setRefClass(
                         }
                     } else if (radio.choice == 3) {
                         multipleObsOption <<- "aggregate"
-                        plotCurrentSeqVal <<- svalue(combobox.aggregate)
                         combinedData$type <<- mapType
+                        plotCurrentSeqVal <<- svalue(combobox.aggregate)
                         combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                tolower(svalue(combobox.aggregate)))
                     }
@@ -1084,15 +1117,9 @@ iNZightMap2Mod <- setRefClass(
                             svalue(edit.plottitle) <- svalue(table.vars)
                         }
                     }
-
-                    ## updateOptions()
                 })
 
                 addHandlerChanged(combobox.singleval, function(h, ...) {
-#                   if (!is.null(timer))
-#                     if (timer$started) timer$stop_timer()
-#                   timer <<- gtimer(1000, function(...) {
-
                     combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData, "singlevalue",
                                                            single.value = svalue(combobox.singleval))
                     plotCurrentSeqVal <<- svalue(combobox.singleval)
@@ -1106,9 +1133,6 @@ iNZightMap2Mod <- setRefClass(
                             svalue(edit.plottitle) <- svalue(table.vars)
                         }
                     }
-#                     }, one.shot = TRUE)
-
-                    ## updatePlot()
                 })
 
                 addHandlerChanged(radio.allvalues, function(h, ...) {
@@ -1129,8 +1153,11 @@ iNZightMap2Mod <- setRefClass(
                             svalue(edit.plottitle) <- svalue(table.vars)
                         }
                     }
-                    ## updatePlot()
                 })
+
+            addHandlerChanged(combobox.sparkline, function(h, ...) {
+                updateOptions()
+            })
 
 
             }
@@ -1198,30 +1225,23 @@ iNZightMap2Mod <- setRefClass(
                         svalue(edit.plottitle) <- svalue(table.vars)
                     }
                 }
-
-                ## updateOptions()
             })
 
             addHandlerChanged(radio.maptype, function(h, ...) {
                 if (svalue(radio.maptype, index = TRUE) == 1) {
-                    visible(lbl.sizeselect) <- FALSE
-                    visible(combobox.sizeselect) <- FALSE
-                    visible(lbl.constalpha) <- FALSE
-                    visible(slider.constalpha) <- FALSE
-                    visible(lbl.constsize) <- FALSE
-                    visible(slider.constsize) <- FALSE
                     combinedData$type <<- "region"
                     mapType <<- "region"
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
-                    visible(lbl.sizeselect) <- TRUE
-                    visible(combobox.sizeselect) <- TRUE
-                    visible(lbl.constalpha) <- TRUE
-                    visible(slider.constalpha) <- TRUE
-                    visible(lbl.constsize) <- TRUE
-                    visible(slider.constsize) <- TRUE
                     combinedData$type <<- "point"
                     mapType <<- "point"
                 }
+                    visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+
                 updateOptions()
             })
 
@@ -1298,7 +1318,8 @@ iNZightMap2Mod <- setRefClass(
                  multiple.vars = multiple.vars, colour.var = mapVars,
                  size.var = mapSizeVar, aggregate = aggregation,
                  darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
-                 current.seq = plotCurrentSeqVal, palette = plotPalette))
+                 current.seq = plotCurrentSeqVal, palette = plotPalette,
+                 sparkline.type = plotSparklinesType))
             dev.flush()
 
         }
