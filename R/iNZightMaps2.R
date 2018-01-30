@@ -140,6 +140,8 @@ iNZightMap2Mod <- setRefClass(
                 gmessage('Cannot create shape directory to load/save shapefiles.',
                          title='Cannot load shapefiles', icon = 'error')
 
+            GUI$rhistory$add(c("SEP", "## New Maps Module"))
+
             mapTypeDialog()
         },
 
@@ -751,7 +753,8 @@ iNZightMap2Mod <- setRefClass(
             }
 
             GUI$initializeModuleWindow(.self)
-
+            GUI$rhistory$add(c(sprintf("## Using the %s map", mapName)), keep = TRUE)
+            GUI$rhistory$add(attr(combinedData, "code"), keep = TRUE)
 
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
             visible(mainGrp) <<- FALSE
@@ -1310,16 +1313,20 @@ iNZightMap2Mod <- setRefClass(
                             gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
             grid::grid.text("Please wait... Loading...")
 
-            dev.hold()
-            grid::grid.newpage()
-            grid::grid.draw(plot(combinedData, main = plotTitle,
+            map.plot <- plot(combinedData, main = plotTitle,
                  axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
                  datum.lines = plotDatumLines, projection = plotProjection,
                  multiple.vars = multiple.vars, colour.var = mapVars,
                  size.var = mapSizeVar, aggregate = aggregation,
                  darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
                  current.seq = plotCurrentSeqVal, palette = plotPalette,
-                 sparkline.type = plotSparklinesType))
+                 sparkline.type = plotSparklinesType)
+
+            GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
+
+            dev.hold()
+            grid::grid.newpage()
+            grid::grid.draw(map.plot)
             dev.flush()
 
         }
