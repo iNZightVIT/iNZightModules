@@ -773,7 +773,7 @@ iNZightMap2Mod <- setRefClass(
             frame.mapoptions <- gframe(horizontal = FALSE)
             group.mapoptions <- ggroup(spacing = 5)
             group.mapoptions$set_borderwidth(10)
-            expand.mapoptions <- gexpandgroup(text = "Advanced Map Options", horizontal = FALSE)
+            expand.mapoptions <- gexpandgroup(text = "Map Options", horizontal = FALSE)
             font(expand.mapoptions) <- list(weight = "bold", family = "normal", size = 10)
 
             add(mainGrp, frame.mapoptions)
@@ -783,7 +783,7 @@ iNZightMap2Mod <- setRefClass(
             frame.plotoptions <- gframe(horizontal = FALSE)
             group.plotoptions <- ggroup(spacing = 5)
             group.plotoptions$set_borderwidth(10)
-            expand.plotoptions <- gexpandgroup(text = "Advanced Plot Options", horizontal = FALSE)
+            expand.plotoptions <- gexpandgroup(text = "Extra Plot Options", horizontal = FALSE)
             font(expand.plotoptions) <- list(weight = "bold", family = "normal", size = 10)
 
             add(mainGrp, frame.plotoptions)
@@ -820,7 +820,10 @@ iNZightMap2Mod <- setRefClass(
             combobox.mapproj <- gcombobox(c("Default", proj.df$Name))
 
             if(!is.null(plotProjection)) {
-                svalue(combobox.mapproj) <- proj.df[which(proj.df$PROJ4 == plotProjection), "Name"]
+                if (plotProjection == "Default")
+                    svalue(combobox.mapproj, index = TRUE) <- 1
+                else
+                    svalue(combobox.mapproj) <- proj.df[which(proj.df$PROJ4 == plotProjection), "Name"]
             }
 
             tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
@@ -886,10 +889,10 @@ iNZightMap2Mod <- setRefClass(
 
             lbl.constalpha <- glabel("Transparency:")
             lbl.constsize <- glabel("Size:")
-            tbl.plotoptions[7, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constalpha
-            tbl.plotoptions[7, 2:4, expand = TRUE] <- slider.constalpha
-            tbl.plotoptions[8, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constsize
-            tbl.plotoptions[8, 2:4, expand = TRUE] <- slider.constsize
+            ## tbl.plotoptions[7, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constalpha
+            ## tbl.plotoptions[7, 2:4, expand = TRUE] <- slider.constalpha
+            ## tbl.plotoptions[8, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constsize
+            ## tbl.plotoptions[8, 2:4, expand = TRUE] <- slider.constsize
 
             visible(slider.constalpha) <- mapType != "region"
             visible(lbl.constalpha) <- mapType != "region"
@@ -994,6 +997,10 @@ iNZightMap2Mod <- setRefClass(
 
                 tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
                 tbl.main[3, 2,   expand = TRUE] <- combobox.sizeselect
+                tbl.main[4, 1, expand = TRUE] <- lbl.constalpha
+                tbl.main[4, 2, expand = TRUE] <- slider.constalpha
+                tbl.main[5, 1, expand = TRUE] <- lbl.constsize
+                tbl.main[5, 2, expand = TRUE] <- slider.constsize
             } else {
                 separator.timevariable <- gseparator()
                 lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
@@ -1036,6 +1043,11 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[7, 2,   expand = TRUE] <- combobox.sizeselect
                 tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
                 tbl.main[7, 2,   expand = TRUE] <- combobox.sparkline
+
+                tbl.main[8, 1, expand = TRUE] <- lbl.constalpha
+                tbl.main[8, 2, expand = TRUE] <- slider.constalpha
+                tbl.main[9, 1, expand = TRUE] <- lbl.constsize
+                tbl.main[9, 2, expand = TRUE] <- slider.constsize
 
                 visible(radio.allvalues) <- FALSE
                 visible(combobox.aggregate) <- FALSE
