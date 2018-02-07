@@ -859,8 +859,6 @@ iNZightMap2Mod <- setRefClass(
 
 #####
             proj.df <- iNZightMaps::iNZightMapProjections()
-            ## proj.df <- read.csv("H:/echome/inzightwork/package/iNZightMaps/projections.csv",
-                                ## stringsAsFactors = FALSE)
 
             lbl.mapproj <- glabel("Projection:")
             combobox.mapproj <- gcombobox(c("Default", proj.df$Name))
@@ -935,10 +933,6 @@ iNZightMap2Mod <- setRefClass(
 
             lbl.constalpha <- glabel("Transparency:")
             lbl.constsize <- glabel("Size:")
-            ## tbl.plotoptions[7, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constalpha
-            ## tbl.plotoptions[7, 2:4, expand = TRUE] <- slider.constalpha
-            ## tbl.plotoptions[8, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constsize
-            ## tbl.plotoptions[8, 2:4, expand = TRUE] <- slider.constsize
 
             visible(slider.constalpha) <- mapType != "region"
             visible(lbl.constalpha) <- mapType != "region"
@@ -1104,9 +1098,9 @@ iNZightMap2Mod <- setRefClass(
                     svalue(combobox.singleval, index = TRUE) <- 1
                 })
 
-
                 visible(radio.allvalues) <- FALSE
                 visible(combobox.aggregate) <- FALSE
+                visible(combobox.sparkline) <- FALSE
 
                 addHandlerChanged(radio.multipleobs, function(h, ...) {
                     radio.choice <- svalue(radio.multipleobs, index = TRUE)
@@ -1130,6 +1124,8 @@ iNZightMap2Mod <- setRefClass(
 
                         visible(lbl.sparkline) <- radio.choice == 2
                         visible(combobox.sparkline) <- radio.choice == 2
+
+                        visible(btn.play) <- radio.choice == 1
                     } else {
                         visible(combobox.singleval) <- FALSE
                         visible(radio.allvalues) <- FALSE
@@ -1144,6 +1140,7 @@ iNZightMap2Mod <- setRefClass(
                         visible(slider.constalpha) <- FALSE
                         visible(lbl.sparkline) <- FALSE
                         visible(combobox.sparkline) <- FALSE
+                        visible(btn.play) <- FALSE
                     }
 
                     if (radio.choice == 1) {
