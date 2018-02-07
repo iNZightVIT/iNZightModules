@@ -243,34 +243,6 @@ iNZightMap2Mod <- setRefClass(
 
                                         # Map Source Box
             ## Function definitions
-### Change filesystem directory names to more readable names (i.e. nzl
-### to New Zealand)
-### --- UNFINISHED ---
-            decodeMapDir <- function(mapdir.mat) {
-                mapdir.mat <- mapdir.contents
-                ## Replace filenames
-
-                have.tidy <- !is.na(mapdir.mat$tidy_filename)
-
-                mapdir.mat$tidy_filepath[have.tidy] <- sub("^.*/([-_\\.A-z0-9]+\\.(shp|rds))$",
-                                                           mapdir.mat$tidy_filename[have.tidy],
-                                                           mapdir.mat$x[have.tidy])
-
-                iso.matrix <- matrix(c("nzl", "New Zealand",
-                                       "usa", "United States"),
-                                     ncol = 2, byrow = TRUE)
-                ## Replace ISO codes
-                country.ind <- grepl("^countries/", dir.vect)
-                country.iso <- sub("^countries/([A-z]+)/.*$", "\\1", dir.vect[country.ind])
-                country.name <- iso.matrix[which(country.iso == iso.matrix[,1]), 2]
-                dir.vect[country.ind] <- sub("^countries/([A-z]+)/",
-                                             paste0("countries/", country.name, "/"),
-                                             dir.vect[country.ind])
-
-                ## Replace first directories with capitals
-                sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
-            }
-
 ### Helper function for gtree()
             offspring.files <- function(path, obj) {
                 if(length(path) > 0) {
@@ -348,6 +320,7 @@ iNZightMap2Mod <- setRefClass(
                                       chosen.col = "filename",
                                       offspring.col = "has.children")
             mapInbuiltBrowse$widget$`headers-visible` <- FALSE
+            tooltip(mapInbuiltBrowse) <- "Select an inbuilt map using the +/- icons. Double click to preview the map"
 
             lbl.mapdesc <- gtext("Description: No description available.")
             font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
@@ -579,18 +552,26 @@ iNZightMap2Mod <- setRefClass(
             ## Widget definitions
 
             tbl.variables <- glayout()
-
+            lbl.datavars <- glabel("Data Variable: ")
+            lbl.mapvars <- glabel("Map Variable: ")
             combobox.mapvars <- gcombobox(items = c(""))
             combobox.datavars <- gcombobox(items = colnames(activeData))
 
-            tbl.variables[1, 1] <- glabel("Data Variable: ")
+            tbl.variables[1, 1] <- lbl.datavars
             tbl.variables[1, 2, expand = TRUE] <- combobox.datavars
 
-            tbl.variables[1, 4] <- glabel("Map Variable: ")
+            tbl.variables[1, 4] <- lbl.mapvars
             tbl.variables[1, 5, expand = TRUE] <- combobox.mapvars
 
+            tooltip(lbl.datavars) <- "Variable in the dataset used to match each observation to a region in the map"
+            tooltip(lbl.mapvars) <- "Variable in the map used to match each region in the map to an observation"
+
+            tooltip(combobox.datavars) <- tooltip(lbl.datavars)
+            tooltip(combobox.mapvars) <- tooltip(lbl.mapvars)
+
+
             lbl.nonmatchedtitle <- glabel("Unmatched Data")
-            lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no corresponding region in the map file")
+            lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no corresponding region in the map")
             font(lbl.nonmatchedtitle) <- list(weight = "bold", family = "normal", size = 10)
             table.nonmatched <- gtable(nomatch.df)
 
