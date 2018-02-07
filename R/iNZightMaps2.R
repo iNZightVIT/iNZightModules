@@ -41,6 +41,7 @@ iNZightMap2Mod <- setRefClass(
         plotCurrentSeqVal = "ANY",
         plotSparklinesType = "ANY",
         timer = "ANY",
+        plotPlay = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -107,6 +108,7 @@ iNZightMap2Mod <- setRefClass(
             plotCurrentSeqVal <<- NULL
             plotSparklinesType <<- "Absolute"
             timer <<- NULL
+            plotPlay <<- FALSE
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
@@ -751,6 +753,50 @@ iNZightMap2Mod <- setRefClass(
 
                 updatePlot()
             }
+        updatePlot = function() {
+            if(length(mapVars) > 1) {
+                multiple.vars <- TRUE
+            } else {
+                multiple.vars <- FALSE
+            }
+
+            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
+                aggregation <- TRUE
+            } else {
+                aggregation <- FALSE
+            }
+
+            if (!plotPlay) {
+                grid::grid.rect(width = 0.25, height = 0.10,
+                                gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+                grid::grid.text("Please wait... Loading...")
+            }
+
+            map.plot <- plot(combinedData, main = plotTitle,
+                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
+                 datum.lines = plotDatumLines, projection = plotProjection,
+                 multiple.vars = multiple.vars, colour.var = mapVars,
+                 size.var = mapSizeVar, aggregate = aggregation,
+                 darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
+                 current.seq = plotCurrentSeqVal, palette = plotPalette,
+                 sparkline.type = plotSparklinesType)
+
+            GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
+
+            dev.hold()
+            grid::grid.newpage()
+            grid::grid.draw(map.plot)
+            dev.flush()
+
+            if (plotPlay) {
+                if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                    svalue(combobox.singleval, index = TRUE) = svalue(combobox.singleval, index = TRUE) + 1
+                } else {
+                    plotPlay <<- FALSE
+                }
+            }
+
+        }
 
             GUI$initializeModuleWindow(.self)
             GUI$rhistory$add(c(sprintf("## Using the %s map", mapName)), keep = TRUE)
@@ -1049,6 +1095,16 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[9, 1, expand = TRUE] <- lbl.constsize
                 tbl.main[9, 2, expand = TRUE] <- slider.constsize
 
+                btn.play <- gbutton("Play")
+
+                tbl.main[10, 1:3, expand = TRUE] <- btn.play
+
+                addHandlerClicked(btn.play, function(h, ...) {
+                    plotPlay <<- TRUE
+                    svalue(combobox.singleval, index = TRUE) <- 1
+                })
+
+
                 visible(radio.allvalues) <- FALSE
                 visible(combobox.aggregate) <- FALSE
 
@@ -1305,41 +1361,6 @@ iNZightMap2Mod <- setRefClass(
 
             visible(mainGrp) <<- TRUE
             updateOptions()
-        },
-        ## Update and plot the map given
-        updatePlot = function() {
-            print("Updating plot...")
-            if(length(mapVars) > 1) {
-                multiple.vars <- TRUE
-            } else {
-                multiple.vars <- FALSE
-            }
-
-            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
-                aggregation <- TRUE
-            } else {
-                aggregation <- FALSE
-            }
-
-            grid::grid.rect(width = 0.25, height = 0.10,
-                            gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
-            grid::grid.text("Please wait... Loading...")
-
-            map.plot <- plot(combinedData, main = plotTitle,
-                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
-                 datum.lines = plotDatumLines, projection = plotProjection,
-                 multiple.vars = multiple.vars, colour.var = mapVars,
-                 size.var = mapSizeVar, aggregate = aggregation,
-                 darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
-                 current.seq = plotCurrentSeqVal, palette = plotPalette,
-                 sparkline.type = plotSparklinesType)
-
-            GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
-
-            dev.hold()
-            grid::grid.newpage()
-            grid::grid.draw(map.plot)
-            dev.flush()
-
         }
+        ## Update and plot the map given
     ))
