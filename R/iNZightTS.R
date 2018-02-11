@@ -32,7 +32,8 @@ iNZightTSMod <- setRefClass(
     methods = list(
         initialize = function(GUI) {
             initFields(GUI = GUI, patternType = 1, smoothness = 10, tsObj = NULL,
-                       plottype = 1, compare = 1, timeFreq = 1, timeStart = c(1, 1), timer = NULL)
+                       plottype = 1, compare = 1, timeFreq = NA, timeStart = c(1, 1), timePeriod = NULL,
+                       timer = NULL)
 
             dat = GUI$getActiveData()
             activeData <<- tsData(dat)
@@ -272,7 +273,7 @@ iNZightTSMod <- setRefClass(
                     visible(multivar) <- TRUE
                 }
 
-                if (!is.na(timeVar)) {
+                if (!is.na(timeVar) || (!is.null(timePeriod) && !is.na(timeFreq)) ) {
                     tryCatch({
                         if (svalue(g1_opt1, TRUE) == 1) {
                             tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,
@@ -287,6 +288,8 @@ iNZightTSMod <- setRefClass(
                         gmessage(paste(sep="\n\n", "Error creating Time Series object", e$message),
                                  title = "Error creating time series", icon = "error", parent = GUI$win)
                     }, finally = {})
+                } else {
+                  cat("No time var...\n")
                 }
 
             })
@@ -465,9 +468,10 @@ iNZightTSMod <- setRefClass(
             ## look for time or date
             time_re = "([Tt][Ii][Mm][Ee])|([Dd][Aa][Tt][Ee])"
             ind     = grep(time_re, names(data))
+            if (length(ind) == 0) return (NA)
+            ind = ind[1]
             if (index) return(ind)
-            else if (length(ind) == 0) return(NA)
-            else return(names(data)[ind])
+            return(names(data)[ind])
         },
 
         ## checks for a time variable in dataset
@@ -478,8 +482,9 @@ iNZightTSMod <- setRefClass(
         ## drops categorical variables (except the time variable)
         tsData = function(data) {
             time_index = getTime(data)
-
-            data[, c(time_index, which(sapply(data, is.numeric)))]
+            num_index = sapply(data, is.numeric)
+            num_index[time_index] <- TRUE
+            data[, num_index]
         },
 
         ## draw the plot, depending on the settings
