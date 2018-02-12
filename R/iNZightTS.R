@@ -468,8 +468,7 @@ iNZightTSMod <- setRefClass(
             ## look for time or date
             time_re = "([Tt][Ii][Mm][Ee])|([Dd][Aa][Tt][Ee])"
             ind     = grep(time_re, names(data))
-            if (length(ind) == 0) return (1)
-            ind = ind[1]
+            if (length(ind) == 0) ind = 1 else ind = ind[1]
             if (index) return(ind)
             return(names(data)[ind])
         },
