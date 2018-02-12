@@ -273,7 +273,8 @@ iNZightTSMod <- setRefClass(
                     visible(multivar) <- TRUE
                 }
 
-                if (!is.na(timeVar) || (!is.null(timePeriod) && !is.na(timeFreq)) ) {
+                if ((svalue(g1_opt1, TRUE) == 1 && !is.na(timeVar)) || 
+                    (svalue(g1_opt1, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
                     tryCatch({
                         if (svalue(g1_opt1, TRUE) == 1) {
                             tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,
@@ -468,8 +469,7 @@ iNZightTSMod <- setRefClass(
             ## look for time or date
             time_re = "([Tt][Ii][Mm][Ee])|([Dd][Aa][Tt][Ee])"
             ind     = grep(time_re, names(data))
-            if (length(ind) == 0) return (NA)
-            ind = ind[1]
+            if (length(ind) == 0) ind = 1 else ind = ind[1]
             if (index) return(ind)
             return(names(data)[ind])
         },
