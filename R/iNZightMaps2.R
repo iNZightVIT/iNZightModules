@@ -721,7 +721,13 @@ iNZightMap2Mod <- setRefClass(
                 mapVars <<- svalue(table.vars)
                 mapSizeVar <<- svalue(combobox.sizeselect)
 
-                mapRegionsPlot <<- svalue(checkbox.regions)
+                ## Only assign value if at least one is unchecked. This prevents
+                ## the plot function from needing to run filter() for no reason.
+                if (length(svalue(checkbox.regions)) != length(checkbox.regions)) {
+                    mapRegionsPlot <<- svalue(checkbox.regions)
+                } else {
+                    mapRegionsPlot <<- NULL
+                }
 
                 if(length(mapVars) == 0) {
                     mapVars <<- NULL
@@ -867,6 +873,10 @@ iNZightMap2Mod <- setRefClass(
             add(group.regions, checkbox.regions, expand = TRUE, fill = TRUE)
 
             tbl.mapoptions[3, 1:4, expand = TRUE, fill = TRUE] <- group.regions
+
+            addHandlerChanged(checkbox.regions, function(h, ...) {
+                updateOptions()
+            })
             ######
 
             add(expand.mapoptions, tbl.mapoptions, expand = TRUE, fill = TRUE)
