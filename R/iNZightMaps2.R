@@ -27,6 +27,7 @@ iNZightMap2Mod <- setRefClass(
         mapType = "ANY",
         mapVars = "ANY",
         mapSizeVar = "ANY",
+        mapRegionsPlot = "ANY",
 
         plotTitle = "ANY",
         plotAxes = "logical",
@@ -94,6 +95,7 @@ iNZightMap2Mod <- setRefClass(
             mapVars <<- NULL
             mapSizeVar <<- NULL
             mapSequenceVar <<- NULL
+            mapRegionsPlot <<- NULL
 
             plotTitle <<- ""
             plotAxes <<- FALSE
@@ -719,6 +721,8 @@ iNZightMap2Mod <- setRefClass(
                 mapVars <<- svalue(table.vars)
                 mapSizeVar <<- svalue(combobox.sizeselect)
 
+                mapRegionsPlot <<- svalue(checkbox.regions)
+
                 if(length(mapVars) == 0) {
                     mapVars <<- NULL
                 }
@@ -760,7 +764,7 @@ iNZightMap2Mod <- setRefClass(
                  size.var = mapSizeVar, aggregate = aggregation,
                  darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
                  current.seq = plotCurrentSeqVal, palette = plotPalette,
-                 sparkline.type = plotSparklinesType)
+                 sparkline.type = plotSparklinesType, regions.to.plot = mapRegionsPlot)
 
             GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
 
@@ -854,6 +858,16 @@ iNZightMap2Mod <- setRefClass(
             tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
             ## tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
             tbl.mapoptions[2, 2:4, expand = TRUE] <- combobox.mapproj
+
+
+            ######
+            group.regions <- ggroup(use.scrollwindow = TRUE)
+            checkbox.regions <- gcheckboxgroup(iNZightMaps::iNZightMapRegions(combinedData),
+                                               horizontal=FALSE, checked = TRUE)
+            add(group.regions, checkbox.regions, expand = TRUE, fill = TRUE)
+
+            tbl.mapoptions[3, 1:4, expand = TRUE, fill = TRUE] <- group.regions
+            ######
 
             add(expand.mapoptions, tbl.mapoptions, expand = TRUE, fill = TRUE)
 
