@@ -28,6 +28,7 @@ iNZightMap2Mod <- setRefClass(
         mapVars = "ANY",
         mapSizeVar = "ANY",
         mapRegionsPlot = "ANY",
+        mapExcludedRegions = "ANY",
 
         plotTitle = "ANY",
         plotAxes = "logical",
@@ -96,6 +97,7 @@ iNZightMap2Mod <- setRefClass(
             mapSizeVar <<- NULL
             mapSequenceVar <<- NULL
             mapRegionsPlot <<- NULL
+            mapExcludedRegions <<- TRUE
 
             plotTitle <<- ""
             plotAxes <<- FALSE
@@ -725,6 +727,7 @@ iNZightMap2Mod <- setRefClass(
                 ## the plot function from needing to run filter() for no reason.
                 if (length(svalue(checkbox.regions)) != length(checkbox.regions)) {
                     mapRegionsPlot <<- svalue(checkbox.regions)
+                    mapExcludedRegions <<- svalue(checkbox.showexcluded)
                 } else {
                     mapRegionsPlot <<- NULL
                 }
@@ -761,6 +764,11 @@ iNZightMap2Mod <- setRefClass(
                 grid::grid.rect(width = 0.25, height = 0.10,
                                 gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
                 grid::grid.text("Please wait... Loading...")
+                axis.limits <- NULL
+            } else {
+                axis.limits <- c(min(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE),
+                                 max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE))
+                ## print(axis.limits)
             }
 
             map.plot <- plot(combinedData, main = plotTitle,
@@ -770,7 +778,9 @@ iNZightMap2Mod <- setRefClass(
                  size.var = mapSizeVar, aggregate = aggregation,
                  darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
                  current.seq = plotCurrentSeqVal, palette = plotPalette,
-                 sparkline.type = plotSparklinesType, regions.to.plot = mapRegionsPlot)
+                 sparkline.type = plotSparklinesType,
+                 regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
+                 scale.limits = axis.limits)
 
             GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
 
@@ -862,7 +872,6 @@ iNZightMap2Mod <- setRefClass(
             }
 
             tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
-            ## tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
             tbl.mapoptions[2, 2:4, expand = TRUE] <- combobox.mapproj
 
 
@@ -870,12 +879,41 @@ iNZightMap2Mod <- setRefClass(
             group.regions <- ggroup(use.scrollwindow = TRUE)
             checkbox.regions <- gcheckboxgroup(iNZightMaps::iNZightMapRegions(combinedData),
                                                horizontal=FALSE, checked = TRUE)
+            checkbox.regionall <- gcheckbox("Select All")
+            checkbox.regionnone <- gcheckbox("Select None")
+            checkbox.showexcluded <- gcheckbox("Plot Excluded Regions")
             add(group.regions, checkbox.regions, expand = TRUE, fill = TRUE)
 
             tbl.mapoptions[3, 1:4, expand = TRUE, fill = TRUE] <- group.regions
+            tbl.mapoptions[4, 3, expand = TRUE, fill = TRUE] <- checkbox.regionall
+            tbl.mapoptions[4, 4, expand = TRUE, fill = TRUE] <- checkbox.regionnone
+            tbl.mapoptions[5, 1:4, expand = TRUE, fill = TRUE] <- checkbox.showexcluded
 
             addHandlerChanged(checkbox.regions, function(h, ...) {
+                if (length(svalue(checkbox.regions, index = TRUE)) != length(checkbox.regions)) {
+                    svalue(checkbox.regionall) <- FALSE
+                }
+                if (length(svalue(checkbox.regions, index = TRUE)) > 0) {
+                    svalue(checkbox.regionnone) <- FALSE
+                }
+
                 updateOptions()
+            })
+
+            addHandlerChanged(checkbox.showexcluded, function(h, ...) {
+                updateOptions()
+            })
+
+            addHandlerChanged(checkbox.regionall, function(h, ...) {
+                if (svalue(checkbox.regionall)) {
+                    svalue(checkbox.regions, index = TRUE) <- 1:length(checkbox.regions)
+                }
+            })
+
+            addHandlerChanged(checkbox.regionnone, function(h, ...) {
+                if (svalue(checkbox.regionnone)) {
+                    svalue(checkbox.regions) <- FALSE
+                }
             })
             ######
 
@@ -1061,7 +1099,6 @@ iNZightMap2Mod <- setRefClass(
                 combobox.singleval <- gslider(unique.singlevals[!is.na(unique.singlevals)])
                 svalue(combobox.singleval) <- combobox.singleval$items[length(combobox.singleval$items)]
 
-                # radio.allvalues <- gradio(c("Sparklines", "Grid (TODO)"), horizontal = TRUE)
                 radio.allvalues <- gradio(c("Sparklines"), horizontal = TRUE)
 
                 # Relative       [ ]
