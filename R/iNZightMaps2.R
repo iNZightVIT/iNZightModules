@@ -44,6 +44,7 @@ iNZightMap2Mod <- setRefClass(
         plotSparklinesType = "ANY",
         timer = "ANY",
         plotPlay = "ANY",
+        plotLabelVar = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -113,6 +114,7 @@ iNZightMap2Mod <- setRefClass(
             plotSparklinesType <<- "Absolute"
             timer <<- NULL
             plotPlay <<- FALSE
+            plotLabelVar <<- NULL
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
@@ -719,6 +721,16 @@ iNZightMap2Mod <- setRefClass(
                 plotConstantAlpha <<- svalue(slider.constalpha)
                 plotConstantSize <<- svalue(slider.constsize)
 
+                if (svalue(checkbox.labels)) {
+                    if (svalue(combobox.labels, index = TRUE) == 1) {
+                        plotLabelVar <<- "use_colour_var"
+                    } else {
+                        plotLabelVar <<- svalue(combobox.labels)
+                    }
+                } else {
+                    plotLabelVar <<- NULL
+                }
+
                 ## Variable Options
                 mapVars <<- svalue(table.vars)
                 mapSizeVar <<- svalue(combobox.sizeselect)
@@ -771,6 +783,11 @@ iNZightMap2Mod <- setRefClass(
                 ## print(axis.limits)
             }
 
+##### PROPORTIONS SCALE
+            if (svalue(checkbox.scaleprop)) {
+                axis.limits <- c(0, 1)
+            }
+
             map.plot <- plot(combinedData, main = plotTitle,
                  axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
                  datum.lines = plotDatumLines, projection = plotProjection,
@@ -780,7 +797,7 @@ iNZightMap2Mod <- setRefClass(
                  current.seq = plotCurrentSeqVal, palette = plotPalette,
                  sparkline.type = plotSparklinesType,
                  regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
-                 scale.limits = axis.limits)
+                 scale.limits = axis.limits, label.var = plotLabelVar)
 
             GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
 
@@ -881,7 +898,7 @@ iNZightMap2Mod <- setRefClass(
                                                horizontal=FALSE, checked = TRUE)
             checkbox.regionall <- gcheckbox("Select All")
             checkbox.regionnone <- gcheckbox("Select None")
-            checkbox.showexcluded <- gcheckbox("Plot Excluded Regions")
+            checkbox.showexcluded <- gcheckbox("Plot Excluded Regions", checked = TRUE)
             add(group.regions, checkbox.regions, expand = TRUE, fill = TRUE)
 
             tbl.mapoptions[3, 1:4, expand = TRUE, fill = TRUE] <- group.regions
@@ -942,12 +959,31 @@ iNZightMap2Mod <- setRefClass(
 
             svalue(checkbox.darktheme) <- plotTheme
 
+            lbl.labels <- glabel("Region Labels:")
+            checkbox.labels <- gcheckbox()
+            combobox.labels <- gcombobox(c("Current Variable", iNZightMaps::iNZightMapVars(combinedData, map.vars = TRUE)))
+            visible(combobox.labels) <- FALSE
+
+            addHandlerChanged(checkbox.labels, function(h, ...) {
+                visible(combobox.labels) <- svalue(checkbox.labels)
+                updateOptions()
+            })
+
+            addHandlerChanged(combobox.labels, function(h, ...) {
+                updateOptions()
+            })
+
             addHandlerChanged(checkbox.darktheme, function(h, ...) {
                 updateOptions()
             })
 
             addHandlerChanged(combobox.palette, function(h, ...) {
               updateOptions()
+            })
+
+            checkbox.scaleprop <- gcheckbox("Fixed Scale for Proportions", visible = TRUE)
+            addHandlerChanged(checkbox.scaleprop, function(h, ...) {
+                updateOptions()
             })
 
             tbl.xaxisedit <- glayout()
@@ -970,6 +1006,12 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
             tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
             tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
+
+            tbl.plotoptions[7, 1, expand = TRUE] <- lbl.labels
+            tbl.plotoptions[7, 2] <- checkbox.labels
+            tbl.plotoptions[7, 3:4, expand = TRUE] <- combobox.labels
+
+            tbl.plotoptions[8, 1, expand = TRUE] <- checkbox.scaleprop
 
             slider.constalpha <- gslider(1, 0.1, by = -0.1)
             slider.constsize <- gslider(1, 10, by = 1)
@@ -1284,6 +1326,11 @@ iNZightMap2Mod <- setRefClass(
             add(group.main, lbl.mainsubtitle)
             add(group.main, tbl.main, expand = TRUE, fill = TRUE)
 
+            addDropSource(table.vars, function(h, ...) {
+                varname <- svalue(h$obj)
+                varname
+            })
+
             addHandlerSelectionChanged(table.vars, function(h, ...) {
                 if (isTRUE(length(svalue(table.vars)) > 0)) {
                     visible(lbl.maptype) <- TRUE
@@ -1357,6 +1404,10 @@ iNZightMap2Mod <- setRefClass(
 
             addHandlerChanged(combobox.sizeselect, function(h, ...) {
                 updateOptions()
+            })
+
+            addDropTarget(combobox.sizeselect, function(h, ...) {
+                svalue(combobox.sizeselect) <- h$dropdata
             })
 
             btmGrp <- ggroup(container = mainGrp)
