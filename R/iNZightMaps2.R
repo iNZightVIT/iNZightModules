@@ -29,6 +29,8 @@ iNZightMap2Mod <- setRefClass(
         mapSizeVar = "ANY",
         mapRegionsPlot = "ANY",
         mapExcludedRegions = "ANY",
+        plotMaxSeqInd = "ANY",
+        plotCurrSeqInd = "ANY",
 
         plotTitle = "ANY",
         plotAxes = "logical",
@@ -45,6 +47,7 @@ iNZightMap2Mod <- setRefClass(
         timer = "ANY",
         plotPlay = "ANY",
         plotLabelVar = "ANY",
+        plotScaleLimits = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -55,6 +58,7 @@ iNZightMap2Mod <- setRefClass(
     methods = list(
         initialize = function(GUI) {
             initFields(GUI = GUI)
+            print(class(GUI))
 
             ## TODO: Check package name, details, etc.
             if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
@@ -702,10 +706,58 @@ iNZightMap2Mod <- setRefClass(
         },
         ## Create the map object based on the options given in the importation dialog box
         createMapObject = function() {},
+
+        updatePlot = function() {
+            gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), gdkCursorNew("GDK_WATCH"))
+            if(length(mapVars) > 1) {
+                multiple.vars <- TRUE
+            } else {
+                multiple.vars <- FALSE
+            }
+
+            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
+                aggregation <- TRUE
+            } else {
+                aggregation <- FALSE
+            }
+
+            if (!plotPlay) {
+                grid::grid.rect(width = 0.25, height = 0.10, y = 0.05,
+                                gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+                grid::grid.text("Please wait... Loading...", y = 0.05)
+                axis.limits <- plotScaleLimits
+            } else {
+                axis.limits <- c(min(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE),
+                                 max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE))
+            }
+
+            map.plot <- plot(combinedData, main = plotTitle,
+                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
+                 datum.lines = plotDatumLines, projection = plotProjection,
+                 multiple.vars = multiple.vars, colour.var = mapVars,
+                 size.var = mapSizeVar, aggregate = aggregation,
+                 darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
+                 current.seq = plotCurrentSeqVal, palette = plotPalette,
+                 sparkline.type = plotSparklinesType,
+                 regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
+                 scale.limits = axis.limits, label.var = plotLabelVar)
+
+            GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
+
+            dev.hold()
+            grid::grid.newpage()
+            grid::grid.draw(map.plot)
+            dev.flush()
+            gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), NULL)
+
+            invisible(map.plot)
+        },
+
         ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
         initiateModule = function() {
             updateOptions = function() {
                 ## Plot Options
+                print("UpdateOptions")
                 plotTitle <<- svalue(edit.plottitle)
                 plotAxes <<- svalue(checkbox.axislabels)
                 plotXLab <<- svalue(edit.xaxis)
@@ -735,6 +787,14 @@ iNZightMap2Mod <- setRefClass(
                 mapVars <<- svalue(table.vars)
                 mapSizeVar <<- svalue(combobox.sizeselect)
 
+                plotScaleLimits <<- switch(svalue(combobox.scale),
+                                          "Default" = NULL,
+                                          "Over all Plots" = iNZightMaps::getMinMax(combinedData, mapVars),
+                                          "Fixed - Proportions" = c(0, 1),
+                                          "Fixed - Custom" = as.numeric(c(svalue(input.scalemin),
+                                                                          svalue(input.scalemax))))
+
+
                 ## Only assign value if at least one is unchecked. This prevents
                 ## the plot function from needing to run filter() for no reason.
                 if (length(svalue(checkbox.regions)) != length(checkbox.regions)) {
@@ -759,62 +819,17 @@ iNZightMap2Mod <- setRefClass(
 
                 updatePlot()
             }
-        updatePlot = function() {
-            if(length(mapVars) > 1) {
-                multiple.vars <- TRUE
-            } else {
-                multiple.vars <- FALSE
-            }
 
-            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
-                aggregation <- TRUE
-            } else {
-                aggregation <- FALSE
-            }
-
-            if (!plotPlay) {
-                grid::grid.rect(width = 0.25, height = 0.10,
-                                gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
-                grid::grid.text("Please wait... Loading...")
-                axis.limits <- NULL
-            } else {
-                axis.limits <- c(min(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE),
-                                 max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE))
-                ## print(axis.limits)
-            }
-
-##### PROPORTIONS SCALE
-            if (svalue(checkbox.scaleprop)) {
-                axis.limits <- c(0, 1)
-            }
-
-            map.plot <- plot(combinedData, main = plotTitle,
-                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
-                 datum.lines = plotDatumLines, projection = plotProjection,
-                 multiple.vars = multiple.vars, colour.var = mapVars,
-                 size.var = mapSizeVar, aggregate = aggregation,
-                 darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
-                 current.seq = plotCurrentSeqVal, palette = plotPalette,
-                 sparkline.type = plotSparklinesType,
-                 regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
-                 scale.limits = axis.limits, label.var = plotLabelVar)
-
-            GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
-
-            dev.hold()
-            grid::grid.newpage()
-            grid::grid.draw(map.plot)
-            dev.flush()
-
-            if (plotPlay) {
-                if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
-                    svalue(combobox.singleval, index = TRUE) = svalue(combobox.singleval, index = TRUE) + 1
+            playPlot <- function(currSeq = 1) {
+                if (currSeq < length(combobox.singleval$items)) {
+                    plotTitle <<- sprintf("%s (%s)", mapVars, plotCurrentSeqVal)
+                    updatePlot()
+                    svalue(combobox.singleval, index = TRUE) <- currSeq + 1
                 } else {
                     plotPlay <<- FALSE
                 }
             }
 
-        }
 
             GUI$initializeModuleWindow(.self)
             GUI$rhistory$add(c(sprintf("## Using the %s map", mapName)), keep = TRUE)
@@ -981,8 +996,27 @@ iNZightMap2Mod <- setRefClass(
               updateOptions()
             })
 
-            checkbox.scaleprop <- gcheckbox("Fixed Scale for Proportions", visible = TRUE)
-            addHandlerChanged(checkbox.scaleprop, function(h, ...) {
+            ## checkbox.scaleprop <- gcheckbox("Fixed Scale for Proportions", visible = TRUE)
+            lbl.scale <- glabel("Map Scales:")
+            combobox.scale <- gcombobox(c("Default", "Over all Plots", "Fixed - Proportions", "Fixed - Custom"))
+            input.scalemin <- gedit(initial.msg = "Min", width = 4)
+            input.scalemax <- gedit(initial.msg = "Max", width = 4)
+            tbl.scales <- glayout()
+            tbl.scales[1, 1] <- input.scalemin
+            tbl.scales[1, 2] <- input.scalemax
+
+            visible(tbl.scales) <- FALSE
+
+            addHandlerChanged(combobox.scale, function(h, ...) {
+                visible(tbl.scales) <- svalue(combobox.scale) == "Fixed - Custom"
+                updateOptions()
+            })
+
+            addHandlerChanged(input.scalemin, function(h, ...) {
+                updateOptions()
+            })
+
+            addHandlerChanged(input.scalemax, function(h, ...) {
                 updateOptions()
             })
 
@@ -997,7 +1031,7 @@ iNZightMap2Mod <- setRefClass(
 
             tbl.plotoptions[2, 1, expand = TRUE,  anchor = c(1, 0)] <- lbl.palette
             tbl.plotoptions[2, 2:3, expand = TRUE] <- combobox.palette
-            tbl.plotoptions[2, 4, expand = TRUE] <- checkbox.darktheme
+            tbl.plotoptions[2, 4] <- checkbox.darktheme
 
             tbl.plotoptions[3, 2:4, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
 
@@ -1011,7 +1045,10 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[7, 2] <- checkbox.labels
             tbl.plotoptions[7, 3:4, expand = TRUE] <- combobox.labels
 
-            tbl.plotoptions[8, 1, expand = TRUE] <- checkbox.scaleprop
+            tbl.plotoptions[8, 1, expand = TRUE] <- lbl.scale
+            tbl.plotoptions[8, 2:3, expand = TRUE] <- combobox.scale
+            ## tbl.plotoptions[8, 3] <- input.scalemin
+            tbl.plotoptions[8, 4] <- tbl.scales
 
             slider.constalpha <- gslider(1, 0.1, by = -0.1)
             slider.constsize <- gslider(1, 10, by = 1)
@@ -1148,7 +1185,7 @@ iNZightMap2Mod <- setRefClass(
                 # Starting/Ending positions |----[]-------|
                 combobox.aggregate <- gcombobox(c("Mean", "Median"))
                 lbl.sparkline <- glabel("Line Chart Type:")
-                combobox.sparkline <- gcombobox(c("Absolute", "Relative"))
+                combobox.sparkline <- gcombobox(c("Absolute", "Relative", "Percent Change"))
 
                 tbl.main[2, 1:3] <- lbl.timevariable
 
@@ -1276,13 +1313,17 @@ iNZightMap2Mod <- setRefClass(
                                                            single.value = svalue(combobox.singleval))
                     plotCurrentSeqVal <<- svalue(combobox.singleval)
 
-                    if (isTRUE(length(svalue(table.vars)) > 1)) {
-                        svalue(edit.plottitle) <- ""
+                    if (plotPlay) {
+                        playPlot(svalue(combobox.singleval, index = TRUE))
                     } else {
-                        if (isTRUE(has.multipleobs && multipleObsOption == "singleval")) {
-                            svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.singleval), ")")
+                        if (isTRUE(length(svalue(table.vars)) > 1)) {
+                            svalue(edit.plottitle) <- ""
                         } else {
-                            svalue(edit.plottitle) <- svalue(table.vars)
+                            if (isTRUE(has.multipleobs && multipleObsOption == "singleval")) {
+                                svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.singleval), ")")
+                            } else {
+                                svalue(edit.plottitle) <- svalue(table.vars)
+                            }
                         }
                     }
                 })
@@ -1426,7 +1467,16 @@ iNZightMap2Mod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
-            ## GUI$plotToolbar$update(NULL, refresh = "updatePlot")
+
+            exportButton <- gimage(stock.id = "zoom-in", size = "button")
+
+            addHandlerClicked(exportButton, function(h, ...) {
+                iNZightPlots::exportHTML(x = updatePlot(),
+                                         mapObj = combinedData,
+                                         file = "H:/echome/asdfasd.html")
+            })
+
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
 
             ## test.btn <- gbutton("interactivity", cont = mainGrp)
             ## addHandlerClicked(test.btn, function(h, ...) {
