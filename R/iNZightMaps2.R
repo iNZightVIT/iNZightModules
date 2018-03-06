@@ -1472,8 +1472,7 @@ iNZightMap2Mod <- setRefClass(
 
             addHandlerClicked(exportButton, function(h, ...) {
                 iNZightPlots::exportHTML(x = updatePlot(),
-                                         mapObj = combinedData,
-                                         file = "H:/echome/asdfasd.html")
+                                         mapObj = combinedData)
             })
 
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
