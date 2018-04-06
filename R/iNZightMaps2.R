@@ -22,6 +22,7 @@ iNZightMap2Mod <- setRefClass(
         staleMap = "logical",
         has.multipleobs = "logical",
         mapSequenceVar = "ANY",
+        plotObject = "ANY",
 
         mapName = "character",
         mapType = "ANY",
@@ -58,7 +59,6 @@ iNZightMap2Mod <- setRefClass(
     methods = list(
         initialize = function(GUI) {
             initFields(GUI = GUI)
-            print(class(GUI))
 
             ## TODO: Check package name, details, etc.
             if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
@@ -111,7 +111,7 @@ iNZightMap2Mod <- setRefClass(
             plotDatumLines <<- FALSE
             plotProjection <<- NULL
             plotTheme <<- FALSE
-            plotPalette <<- "Default"
+            plotPalette <<- "Viridis"
             plotConstantAlpha <<- 1.0
             plotConstantSize <<- 1.0
             plotCurrentSeqVal <<- NULL
@@ -232,8 +232,9 @@ iNZightMap2Mod <- setRefClass(
             visible(expand.variables) <- FALSE
             enabled(frame.variables) <- FALSE
 
-            btn.finish <- gbutton("Finish")
+            btn.finish <- gbutton(action = gaction("Use Map", icon = "apply"))
             enabled(btn.finish) <- FALSE
+            font(btn.finish) <- list(weight = "bold")
 
             btn.back <- gbutton("Cancel Map Change")
             visible(btn.back) <- class(mapData) != "uninitializedField"
@@ -731,6 +732,7 @@ iNZightMap2Mod <- setRefClass(
                                  max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE))
             }
 
+            print(plotProjection)
             map.plot <- plot(combinedData, main = plotTitle,
                  axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
                  datum.lines = plotDatumLines, projection = plotProjection,
@@ -751,6 +753,7 @@ iNZightMap2Mod <- setRefClass(
             gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), NULL)
 
             invisible(map.plot)
+            plotObject <<- map.plot
         },
 
         ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
@@ -788,10 +791,11 @@ iNZightMap2Mod <- setRefClass(
                 mapSizeVar <<- svalue(combobox.sizeselect)
 
                 plotScaleLimits <<- switch(svalue(combobox.scale),
-                                          "Default" = NULL,
-                                          "Over all Plots" = iNZightMaps::getMinMax(combinedData, mapVars),
-                                          "Fixed - Proportions" = c(0, 1),
-                                          "Fixed - Custom" = as.numeric(c(svalue(input.scalemin),
+                                          "Independent scales" = NULL,
+                                          "Same for all plots" = iNZightMaps::getMinMax(combinedData, mapVars),
+                                          "Scales fixed at 0-1" = c(0, 1),
+                                          "Scales fixed at 0-100" = c(0, 100),
+                                          "Scales fixed at custom range" = as.numeric(c(svalue(input.scalemin),
                                                                           svalue(input.scalemax))))
 
 
@@ -799,7 +803,8 @@ iNZightMap2Mod <- setRefClass(
                 ## the plot function from needing to run filter() for no reason.
                 if (length(svalue(checkbox.regions)) != length(checkbox.regions)) {
                     mapRegionsPlot <<- svalue(checkbox.regions)
-                    mapExcludedRegions <<- svalue(checkbox.showexcluded)
+                    ## mapExcludedRegions <<- svalue(checkbox.showexcluded)
+                    mapExcludedRegions <<- TRUE
                 } else {
                     mapRegionsPlot <<- NULL
                 }
@@ -903,8 +908,8 @@ iNZightMap2Mod <- setRefClass(
                     svalue(combobox.mapproj) <- proj.df[which(proj.df$PROJ4 == plotProjection), "Name"]
             }
 
-            tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
-            tbl.mapoptions[2, 2:4, expand = TRUE] <- combobox.mapproj
+            tbl.mapoptions[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
+            tbl.mapoptions[4, 2:4, expand = TRUE] <- combobox.mapproj
 
 
             ######
@@ -913,13 +918,13 @@ iNZightMap2Mod <- setRefClass(
                                                horizontal=FALSE, checked = TRUE)
             checkbox.regionall <- gcheckbox("Select All")
             checkbox.regionnone <- gcheckbox("Select None")
-            checkbox.showexcluded <- gcheckbox("Plot Excluded Regions", checked = TRUE)
+            ## checkbox.showexcluded <- gcheckbox("Plot Excluded Regions", checked = TRUE)
             add(group.regions, checkbox.regions, expand = TRUE, fill = TRUE)
 
-            tbl.mapoptions[3, 1:4, expand = TRUE, fill = TRUE] <- group.regions
-            tbl.mapoptions[4, 3, expand = TRUE, fill = TRUE] <- checkbox.regionall
-            tbl.mapoptions[4, 4, expand = TRUE, fill = TRUE] <- checkbox.regionnone
-            tbl.mapoptions[5, 1:4, expand = TRUE, fill = TRUE] <- checkbox.showexcluded
+            tbl.mapoptions[2, 1:4, expand = TRUE, fill = TRUE] <- group.regions
+            tbl.mapoptions[3, 1, expand = TRUE, fill = TRUE] <- checkbox.regionall
+            tbl.mapoptions[3, 2, expand = TRUE, fill = TRUE] <- checkbox.regionnone
+            ## tbl.mapoptions[4, 1:4, expand = TRUE, fill = TRUE] <- checkbox.showexcluded
 
             addHandlerChanged(checkbox.regions, function(h, ...) {
                 if (length(svalue(checkbox.regions, index = TRUE)) != length(checkbox.regions)) {
@@ -932,9 +937,9 @@ iNZightMap2Mod <- setRefClass(
                 updateOptions()
             })
 
-            addHandlerChanged(checkbox.showexcluded, function(h, ...) {
-                updateOptions()
-            })
+            ## addHandlerChanged(checkbox.showexcluded, function(h, ...) {
+                ## updateOptions()
+            ## })
 
             addHandlerChanged(checkbox.regionall, function(h, ...) {
                 if (svalue(checkbox.regionall)) {
@@ -972,6 +977,7 @@ iNZightMap2Mod <- setRefClass(
                                             "Accent", "Dark2", "Paired", "Pastel1", "Set1",
                                             "Blues", "BuGn", "BuPu", "GnBu"))
 
+            svalue(combobox.palette) <- plotPalette
             svalue(checkbox.darktheme) <- plotTheme
 
             lbl.labels <- glabel("Region Labels:")
@@ -998,7 +1004,11 @@ iNZightMap2Mod <- setRefClass(
 
             ## checkbox.scaleprop <- gcheckbox("Fixed Scale for Proportions", visible = TRUE)
             lbl.scale <- glabel("Map Scales:")
-            combobox.scale <- gcombobox(c("Default", "Over all Plots", "Fixed - Proportions", "Fixed - Custom"))
+            combobox.scale <- gcombobox(c("Independent scales",
+                                          "Same for all plots",
+                                          "Scales fixed at 0-1",
+                                          "Scales fixed at 0-100",
+                                          "Scales fixed at custom range"))
             input.scalemin <- gedit(initial.msg = "Min", width = 4)
             input.scalemax <- gedit(initial.msg = "Max", width = 4)
             tbl.scales <- glayout()
@@ -1008,7 +1018,7 @@ iNZightMap2Mod <- setRefClass(
             visible(tbl.scales) <- FALSE
 
             addHandlerChanged(combobox.scale, function(h, ...) {
-                visible(tbl.scales) <- svalue(combobox.scale) == "Fixed - Custom"
+                visible(tbl.scales) <- svalue(combobox.scale) == "Scales fixed at custom range"
                 updateOptions()
             })
 
@@ -1051,10 +1061,10 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[8, 4] <- tbl.scales
 
             slider.constalpha <- gslider(1, 0.1, by = -0.1)
-            slider.constsize <- gslider(1, 10, by = 1)
+            slider.constsize <- gslider(1, 10, by = 1, value = 5)
 
-            lbl.constalpha <- glabel("Transparency:")
-            lbl.constsize <- glabel("Size:")
+            lbl.constalpha <- glabel("Transparency of map:")
+            lbl.constsize <- glabel("Overall size:")
 
             visible(slider.constalpha) <- mapType != "region"
             visible(lbl.constalpha) <- mapType != "region"
@@ -1159,10 +1169,10 @@ iNZightMap2Mod <- setRefClass(
 
                 tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
                 tbl.main[3, 2,   expand = TRUE] <- combobox.sizeselect
-                tbl.main[4, 1, expand = TRUE] <- lbl.constalpha
-                tbl.main[4, 2, expand = TRUE] <- slider.constalpha
-                tbl.main[5, 1, expand = TRUE] <- lbl.constsize
-                tbl.main[5, 2, expand = TRUE] <- slider.constsize
+                tbl.main[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constalpha
+                tbl.main[5, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
+                tbl.main[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constsize
+                tbl.main[4, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
             } else {
                 separator.timevariable <- gseparator()
                 lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
@@ -1205,10 +1215,10 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
                 tbl.main[7, 2,   expand = TRUE] <- combobox.sparkline
 
-                tbl.main[8, 1, expand = TRUE] <- lbl.constalpha
-                tbl.main[8, 2, expand = TRUE] <- slider.constalpha
-                tbl.main[9, 1, expand = TRUE] <- lbl.constsize
-                tbl.main[9, 2, expand = TRUE] <- slider.constsize
+                tbl.main[9, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constalpha
+                tbl.main[9, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
+                tbl.main[8, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constsize
+                tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
 
                 btn.play <- gbutton("Play")
 
@@ -1468,11 +1478,14 @@ iNZightMap2Mod <- setRefClass(
                                       visible(GUI$gp1) <<- TRUE
                                   })
 
-            exportButton <- gimage(stock.id = "zoom-in", size = "button")
+            exportButton <- iNZight:::gimagebutton(filename = "eye-pagexcf.png",
+                                         tooltip = "Export interactive map", size = "button")
 
             addHandlerClicked(exportButton, function(h, ...) {
-                iNZightPlots::exportHTML(x = updatePlot(),
-                                         mapObj = combinedData)
+                browseURL(iNZightPlots::exportHTML(x = plotObject,
+                                         mapObj = combinedData,
+                                         file = tempfile(fileext = ".html")),
+                          browser = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
             })
 
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
