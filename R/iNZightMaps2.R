@@ -774,7 +774,12 @@ iNZightMap2Mod <- setRefClass(
                 plotTheme <<- svalue(checkbox.darktheme)
                 plotPalette <<- svalue(combobox.palette)
                 plotConstantAlpha <<- svalue(slider.constalpha)
-                plotConstantSize <<- svalue(slider.constsize)
+
+                if (combinedData$type == "sparklines") {
+                    plotConstantSize <<- svalue(slider.constsizespark)
+                } else {
+                    plotConstantSize <<- svalue(slider.constsize)
+                }
 
                 if (svalue(checkbox.labels)) {
                     if (svalue(combobox.labels, index = TRUE) == 1) {
@@ -1060,16 +1065,20 @@ iNZightMap2Mod <- setRefClass(
             ## tbl.plotoptions[8, 3] <- input.scalemin
             tbl.plotoptions[8, 4] <- tbl.scales
 
-            slider.constalpha <- gslider(1, 0.1, by = -0.1)
-            slider.constsize <- gslider(1, 10, by = 1, value = 5)
+            slider.constalpha     <- gslider(1, 0.1, by = -0.1)
+            slider.constsize      <- gslider(1, 10, by = 1, value = 5)
+            slider.constsizespark <- gslider(1, 5, by = 0.5, value = 1)
 
-            lbl.constalpha <- glabel("Transparency of map:")
-            lbl.constsize <- glabel("Overall size:")
+            lbl.constalpha     <- glabel("Transparency of map:")
+            lbl.constsize      <- glabel("Overall size:")
+            lbl.constsizespark <- glabel("Overall size:")
 
-            visible(slider.constalpha) <- mapType != "region"
-            visible(lbl.constalpha) <- mapType != "region"
-            visible(slider.constsize) <- mapType != "region"
-            visible(lbl.constsize) <- mapType != "region"
+            visible(slider.constalpha) <- mapType == "point"
+            visible(lbl.constalpha)    <- mapType == "point"
+            visible(slider.constsize)  <- mapType == "point"
+            visible(lbl.constsize)     <- mapType == "point"
+
+            visible(slider.constsizespark) <- FALSE
 
             addHandlerChanged(slider.constalpha, function(h, ...) {
                 if (!is.null(timer))
@@ -1083,23 +1092,29 @@ iNZightMap2Mod <- setRefClass(
                 timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
             })
 
+            addHandlerChanged(slider.constsizespark, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
+            })
+
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
 
-            visible(lbl.xaxis) <- plotAxes
+            visible(lbl.xaxis)     <- plotAxes
             visible(tbl.xaxisedit) <- plotAxes
-            visible(lbl.yaxis) <- plotAxes
+            visible(lbl.yaxis)     <- plotAxes
             visible(tbl.yaxisedit) <- plotAxes
 
             addHandlerChanged(checkbox.axislabels, function (h, ...) {
                 if(svalue(checkbox.axislabels)) {
-                    visible(lbl.xaxis) <- TRUE
+                    visible(lbl.xaxis)     <- TRUE
                     visible(tbl.xaxisedit) <- TRUE
-                    visible(lbl.yaxis) <- TRUE
+                    visible(lbl.yaxis)     <- TRUE
                     visible(tbl.yaxisedit) <- TRUE
                 } else {
-                    visible(lbl.xaxis) <- FALSE
+                    visible(lbl.xaxis)     <- FALSE
                     visible(tbl.xaxisedit) <- FALSE
-                    visible(lbl.yaxis) <- FALSE
+                    visible(lbl.yaxis)     <- FALSE
                     visible(tbl.yaxisedit) <- FALSE
                 }
                 updateOptions()
@@ -1215,10 +1230,11 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
                 tbl.main[7, 2,   expand = TRUE] <- combobox.sparkline
 
-                tbl.main[9, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constalpha
+                tbl.main[9, 1, expand = TRUE, anchor = c(1, 0)]  <- lbl.constalpha
                 tbl.main[9, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
-                tbl.main[8, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constsize
+                tbl.main[8, 1, expand = TRUE, anchor = c(1, 0)]  <- lbl.constsize
                 tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
+                tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsizespark
 
                 btn.play <- gbutton("Play")
 
@@ -1238,40 +1254,41 @@ iNZightMap2Mod <- setRefClass(
 
                     if (isTRUE(!is.null(mapVars))) {
                         visible(combobox.singleval) <- radio.choice == 1
-                        visible(radio.allvalues) <- radio.choice == 2
+                        visible(radio.allvalues)    <- radio.choice == 2
                         visible(combobox.aggregate) <- radio.choice == 3
 
-                        visible(lbl.maptype) <- TRUE
+                        visible(lbl.maptype)   <- TRUE
                         visible(radio.maptype) <- radio.choice != 2
 
-                        visible(lbl.sizeselect) <- radio.choice != 2 && mapType == "point"
+                        visible(lbl.sizeselect)      <- radio.choice != 2 && mapType == "point"
                         visible(combobox.sizeselect) <- radio.choice != 2 && mapType == "point"
 
-                        visible(lbl.constsize) <- mapType == "point" || radio.choice == 2
-                        visible(slider.constsize) <- mapType == "point" || radio.choice == 2
+                        visible(lbl.constsize)    <- mapType == "point" || radio.choice == 2
+                        visible(slider.constsize) <- mapType == "point" && radio.choice != 2
 
-                        visible(lbl.constalpha) <- mapType == "point" || radio.choice == 2
+                        visible(lbl.constalpha)    <- mapType == "point" || radio.choice == 2
                         visible(slider.constalpha) <- mapType == "point" || radio.choice == 2
 
-                        visible(lbl.sparkline) <- radio.choice == 2
-                        visible(combobox.sparkline) <- radio.choice == 2
+                        visible(lbl.sparkline)         <- radio.choice == 2
+                        visible(combobox.sparkline)    <- radio.choice == 2
+                        visible(slider.constsizespark) <- radio.choice == 2
 
                         visible(btn.play) <- radio.choice == 1
                     } else {
-                        visible(combobox.singleval) <- FALSE
-                        visible(radio.allvalues) <- FALSE
-                        visible(combobox.aggregate) <- FALSE
-                        visible(lbl.maptype) <- FALSE
-                        visible(radio.maptype) <- FALSE
-                        visible(lbl.sizeselect) <- FALSE
+                        visible(combobox.singleval)  <- FALSE
+                        visible(radio.allvalues)     <- FALSE
+                        visible(combobox.aggregate)  <- FALSE
+                        visible(lbl.maptype)         <- FALSE
+                        visible(radio.maptype)       <- FALSE
+                        visible(lbl.sizeselect)      <- FALSE
                         visible(combobox.sizeselect) <- FALSE
-                        visible(lbl.constsize) <- FALSE
-                        visible(slider.constsize) <- FALSE
-                        visible(lbl.constalpha) <- FALSE
-                        visible(slider.constalpha) <- FALSE
-                        visible(lbl.sparkline) <- FALSE
-                        visible(combobox.sparkline) <- FALSE
-                        visible(btn.play) <- FALSE
+                        visible(lbl.constsize)       <- FALSE
+                        visible(slider.constsize)    <- FALSE
+                        visible(lbl.constalpha)      <- FALSE
+                        visible(slider.constalpha)   <- FALSE
+                        visible(lbl.sparkline)       <- FALSE
+                        visible(combobox.sparkline)  <- FALSE
+                        visible(btn.play)            <- FALSE
                     }
 
                     if (radio.choice == 1) {
@@ -1478,7 +1495,7 @@ iNZightMap2Mod <- setRefClass(
                                       visible(GUI$gp1) <<- TRUE
                                   })
 
-            exportButton <- iNZight:::gimagebutton(filename = "eye-pagexcf.png",
+            exportButton <- iNZight:::gimagebutton(stock.id = "zoom-in",
                                          tooltip = "Export interactive map", size = "button")
 
             addHandlerClicked(exportButton, function(h, ...) {
