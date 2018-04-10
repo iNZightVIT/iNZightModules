@@ -832,8 +832,6 @@ iNZightMap2Mod <- setRefClass(
 
             playPlot <- function(currSeq = 1) {
                 if (currSeq < length(combobox.singleval$items)) {
-                    plotTitle <<- sprintf("%s (%s)", mapVars, plotCurrentSeqVal)
-                    updatePlot()
                     svalue(combobox.singleval, index = TRUE) <- currSeq + 1
                 } else {
                     plotPlay <<- FALSE
@@ -1199,6 +1197,7 @@ iNZightMap2Mod <- setRefClass(
                     multipleObsOption <<- "singleval"
                 }
 
+                lbl.singleval <- glabel(sprintf("Value of %s variable:", mapSequenceVar))
                 unique.singlevals <- unique(as.data.frame(combinedData[["region.data"]])[, combinedData$sequence.var])
                 combobox.singleval <- gslider(unique.singlevals[!is.na(unique.singlevals)])
                 svalue(combobox.singleval) <- combobox.singleval$items[length(combobox.singleval$items)]
@@ -1208,6 +1207,7 @@ iNZightMap2Mod <- setRefClass(
                 # Relative       [ ]
                 # Percent change [ ]
                 # Starting/Ending positions |----[]-------|
+                lbl.aggregate <- glabel("Aggregation type:")
                 combobox.aggregate <- gcombobox(c("Mean", "Median"))
                 lbl.sparkline <- glabel("Line Chart Type:")
                 combobox.sparkline <- gcombobox(c("Absolute", "Relative", "Percent Change"))
@@ -1216,19 +1216,21 @@ iNZightMap2Mod <- setRefClass(
 
                 tbl.main[3, 1:3] <- radio.multipleobs
 
-                tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.singleval
-                tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.aggregate
+                tbl.main[4, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.singleval
+                tbl.main[4, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.singleval
+                tbl.main[4, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.aggregate
+                tbl.main[4, 2:3, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.aggregate
 
                 tbl.main[5, 1:3] <- separator.timevariable
 
-                tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
-                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
-                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
+                tbl.main[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+                tbl.main[6, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
+                tbl.main[6, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
 
-                tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
-                tbl.main[7, 2,   expand = TRUE] <- combobox.sizeselect
-                tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
-                tbl.main[7, 2,   expand = TRUE] <- combobox.sparkline
+                tbl.main[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+                tbl.main[7, 2, expand = TRUE] <- combobox.sizeselect
+                tbl.main[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
+                tbl.main[7, 2, expand = TRUE] <- combobox.sparkline
 
                 tbl.main[9, 1, expand = TRUE, anchor = c(1, 0)]  <- lbl.constalpha
                 tbl.main[9, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
@@ -1236,16 +1238,22 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
                 tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsizespark
 
-                btn.play <- gbutton("Play")
-
-                tbl.main[10, 1:3, expand = TRUE] <- btn.play
+                img.playicon <- system.file("images/icon-play.png", package = "iNZight")
+                btn.play <- iNZight:::gimagebutton(filename = img.playicon, size = "button")
+                btn.delay <- iNZight:::gimagebutton(system.file("images/icon-clockicon.png", package = "iNZight"),
+                                                    size = "button")
 
                 addHandlerClicked(btn.play, function(h, ...) {
-                    plotPlay <<- TRUE
-                    svalue(combobox.singleval, index = TRUE) <- 1
+                    if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                        plotPlay <<- TRUE
+                        svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
+                    }
                 })
 
-                visible(radio.allvalues) <- FALSE
+                tbl.main[4, 3, expand = TRUE, anchor = c(-1, 0)] <- btn.play
+
+                visible(radio.allvalues)    <- FALSE
+                visible(lbl.aggregate)      <- FALSE
                 visible(combobox.aggregate) <- FALSE
                 visible(combobox.sparkline) <- FALSE
 
@@ -1253,8 +1261,10 @@ iNZightMap2Mod <- setRefClass(
                     radio.choice <- svalue(radio.multipleobs, index = TRUE)
 
                     if (isTRUE(!is.null(mapVars))) {
+                        visible(lbl.singleval)      <- radio.choice == 1
                         visible(combobox.singleval) <- radio.choice == 1
                         visible(radio.allvalues)    <- radio.choice == 2
+                        visible(lbl.aggregate)      <- radio.choice == 3
                         visible(combobox.aggregate) <- radio.choice == 3
 
                         visible(lbl.maptype)   <- TRUE
@@ -1275,8 +1285,10 @@ iNZightMap2Mod <- setRefClass(
 
                         visible(btn.play) <- radio.choice == 1
                     } else {
+                        visible(lbl.singleval)       <- FALSE
                         visible(combobox.singleval)  <- FALSE
                         visible(radio.allvalues)     <- FALSE
+                        visible(lbl.aggregate)       <- FALSE
                         visible(combobox.aggregate)  <- FALSE
                         visible(lbl.maptype)         <- FALSE
                         visible(radio.maptype)       <- FALSE
@@ -1341,7 +1353,15 @@ iNZightMap2Mod <- setRefClass(
                     plotCurrentSeqVal <<- svalue(combobox.singleval)
 
                     if (plotPlay) {
-                        playPlot(svalue(combobox.singleval, index = TRUE))
+                        ## playPlot(svalue(combobox.singleval, index = TRUE))
+                        plotTitle <<- sprintf("%s (%s)", mapVars, plotCurrentSeqVal)
+                        updatePlot()
+
+                        if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                            svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
+                        } else {
+                            plotPlay <<- FALSE
+                        }
                     } else {
                         if (isTRUE(length(svalue(table.vars)) > 1)) {
                             svalue(edit.plottitle) <- ""
@@ -1383,7 +1403,6 @@ iNZightMap2Mod <- setRefClass(
             }
 
             tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
-
 
             visible(lbl.maptype) <- !is.null(mapVars)
             visible(radio.maptype) <- !is.null(mapVars)
