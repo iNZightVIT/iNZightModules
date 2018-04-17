@@ -49,6 +49,8 @@ iNZightMap2Mod <- setRefClass(
         plotPlay = "ANY",
         plotLabelVar = "ANY",
         plotScaleLimits = "ANY",
+        plotAxisScale = "ANY",
+        plotLabelScale = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -119,6 +121,8 @@ iNZightMap2Mod <- setRefClass(
             timer <<- NULL
             plotPlay <<- FALSE
             plotLabelVar <<- NULL
+            plotAxisScale <<- 1
+            plotLabelScale <<- 4
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
@@ -742,7 +746,8 @@ iNZightMap2Mod <- setRefClass(
                  current.seq = plotCurrentSeqVal, palette = plotPalette,
                  sparkline.type = plotSparklinesType,
                  regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
-                 scale.limits = axis.limits, label.var = plotLabelVar)
+                 scale.limits = axis.limits, label.var = plotLabelVar,
+                 scale.axis = plotAxisScale, scale.label = plotLabelScale)
 
             GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
 
@@ -774,6 +779,8 @@ iNZightMap2Mod <- setRefClass(
                 plotTheme <<- svalue(checkbox.darktheme)
                 plotPalette <<- svalue(combobox.palette)
                 plotConstantAlpha <<- svalue(slider.constalpha)
+                plotAxisScale <<- svalue(slider.scaleaxis)
+                plotLabelScale <<- svalue(slider.scalelabels)
 
                 if (combinedData$type == "sparklines") {
                     plotConstantSize <<- svalue(slider.constsizespark)
@@ -984,12 +991,14 @@ iNZightMap2Mod <- setRefClass(
             svalue(checkbox.darktheme) <- plotTheme
 
             lbl.labels <- glabel("Region Labels:")
-            checkbox.labels <- gcheckbox()
+            checkbox.labels <- gcheckbox("Region Labels")
             combobox.labels <- gcombobox(c("Current Variable", iNZightMaps::iNZightMapVars(combinedData, map.vars = TRUE)))
             visible(combobox.labels) <- FALSE
 
             addHandlerChanged(checkbox.labels, function(h, ...) {
                 visible(combobox.labels) <- svalue(checkbox.labels)
+                visible(lbl.scalelabels) <- svalue(checkbox.labels)
+                visible(slider.scalelabels) <- svalue(checkbox.labels)
                 updateOptions()
             })
 
@@ -1020,6 +1029,14 @@ iNZightMap2Mod <- setRefClass(
 
             visible(tbl.scales) <- FALSE
 
+            lbl.scaleaxis <- glabel("Plot title font size:")
+            lbl.scalelabels <- glabel("Label font size:")
+            slider.scaleaxis <- gslider(7, 17, value = 11)
+            slider.scalelabels <- gslider(1, 10, value = 4, by = 0.5)
+
+            visible(lbl.scalelabels) <- svalue(checkbox.labels)
+            visible(slider.scalelabels) <- svalue(checkbox.labels)
+
             addHandlerChanged(combobox.scale, function(h, ...) {
                 visible(tbl.scales) <- svalue(combobox.scale) == "Scales fixed at custom range"
                 updateOptions()
@@ -1031,6 +1048,18 @@ iNZightMap2Mod <- setRefClass(
 
             addHandlerChanged(input.scalemax, function(h, ...) {
                 updateOptions()
+            })
+
+            addHandlerChanged(slider.scaleaxis, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
+            })
+
+            addHandlerChanged(slider.scalelabels, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
             })
 
             tbl.xaxisedit <- glayout()
@@ -1046,22 +1075,26 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[2, 2:3, expand = TRUE] <- combobox.palette
             tbl.plotoptions[2, 4] <- checkbox.darktheme
 
-            tbl.plotoptions[3, 2:4, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
+            tbl.plotoptions[3, 2, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
 
-            tbl.plotoptions[4, 2:4, expand = TRUE] <- checkbox.axislabels
-            tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.xaxis
-            tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
-            tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
-            tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
+            tbl.plotoptions[3, 4, expand = TRUE] <- checkbox.axislabels
+            ## tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.xaxis
+            ## tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
+            ## tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
+            ## tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
 
-            tbl.plotoptions[7, 1, expand = TRUE] <- lbl.labels
-            tbl.plotoptions[7, 2] <- checkbox.labels
-            tbl.plotoptions[7, 3:4, expand = TRUE] <- combobox.labels
+            ## tbl.plotoptions[4, 1, expand = TRUE] <- lbl.labels
+            tbl.plotoptions[6, 2] <- checkbox.labels
+            tbl.plotoptions[6, 3:4, expand = TRUE] <- combobox.labels
 
-            tbl.plotoptions[8, 1, expand = TRUE] <- lbl.scale
-            tbl.plotoptions[8, 2:3, expand = TRUE] <- combobox.scale
-            ## tbl.plotoptions[8, 3] <- input.scalemin
-            tbl.plotoptions[8, 4] <- tbl.scales
+            tbl.plotoptions[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scale
+            tbl.plotoptions[4, 2:3, expand = TRUE] <- combobox.scale
+            tbl.plotoptions[4, 4] <- tbl.scales
+
+            tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scaleaxis
+            tbl.plotoptions[5, 2:4] <- slider.scaleaxis
+            tbl.plotoptions[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scalelabels
+            tbl.plotoptions[7, 2:4] <- slider.scalelabels
 
             slider.constalpha     <- gslider(1, 0.1, by = -0.1)
             slider.constsize      <- gslider(1, 10, by = 1, value = 5)
@@ -1239,18 +1272,26 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsizespark
 
                 img.playicon <- system.file("images/icon-play.png", package = "iNZight")
+                img.stopicon <- system.file("images/icon-stop.png", package = "iNZight")
+
                 btn.play <- iNZight:::gimagebutton(filename = img.playicon, size = "button")
-                btn.delay <- iNZight:::gimagebutton(system.file("images/icon-clockicon.png", package = "iNZight"),
+                btn.delay <- iNZight:::gimagebutton(filename = system.file("images/icon-clock.png", package = "iNZight"),
                                                     size = "button")
 
                 addHandlerClicked(btn.play, function(h, ...) {
                     if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
                         plotPlay <<- TRUE
+                        btn.play$set_value(img.stopicon)
+
                         svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                     }
                 })
 
-                tbl.main[4, 3, expand = TRUE, anchor = c(-1, 0)] <- btn.play
+                tbl.playcontrol <- glayout()
+                tbl.playcontrol[1, 1, anchor = c(-1, 1)] <- btn.play
+                tbl.playcontrol[1, 2, anchor = c(-1, 1)] <- btn.delay
+
+                tbl.main[4, 3, anchor = c(-1, 1)] <- tbl.playcontrol
 
                 visible(radio.allvalues)    <- FALSE
                 visible(lbl.aggregate)      <- FALSE
@@ -1360,6 +1401,7 @@ iNZightMap2Mod <- setRefClass(
                         if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
                             svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                         } else {
+                            btn.play$set_value(img.playicon)
                             plotPlay <<- FALSE
                         }
                     } else {
