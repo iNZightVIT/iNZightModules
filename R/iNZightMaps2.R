@@ -666,6 +666,12 @@ iNZightMap2Mod <- setRefClass(
                     mapType <<- "region"
                 }
 
+                if (has.multipleobs) {
+                    sequence.var <- svalue(combobox.sequencevar)
+                } else {
+                    sequence.var <- NULL
+                }
+
                 ## TODO: Simplification
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
                                                              map = mapData,
@@ -674,7 +680,7 @@ iNZightMap2Mod <- setRefClass(
                                                              by.map = map.var,
                                                              simplification.level = 0.01,
                                                              multiple.obs = has.multipleobs,
-                                                             sequence.var = svalue(combobox.sequencevar))
+                                                             sequence.var = sequence.var)
 
                 mapSequenceVar <<- svalue(combobox.sequencevar)
 
