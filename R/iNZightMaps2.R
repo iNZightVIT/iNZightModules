@@ -778,13 +778,13 @@ iNZightMap2Mod <- setRefClass(
                 plotYLab <<- svalue(edit.yaxis)
                 plotDatumLines <<- svalue(checkbox.datum)
 
-                plotProjection <<- ifelse(svalue(combobox.mapproj) == "Default",
+                plotProjection <<- ifelse(svalue(combobox.mapproj) == "From Shapefile",
                                           "Default",
                                           proj.df[svalue(combobox.mapproj, index = TRUE) - 1, "PROJ4"])
 
                 plotTheme <<- svalue(checkbox.darktheme)
                 plotPalette <<- svalue(combobox.palette)
-                plotConstantAlpha <<- svalue(slider.constalpha)
+                plotConstantAlpha <<- 1 - svalue(slider.constalpha)
                 plotAxisScale <<- svalue(slider.scaleaxis)
                 plotLabelScale <<- svalue(slider.scalelabels)
 
@@ -915,7 +915,7 @@ iNZightMap2Mod <- setRefClass(
             proj.df <- iNZightMaps::iNZightMapProjections()
 
             lbl.mapproj <- glabel("Projection:")
-            combobox.mapproj <- gcombobox(c("Default", proj.df$Name))
+            combobox.mapproj <- gcombobox(c("From Shapefile", proj.df$Name))
 
             if(!is.null(plotProjection)) {
                 if (plotProjection == "Default")
@@ -1102,7 +1102,7 @@ iNZightMap2Mod <- setRefClass(
             tbl.plotoptions[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scalelabels
             tbl.plotoptions[7, 2:4] <- slider.scalelabels
 
-            slider.constalpha     <- gslider(1, 0.1, by = -0.1)
+            slider.constalpha     <- gslider(0, 0.9, by = 0.1)
             slider.constsize      <- gslider(1, 10, by = 1, value = 5)
             slider.constsizespark <- gslider(1, 5, by = 0.5, value = 1)
 
