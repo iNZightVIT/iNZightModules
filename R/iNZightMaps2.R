@@ -1568,8 +1568,7 @@ iNZightMap2Mod <- setRefClass(
             addHandlerClicked(exportButton, function(h, ...) {
                 browseURL(iNZightPlots::exportHTML(x = plotObject,
                                          mapObj = combinedData,
-                                         file = tempfile(fileext = ".html")),
-                          browser = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
+                                         file = tempfile(fileext = ".html")))
             })
 
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
