@@ -1037,8 +1037,8 @@ iNZightMap2Mod <- setRefClass(
 
             lbl.scaleaxis <- glabel("Plot title font size:")
             lbl.scalelabels <- glabel("Label font size:")
-            slider.scaleaxis <- gslider(7, 17, value = 11)
-            slider.scalelabels <- gslider(1, 10, value = 4, by = 0.5)
+            slider.scaleaxis <- gslider(7, 15, value = 11)
+            slider.scalelabels <- gslider(2, 6, value = 4, by = 0.5)
 
             visible(lbl.scalelabels) <- svalue(checkbox.labels)
             visible(slider.scalelabels) <- svalue(checkbox.labels)
@@ -1104,7 +1104,7 @@ iNZightMap2Mod <- setRefClass(
 
             slider.constalpha     <- gslider(0, 0.9, by = 0.1)
             slider.constsize      <- gslider(1, 10, by = 1, value = 5)
-            slider.constsizespark <- gslider(1, 5, by = 0.5, value = 1)
+            slider.constsizespark <- gslider(0.5, 2.0, by = 0.25, value = 1.25)
 
             lbl.constalpha     <- glabel("Transparency of map:")
             lbl.constsize      <- glabel("Overall size:")
