@@ -158,45 +158,45 @@ iNZightMap2Mod <- setRefClass(
 
             GUI$rhistory$add(c("SEP", "## New Maps Module"))
 
-            mapTypeDialog()
+            importDialog()
         },
 
-        mapTypeDialog = function() {
-            w <- gwindow("Define Geographical Variables",
-                         width = 400,
-                         height = 500,
-                         parent = GUI$win,
-                         visible = FALSE)
-
-            gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
-            gv$set_borderwidth(15)
-
-            lbl <- glabel("Type of Map Data")
-            font(lbl) <- list(weight = "bold", size = 12, family = "normal")
-            radioMapType <- gradio(c("Coordinate (latitude, longitude)",
-                                     "Regions (country, state, county, etc.)"))
-            add(gv, lbl)
-            add(gv, radioMapType)
-
-            coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
-            svalue(radioMapType, index = TRUE) <- if(coord.or.region) 1 else 2
-
-            addSpace(gv, 10)
-
-            btnFinish <- gbutton("OK")
-            add(gv, btnFinish)
-
-            addHandlerClicked(btnFinish, function(h, ...) {
-                if(svalue(radioMapType, index = TRUE) == 1) {
-                    print("Coordinate")
-                } else {
-                    dispose(w)
-                    importDialog()
-                }
-            })
-
-            visible(w) <- TRUE
-        },
+        # mapTypeDialog = function() {
+        #     w <- gwindow("Define Geographical Variables",
+        #                  width = 400,
+        #                  height = 500,
+        #                  parent = GUI$win,
+        #                  visible = FALSE)
+        # 
+        #     gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
+        #     gv$set_borderwidth(15)
+        # 
+        #     lbl <- glabel("Type of Map Data")
+        #     font(lbl) <- list(weight = "bold", size = 12, family = "normal")
+        #     radioMapType <- gradio(c("Coordinate (latitude, longitude)",
+        #                              "Regions (country, state, county, etc.)"))
+        #     add(gv, lbl)
+        #     add(gv, radioMapType)
+        # 
+        #     coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
+        #     svalue(radioMapType, index = TRUE) <- if(coord.or.region) 1 else 2
+        # 
+        #     addSpace(gv, 10)
+        # 
+        #     btnFinish <- gbutton("OK")
+        #     add(gv, btnFinish)
+        # 
+        #     addHandlerClicked(btnFinish, function(h, ...) {
+        #         if(svalue(radioMapType, index = TRUE) == 1) {
+        #             print("Coordinate")
+        #         } else {
+        #             dispose(w)
+        #             importDialog()
+        #         }
+        #     })
+        # 
+        #     visible(w) <- TRUE
+        # },
         importDialog = function() {
             GUI$initializeModuleWindow(.self)
             lbl.inzightmaps <- glabel("iNZight Maps")
@@ -1331,6 +1331,7 @@ iNZightMap2Mod <- setRefClass(
                         visible(slider.constsizespark) <- radio.choice == 2
 
                         visible(btn.play) <- radio.choice == 1
+                        visible(btn.delay) <- radio.choice == 1
                     } else {
                         visible(lbl.singleval)       <- FALSE
                         visible(combobox.singleval)  <- FALSE
@@ -1348,6 +1349,7 @@ iNZightMap2Mod <- setRefClass(
                         visible(lbl.sparkline)       <- FALSE
                         visible(combobox.sparkline)  <- FALSE
                         visible(btn.play)            <- FALSE
+                        visible(btn.delay)           <- FALSE
                     }
 
                     if (radio.choice == 1) {
