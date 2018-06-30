@@ -1452,26 +1452,24 @@ iNZightMap2Mod <- setRefClass(
                 })
 
                 addHandlerChanged(combobox.aggregate, function(h, ...) {
-                    combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
-                                                           tolower(svalue(combobox.aggregate)))
-                    plotCurrentSeqVal <<- svalue(combobox.aggregate)
-
-                    if (isTRUE(length(svalue(table.vars)) > 1)) {
-                        svalue(edit.plottitle) <- ""
+                  combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
+                                                                      tolower(svalue(combobox.aggregate)))
+                  plotCurrentSeqVal <<- svalue(combobox.aggregate)
+                  
+                  if (isTRUE(length(svalue(table.vars)) > 1)) {
+                    svalue(edit.plottitle) <- ""
+                  } else {
+                    if (isTRUE(has.multipleobs && multipleObsOption == "aggregate")) {
+                      svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.aggregate), ")")
                     } else {
-                        if (isTRUE(has.multipleobs && multipleObsOption == "aggregate")) {
-                            svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.aggregate), ")")
-                        } else {
-                            svalue(edit.plottitle) <- svalue(table.vars)
-                        }
+                      svalue(edit.plottitle) <- svalue(table.vars)
                     }
+                  }
                 })
-
-            addHandlerChanged(combobox.sparkline, function(h, ...) {
-                updateOptions()
-            })
-
-
+                
+                addHandlerChanged(combobox.sparkline, function(h, ...) {
+                  updateOptions()
+                })
             }
 
             tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
@@ -1596,27 +1594,6 @@ iNZightMap2Mod <- setRefClass(
             })
 
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
-
-            ## test.btn <- gbutton("interactivity", cont = mainGrp)
-            ## addHandlerClicked(test.btn, function(h, ...) {
-                ## library(grid)
-                ## library(gridSVG)
-                ## grid.force()
-                ## regions <- grid::grid.grep("pathgrob", grep = TRUE, global = TRUE)
-##
-                ## for (i in 1:length(regions)) {
-                    ## curr.region.tooltip <- paste0(combinedData$data$NAME[i],
-                                                  ## " (", mapVars, ": ", combinedData$data[i, mapVars], ")")
-                    ## curr.region.tooltip <- gsub("'", "\\\\'", curr.region.tooltip)
-                    ## curr.region.tooltip <- gsub('"', '\\\\"', curr.region.tooltip)
-                    ## grid.garnish(regions[[i]],
-                                 ## onmouseover = paste("showTooltip(evt, '", curr.region.tooltip, "')"),
-                                 ## onmouseout = "hideTooltip()")
-                ## }
-##
-                ## grid.script(filename = "tooltip.js", inline = TRUE)
-                ## grid.export("testinzight.svg")
-            ## })
 
             visible(mainGrp) <<- TRUE
             updateOptions()
