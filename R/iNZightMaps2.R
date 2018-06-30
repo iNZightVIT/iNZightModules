@@ -47,6 +47,7 @@ iNZightMap2Mod <- setRefClass(
         plotSparklinesType = "ANY",
         timer = "ANY",
         plotPlay = "ANY",
+        playdelay = "ANY",
         plotLabelVar = "ANY",
         plotScaleLimits = "ANY",
         plotAxisScale = "ANY",
@@ -120,6 +121,7 @@ iNZightMap2Mod <- setRefClass(
             plotSparklinesType <<- "Absolute"
             timer <<- NULL
             plotPlay <<- FALSE
+            playdelay <<- 0.1
             plotLabelVar <<- NULL
             plotAxisScale <<- 1
             plotLabelScale <<- 4
@@ -1292,6 +1294,25 @@ iNZightMap2Mod <- setRefClass(
                         svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                     }
                 })
+                
+                addHandlerClicked(btn.delay, function(h, ...) {
+                  w <- gwindow(title = "Play Settings", width = 200, height = 80,
+                               parent = GUI$win)
+                  g <- gvbox(spacing = 10, container = w)
+                  g$set_borderwidth(10)
+                  
+                  g1 <- ggroup(container = g)
+                  glabel("Time delay between plots :", container = g1)
+                  spin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay, container = g1)
+                  glabel("(seconds)", container = g1)
+                  
+                  g2 <- ggroup(container = g)
+                  addSpring(g2)
+                  gbutton("OK", container = g, handler = function(h, ...) {
+                    playdelay <<- svalue(spin)
+                    dispose(w)
+                  })
+                })
 
                 tbl.playcontrol <- glayout()
                 tbl.playcontrol[1, 1, anchor = c(-1, 1)] <- btn.play
@@ -1407,6 +1428,7 @@ iNZightMap2Mod <- setRefClass(
                         updatePlot()
 
                         if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                            Sys.sleep(playdelay)
                             svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                         } else {
                             btn.play$set_value(img.playicon)
