@@ -48,6 +48,7 @@ iNZightMap2Mod <- setRefClass(
         timer = "ANY",
         plotPlay = "ANY",
         playdelay = "ANY",
+        playTimer = "ANY",
         plotLabelVar = "ANY",
         plotScaleLimits = "ANY",
         plotAxisScale = "ANY",
@@ -122,6 +123,7 @@ iNZightMap2Mod <- setRefClass(
             timer <<- NULL
             plotPlay <<- FALSE
             playdelay <<- 0.1
+            playTimer <<- NULL
             plotLabelVar <<- NULL
             plotAxisScale <<- 1
             plotLabelScale <<- 4
@@ -1287,12 +1289,20 @@ iNZightMap2Mod <- setRefClass(
                                                     size = "button")
 
                 addHandlerClicked(btn.play, function(h, ...) {
-                    if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                    if (!is.null(playTimer)) {
+                      playTimer$stop_timer()
+                      plotPlay <<- FALSE
+                      btn.play$set_value(img.playicon)
+                      playTimer <<- NULL
+                    } else {
+                      if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
                         plotPlay <<- TRUE
                         btn.play$set_value(img.stopicon)
-
+                        
                         svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
+                      }
                     }
+
                 })
                 
                 addHandlerClicked(btn.delay, function(h, ...) {
@@ -1428,8 +1438,13 @@ iNZightMap2Mod <- setRefClass(
                         updatePlot()
 
                         if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
-                            Sys.sleep(playdelay)
-                            svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
+                            playTimer <<- gtimer(
+                              playdelay * 1000, 
+                              function(i) { svalue(combobox.singleval, index = TRUE) <- i + 1 }, 
+                              data = svalue(combobox.singleval, index = TRUE),
+                              one.shot = TRUE
+                            )
+                            # svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                         } else {
                             btn.play$set_value(img.playicon)
                             plotPlay <<- FALSE
