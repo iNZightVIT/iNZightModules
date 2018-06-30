@@ -1294,6 +1294,7 @@ iNZightMap2Mod <- setRefClass(
                       plotPlay <<- FALSE
                       btn.play$set_value(img.playicon)
                       playTimer <<- NULL
+                      svalue(edit.plottitle) <- sprintf("%s (%s)", mapVars, svalue(combobox.singleval))
                     } else {
                       if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
                         plotPlay <<- TRUE
