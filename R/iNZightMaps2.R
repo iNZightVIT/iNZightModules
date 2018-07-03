@@ -202,6 +202,7 @@ iNZightMap2Mod <- setRefClass(
         #     visible(w) <- TRUE
         # },
         importDialog = function() {
+          requireNamespace("sf")
             GUI$initializeModuleWindow(.self)
             lbl.inzightmaps <- glabel("iNZight Maps")
             font(lbl.inzightmaps) <- list(weight = "bold",
