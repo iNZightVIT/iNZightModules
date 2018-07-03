@@ -312,6 +312,203 @@ iNZightMapMod <- setRefClass(
 
             tbl <- glayout(homogeneous = FALSE)
             ii <- 1
+            
+            ## PLOT OPTIONS
+            frame.plotoptions <- gframe(horizontal = FALSE)
+            group.plotoptions <- ggroup(spacing = 5)
+            group.plotoptions$set_borderwidth(10)
+            expand.plotoptions <- gexpandgroup(text = "Extra Plot Options", horizontal = FALSE)
+            font(expand.plotoptions) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.plotoptions)
+            add(frame.plotoptions, group.plotoptions, expand = TRUE)
+            add(group.plotoptions, expand.plotoptions, expand = TRUE)
+            
+            visible(expand.plotoptions) <- FALSE
+            
+            tbl.plotoptions <- glayout()
+            
+            add(expand.plotoptions, tbl.plotoptions)
+            ii.plotopt <- 1
+            
+            ## COLOUR OPTIONS
+            frame.colour <- gframe(horizontal = FALSE)
+            group.colour <- ggroup(spacing = 5)
+            group.colour$set_borderwidth(10)
+            expand.colour <- gexpandgroup(text = "Colour", horizontal = FALSE)
+            font(expand.colour) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.colour)
+            add(frame.colour, group.colour, expand = TRUE)
+            add(group.colour, expand.colour, expand = TRUE)
+            
+            visible(expand.colour) <- FALSE
+
+            tbl.colour <- glayout()
+            
+            add(expand.colour, tbl.colour)
+            ii.colour <- 1
+
+            if (map.type != "shape") {
+              lbl.colour <- glabel("Colour by :")
+              colVarList <- gcombobox(
+                c("", names(GUI$getActiveData())),
+                selected = ifelse(
+                  is.null(map.vars$colby),
+                  1, 
+                  which(names(GUI$getActiveData()) == map.vars$colby)[1] + 1
+                )
+              )
+              tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colour
+              tbl.colour[ii.colour, 3:6, expand = TRUE] <- colVarList
+              ii.colour <- ii.colour + 1
+
+              lbl.palette <- glabel("Palette:")
+              combobox.palette <- gcombobox(c("viridis", "heat"))
+
+              tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.palette
+              tbl.colour[ii.colour, 3:6, expand = TRUE] <- combobox.palette
+              ii.colour <- ii.colour + 1
+
+              checkbox.reverse <- gcheckbox("Reverse palette")
+              checkbox.ranks <- gcheckbox("Use Ranks")
+
+              tbl.colour[ii.colour, 3:4, expand = TRUE] <- checkbox.reverse
+              tbl.colour[ii.colour, 5:6, expand = TRUE] <- checkbox.ranks
+              ii.colour <- ii.colour + 1
+            }
+
+            ## SIZE OPTIONS
+            frame.size <- gframe(horizontal = FALSE)
+            group.size <- ggroup(spacing = 5)
+            group.size$set_borderwidth(10)
+            expand.size <- gexpandgroup(text = "Size", horizontal = FALSE)
+            font(expand.size) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.size)
+            add(frame.size, group.size, expand = TRUE)
+            add(group.size, expand.size, expand = TRUE)
+            
+            visible(expand.size) <- FALSE
+            
+            tbl.size <- glayout()
+            
+            add(expand.size, tbl.size)
+            ii.size <- 1
+            
+            if (map.type != "shape") {
+              lbl.sizeby <- glabel("Size by :")
+              rszVarList <- gcombobox(
+                c("", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
+                selected = ifelse(
+                  is.null(map.vars$sizeby),
+                  1, which(rszNames == map.vars$sizeby)[1] + 1
+                )
+              )
+              tbl.size[ii.size, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.sizeby
+              tbl.size[ii.size, 3:6, expand = TRUE] <- rszVarList
+              ii.size <- ii.size + 1
+              
+              lbl.size <- glabel("Point size :")
+              cexSlider <- gslider(from = 0.05, to = 3.5, by = 0.05, value = map.vars$cex.pt)
+              tbl.size[ii.size, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.size
+              tbl.size[ii.size, 4:6, expand = TRUE] <- cexSlider
+              ii.size <- ii.size + 1
+              
+              lbl.sizemethod <- glabel("Resize method:")
+              combobox.sizemethod <- gcombobox(c("proportional", "emphasize"))
+              tbl.size[ii.size, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.sizemethod
+              tbl.size[ii.size, 4:6, expand = TRUE] <- combobox.sizemethod
+              ii.size <- ii.size + 1
+            }
+            
+            ## OPACITY OPTIONS
+            frame.opacity <- gframe(horizontal = FALSE)
+            group.opacity <- ggroup(spacing = 5)
+            group.opacity$set_borderwidth(10)
+            expand.opacity <- gexpandgroup(text = "Opacity", horizontal = FALSE)
+            font(expand.opacity) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.opacity)
+            add(frame.opacity, group.opacity, expand = TRUE)
+            add(group.opacity, expand.opacity, expand = TRUE)
+            
+            visible(expand.opacity) <- FALSE
+            
+            tbl.opacity <- glayout()
+            
+            add(expand.opacity, tbl.opacity)
+            ii.opacity <- 1
+            
+            if (map.type != "shape") {
+              lbl.opacityby <- glabel("Opacify by :")
+              opctyVarList <- gcombobox(
+                c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
+                selected = ifelse(
+                  is.null(map.vars$opacity),
+                  1, which(numNames == map.vars$opacity)[1] + 1
+                )
+              )
+              tbl.opacity[ii.opacity, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.opacityby
+              tbl.opacity[ii.opacity, 3:6, expand = TRUE] <- opctyVarList
+              ii.opacity <- ii.opacity + 1
+              
+              ## Transparency
+              lbl.transp <- glabel("Transparency (TO MOVE?) :")
+              transpSlider <- gslider(from = 0, to = 100,
+                                      by = 1, value = 100 * (1 - map.vars$alpha))
+              tbl.opacity[ii.opacity, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.transp
+              tbl.opacity[ii.opacity, 4:6, expand = TRUE] <- transpSlider
+              ii.opacity <- ii.opacity + 1
+            }
+            
+            ## CONNECT OPTIONS
+            frame.connect <- gframe(horizontal = FALSE)
+            group.connect <- ggroup(spacing = 5)
+            group.connect$set_borderwidth(10)
+            expand.connect <- gexpandgroup(text = "Connect Points", horizontal = FALSE)
+            font(expand.connect) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.connect)
+            add(frame.connect, group.connect, expand = TRUE)
+            add(group.connect, expand.connect, expand = TRUE)
+            
+            visible(expand.connect) <- FALSE
+            
+            tbl.connect <- glayout()
+            
+            add(expand.connect, tbl.connect)
+            ii.connect <- 1
+            
+            if (map.type != "shape") {
+              joinPts <- gcheckbox("Connect points by lines", checked = FALSE)
+              if (!is.null(map.vars$join)) svalue(joinPts) <- map.vars$join
+              
+              joinCols <- c("red", "black", "blue", "green4",
+                            "yellow", "pink", "grey", "orange")
+              joinCol <- gcombobox(joinCols)
+              if (!is.null(map.vars$col.line))
+                if (map.vars$col.line %in% joinCols)
+                  svalue(joinCol) <- which(joinCols == map.vars$col.line)
+              enabled(joinCol) <- svalue(colVarList, TRUE) == 1
+              
+              tbl.connect[ii.connect, 2:6, expand = TRUE, anchor = c(-1, 0)] <- joinPts
+              ii.connect <- ii.connect + 1
+              
+              lbl.connectcolour <- glabel("Line colour:")
+              
+              tbl.connect[ii.connect, 3:4, expand = TRUE] <- lbl.connectcolour
+              tbl.connect[ii.connect, 5:6, expand = TRUE] <- joinCol
+              addHandlerChanged(joinPts, function(h, ...) updateEverything())
+              addHandlerChanged(joinCol, function(h, ...) updateEverything())
+              
+              ii.connect <- ii.connect + 1
+              
+              lbl.linewidth <- glabel("Line width:")
+              slider.linewidth <- gslider(1, 10)
+              tbl.connect[ii.connect, 3:4, expand = TRUE, anchor = c(-1, 0)] <- lbl.linewidth
+              tbl.connect[ii.connect, 5:6, expand = TRUE] <- slider.linewidth
+            }
 
             if (map.type == "shape") {
                 yVarList <- gcombobox(
@@ -323,71 +520,21 @@ iNZightMapMod <- setRefClass(
                     )
                 tbl[ii, 1:6, expand = TRUE] <- yVarList
                 ii <- ii + 1
-            } else {
-                lbl <- glabel("Code Variables")
-                font(lbl) <- list(weight = "bold", size = 11)
-                tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
-                ii <- ii + 1
-                
-                lbl <- glabel("Colour by :")
-                colVarList <- gcombobox(c("", names(GUI$getActiveData())),
-                                        selected = ifelse(
-                                            is.null(map.vars$colby),
-                                            1, which(names(GUI$getActiveData()) ==
-                                                         map.vars$colby)[1] + 1
-                                            )
-                                        )
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- colVarList
-                ii <- ii + 1                
-                
-                lbl <- glabel("Size by :")
-                rszVarList <- gcombobox(
-                    c("", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
-                    selected = ifelse(
-                        is.null(map.vars$sizeby),
-                        1, which(rszNames == map.vars$sizeby)[1] + 1
-                        )
-                    )
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- rszVarList
-                ii <- ii + 1
-                
-                
-                lbl <- glabel("Opacify by :")
-                opctyVarList <- gcombobox(
-                    c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
-                    selected = ifelse(
-                        is.null(map.vars$opacity),
-                        1, which(numNames == map.vars$opacity)[1] + 1
-                        )
-                    )
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- opctyVarList
-                ii <- ii + 1
             }
-            
-            ii <- ii + 1
-            ii <- ii + 1
-            lbl <- glabel("Plot Options")
-            font(lbl) <- list(weight = "bold", size = 11)
-            tbl[ii, 1:6, anchor = c(-1, -1), expand = TRUE] <- lbl
-            ii <- ii + 1
 
-            
             if (map.type != "shape") {
                 lbl <- glabel("Map type :")
                 typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
                 typeList <- gcombobox(typeOpts)
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- typeList
-                ii <- ii + 1
+                tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+                tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
+                ii.plotopt <- ii.plotopt + 1
             }
 
 
             ## COLOUR
-            lbl <- glabel("Colour :")
             if (map.type == "shape") {
+                lbl <- glabel("Shape colour :")
                 pointCols <- c("red", "darkblue", "darkgreen", "darkmagenta",
                                "darkslateblue", "hotpink4", "lightsalmon2",
                                "palegreen3", "steelblue3",
@@ -408,6 +555,7 @@ iNZightMapMod <- setRefClass(
                         which(pointCols == map.vars$col.pt)[1]),
                     editable = FALSE)
             } else {
+                lbl <- glabel("Point colour :")
                 pointCols <- c("grey50", "black", "darkblue", "darkgreen",
                                "darkmagenta", "darkslateblue", "hotpink4",
                                "lightsalmon2", "palegreen3", "steelblue3")
@@ -420,50 +568,14 @@ iNZightMapMod <- setRefClass(
                     editable = TRUE)
             }
 
-            tbl[ii,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-            tbl[ii,  3:6, expand = TRUE] <- symbolColList
-            ii <- ii + 1
+            tbl.plotoptions[ii.plotopt,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+            tbl.plotoptions[ii.plotopt,  3:6, expand = TRUE] <- symbolColList
+            ii.plotopt <- ii.plotopt + 1
 
             if (map.type == "shape") {
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- glabel("Missing value colour :")
-                tbl[ii, 3:6, expand = TRUE] <- naFillCol
+              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- glabel("Missing value colour :")
+              tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- naFillCol
             }
-
-
-            if (map.type != "shape") {
-                ## Point sizes
-                lbl <- glabel("Point size :")
-                cexSlider <- gslider(from = 0.05, to = 3.5,
-                                     by = 0.05, value = map.vars$cex.pt)
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- cexSlider
-                ii <- ii + 1
-                
-                ## Transparency
-                lbl <- glabel("Transparency :")
-                transpSlider <- gslider(from = 0, to = 100,
-                                        by = 1, value = 100 * (1 - map.vars$alpha))
-                tbl[ii, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl[ii, 3:6, expand = TRUE] <- transpSlider
-                ii <- ii + 1
-
-                ## Connect by lines
-                joinPts <- gcheckbox("Connect points by lines", checked = FALSE)
-                if (!is.null(map.vars$join)) svalue(joinPts) <- map.vars$join
-                
-                joinCols <- c("red", "black", "blue", "green4",
-                              "yellow", "pink", "grey", "orange")
-                joinCol <- gcombobox(joinCols)
-                if (!is.null(map.vars$col.line))
-                    if (map.vars$col.line %in% joinCols)
-                        svalue(joinCol) <- which(joinCols == map.vars$col.line)
-                enabled(joinCol) <- svalue(colVarList, TRUE) == 1
-                tbl[ii, 1:3, expand = TRUE, anchor = c(-1, 0)] <- joinPts
-                tbl[ii, 4:6, expand = TRUE] <- joinCol
-                addHandlerChanged(joinPts, function(h, ...) updateEverything())
-                addHandlerChanged(joinCol, function(h, ...) updateEverything())
-            }
-
 
             ## Labels
             if (map.type == "shape") {
@@ -489,9 +601,23 @@ iNZightMapMod <- setRefClass(
                     map.vars$na.fill <<- svalue(naFillCol)
                     map.vars$map.labels <<- svalue(mapLbls, index = TRUE)
                 } else {
-                    if (svalue(colVarList, TRUE) > 1) map.vars$colby <<- svalue(colVarList) else map.vars$colby <<- NULL
-                    if (svalue(rszVarList, TRUE) > 1) map.vars$sizeby <<- svalue(rszVarList) else map.vars$sizeby <<- NULL
-                    if (svalue(opctyVarList, TRUE) > 1) map.vars$opacity <<- svalue(opctyVarList) else map.vars$opacity <<- NULL
+                    if (svalue(colVarList, TRUE) > 1) {
+                      map.vars$colby <<- svalue(colVarList) 
+                    } else {
+                      map.vars$colby <<- NULL
+                    }
+                  
+                    if (svalue(rszVarList, TRUE) > 1) {
+                      map.vars$sizeby <<- svalue(rszVarList) 
+                    } else { 
+                      map.vars$sizeby <<- NULL
+                    }
+                  
+                    if (svalue(opctyVarList, TRUE) > 1) {
+                      map.vars$opacity <<- svalue(opctyVarList) 
+                    } else {
+                      map.vars$opacity <<- NULL
+                    }
                     
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
@@ -511,11 +637,28 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
+                  if (isTRUE(svalue(colVarList) != "")) {
+                    # expand.colour$set_names(sprintf("Colour - %s", svalue(colVarList)))
+                    visible(group.colour) <- TRUE
+                  } else {
+                    # expand.colour$set_names("Colour")
+                    visible(group.colour) <- FALSE
+                  }
+                  
                                       enabled(joinCol) <- svalue(colVarList, TRUE) == 1
                                       updateEverything()
                                   })
-                addHandlerChanged(rszVarList, handler = function(h, ...) updateEverything())
-                addHandlerChanged(opctyVarList, handler = function(h, ...) updateEverything())
+                addHandlerChanged(rszVarList, handler = function(h, ...) {
+                  # visible(lbl.size) <- isTRUE(svalue(rszVarList) != "")
+                  # visible(cexSlider) <- isTRUE(svalue(rszVarList) != "")
+                  expand.size$set_names(paste0("Size - ", svalue(rszVarList)))
+                  updateEverything()
+                })
+                addHandlerChanged(opctyVarList, handler = function(h, ...) {
+                  visible(lbl.transp) <- !isTRUE(svalue(opctyVarList) != "")
+                  visible(transpSlider) <- !isTRUE(svalue(opctyVarList) != "")
+                  updateEverything()
+                })
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
             }
 
