@@ -313,6 +313,12 @@ iNZightMapMod <- setRefClass(
             tbl <- glayout(homogeneous = FALSE)
             ii <- 1
             
+            font.grouptitle <- list(
+              weight = "bold", 
+              family = "normal", 
+              size = 10
+            )
+            
             ## PLOT OPTIONS
             frame.plotoptions <- gframe(horizontal = FALSE)
             group.plotoptions <- ggroup(spacing = 5)
@@ -336,7 +342,7 @@ iNZightMapMod <- setRefClass(
             group.colour <- ggroup(spacing = 5)
             group.colour$set_borderwidth(10)
             expand.colour <- gexpandgroup(text = "Colour", horizontal = FALSE)
-            font(expand.colour) <- list(weight = "bold", family = "normal", size = 10)
+            font(expand.colour) <- font.grouptitle
             
             add(mainGrp, frame.colour)
             add(frame.colour, group.colour, expand = TRUE)
@@ -478,36 +484,54 @@ iNZightMapMod <- setRefClass(
             tbl.connect <- glayout()
             
             add(expand.connect, tbl.connect)
-            ii.connect <- 1
-            
+
             if (map.type != "shape") {
-              joinPts <- gcheckbox("Connect points by lines", checked = FALSE)
-              if (!is.null(map.vars$join)) svalue(joinPts) <- map.vars$join
-              
-              joinCols <- c("red", "black", "blue", "green4",
-                            "yellow", "pink", "grey", "orange")
-              joinCol <- gcombobox(joinCols)
-              if (!is.null(map.vars$col.line))
-                if (map.vars$col.line %in% joinCols)
-                  svalue(joinCol) <- which(joinCols == map.vars$col.line)
-              enabled(joinCol) <- svalue(colVarList, TRUE) == 1
-              
-              tbl.connect[ii.connect, 2:6, expand = TRUE, anchor = c(-1, 0)] <- joinPts
-              ii.connect <- ii.connect + 1
+              joinPts <- gcheckbox("Connect points with lines", checked = FALSE)
               
               lbl.connectcolour <- glabel("Line colour:")
-              
-              tbl.connect[ii.connect, 3:4, expand = TRUE] <- lbl.connectcolour
-              tbl.connect[ii.connect, 5:6, expand = TRUE] <- joinCol
-              addHandlerChanged(joinPts, function(h, ...) updateEverything())
-              addHandlerChanged(joinCol, function(h, ...) updateEverything())
-              
-              ii.connect <- ii.connect + 1
+              joinCols <- c("red", "black", "blue", "green4", "yellow", "pink", "grey", "orange")
+              joinCol <- gcombobox(joinCols)
               
               lbl.linewidth <- glabel("Line width:")
               slider.linewidth <- gslider(1, 10)
-              tbl.connect[ii.connect, 3:4, expand = TRUE, anchor = c(-1, 0)] <- lbl.linewidth
-              tbl.connect[ii.connect, 5:6, expand = TRUE] <- slider.linewidth
+              
+              visible(lbl.connectcolour) <- FALSE
+              visible(joinCol) <- FALSE
+              visible(lbl.linewidth) <- FALSE
+              visible(slider.linewidth) <- FALSE
+              
+              if (!is.null(map.vars$join)) {
+                svalue(joinPts) <- map.vars$join
+                visible(lbl.connectcolour) <- map.vars$join
+                visible(joinCol) <- map.vars$join
+                visible(lbl.linewidth) <- map.vars$join
+                visible(slider.linewidth) <- map.vars$join
+              }
+
+              if (!is.null(map.vars$col.line)) {
+                if (map.vars$col.line %in% joinCols) {
+                  svalue(joinCol) <- which(joinCols == map.vars$col.line)
+                }
+              }
+              
+              # enabled(joinCol) <- svalue(colVarList, TRUE) == 1
+              
+              tbl.connect[1, 1:6, expand = TRUE, anchor = c(-1, 0)] <- joinPts
+              tbl.connect[2, 3:4, expand = TRUE] <- lbl.connectcolour
+              tbl.connect[2, 5:6, expand = TRUE] <- joinCol
+              tbl.connect[3, 3:4, expand = TRUE, anchor = c(-1, 0)] <- lbl.linewidth
+              tbl.connect[3, 5:6, expand = TRUE] <- slider.linewidth
+              
+              addHandlerChanged(joinPts, function(h, ...) {
+                visible(lbl.connectcolour) <- svalue(joinPts)
+                visible(joinCol) <- svalue(joinPts)
+                visible(lbl.linewidth) <- svalue(joinPts)
+                visible(slider.linewidth) <- svalue(joinPts)
+                
+                updateEverything()
+              })
+              
+              addHandlerChanged(joinCol, function(h, ...) updateEverything())
             }
 
             if (map.type == "shape") {
@@ -630,6 +654,16 @@ iNZightMapMod <- setRefClass(
                 
                 updatePlot()
             }
+            
+            changeExpandTitle <- function(expandgroup, title, var, font = font.grouptitle) {
+              if (var > 0) {
+                expandgroup$set_names(sprintf("%s - %s", title, var))
+              } else {
+                expandgroup$set_names(title)
+              }
+              
+              font(expandgroup) <- font
+            }
 
             ## in this case, no point in having a separate "show" button
             if (map.type == "shape") {
@@ -637,28 +671,26 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
-                  if (isTRUE(svalue(colVarList) != "")) {
-                    # expand.colour$set_names(sprintf("Colour - %s", svalue(colVarList)))
-                    visible(group.colour) <- TRUE
-                  } else {
-                    # expand.colour$set_names("Colour")
-                    visible(group.colour) <- FALSE
-                  }
-                  
-                                      enabled(joinCol) <- svalue(colVarList, TRUE) == 1
-                                      updateEverything()
-                                  })
-                addHandlerChanged(rszVarList, handler = function(h, ...) {
-                  # visible(lbl.size) <- isTRUE(svalue(rszVarList) != "")
-                  # visible(cexSlider) <- isTRUE(svalue(rszVarList) != "")
-                  expand.size$set_names(paste0("Size - ", svalue(rszVarList)))
+                  changeExpandTitle(expand.colour, "Colour\n", svalue(colVarList))
+                  enabled(joinCol) <- svalue(colVarList, TRUE) == 1
                   updateEverything()
                 })
+              
+                addHandlerChanged(rszVarList, handler = function(h, ...) {
+                  changeExpandTitle(expand.size, "Size", svalue(rszVarList))
+
+                  updateEverything()
+                })
+                
                 addHandlerChanged(opctyVarList, handler = function(h, ...) {
                   visible(lbl.transp) <- !isTRUE(svalue(opctyVarList) != "")
                   visible(transpSlider) <- !isTRUE(svalue(opctyVarList) != "")
+                  
+                  changeExpandTitle(expand.opacity, "Opacity", svalue(opctyVarList))
+                  
                   updateEverything()
                 })
+                
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
             }
 
