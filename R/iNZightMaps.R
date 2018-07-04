@@ -360,6 +360,29 @@ iNZightMapMod <- setRefClass(
             ii.colour <- 1
 
             if (map.type != "shape") {
+              lbl.colourstatic <- glabel("Point colour :")
+              pointCols <- c("grey50", "black", "darkblue", "darkgreen",
+                             "darkmagenta", "darkslateblue", "hotpink4",
+                             "lightsalmon2", "palegreen3", "steelblue3")
+              symbolColList <- gcombobox(
+                pointCols,
+                selected = ifelse(
+                  is.na(which(pointCols == map.vars$col.pt)[1]),
+                  1,
+                  which(pointCols == map.vars$col.pt)[1]),
+                editable = TRUE)
+              
+              
+            
+            tbl.colour[ii.colour,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colourstatic
+            tbl.colour[ii.colour,  3:6, expand = TRUE] <- symbolColList
+            ii.colour <- ii.colour + 1
+            
+            sep.colour <- gseparator()
+            tbl.colour[ii.colour, 1:6, expand = TRUE] <- sep.colour
+            ii.colour <- ii.colour + 1
+              
+              
               lbl.colour <- glabel("Colour by :")
               colVarList <- gcombobox(
                 c("", names(GUI$getActiveData())),
@@ -619,23 +642,8 @@ iNZightMapMod <- setRefClass(
                         1,
                         which(pointCols == map.vars$col.pt)[1]),
                     editable = FALSE)
-            } else {
-                lbl <- glabel("Point colour :")
-                pointCols <- c("grey50", "black", "darkblue", "darkgreen",
-                               "darkmagenta", "darkslateblue", "hotpink4",
-                               "lightsalmon2", "palegreen3", "steelblue3")
-                symbolColList <- gcombobox(
-                    pointCols,
-                    selected = ifelse(
-                        is.na(which(pointCols == map.vars$col.pt)[1]),
-                        1,
-                        which(pointCols == map.vars$col.pt)[1]),
-                    editable = TRUE)
             }
 
-            tbl.plotoptions[ii.plotopt,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-            tbl.plotoptions[ii.plotopt,  3:6, expand = TRUE] <- symbolColList
-            ii.plotopt <- ii.plotopt + 1
 
             if (map.type == "shape") {
               tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- glabel("Missing value colour :")
@@ -698,7 +706,7 @@ iNZightMapMod <- setRefClass(
             
             changeExpandTitle <- function(expandgroup, title, var, font = font.grouptitle) {
               if (var > 0) {
-                expandgroup$set_names(sprintf("%s - %s", title, var))
+                expandgroup$set_names(sprintf("%s (%s)", title, var))
               } else {
                 expandgroup$set_names(title)
               }
@@ -718,9 +726,12 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(naFillCol, handler = function(h, ...) updateEverything())
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
-                  changeExpandTitle(expand.colour, "Colour\n", svalue(colVarList))
+                  changeExpandTitle(expand.colour, "Colour", svalue(colVarList))
                   
                   changeVisibleControls(controls.colour, colVarList)
+                  visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
+                  visible(symbolColList) <- svalue(colVarList, TRUE) == 1
+                  visible(sep.colour) <- svalue(colVarList, TRUE) == 1
                   
                   enabled(joinCol) <- svalue(colVarList, TRUE) == 1
                   updateEverything()
@@ -1076,6 +1087,8 @@ iNZightMapMod <- setRefClass(
 
             if (!is.null(extra.args))
                 args <- c(args, extra.args)
+            
+            print(names(args))
 
             pl <- do.call(plot, args)
             GUI$plotType <<- map.type #attr(pl, "plottype")
