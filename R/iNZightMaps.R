@@ -397,7 +397,7 @@ iNZightMapMod <- setRefClass(
               ii.colour <- ii.colour + 1
 
               lbl.palette <- glabel("Palette:")
-              combobox.palette <- gcombobox(c("viridis", "heat"))
+              combobox.palette <- gcombobox(c("viridis", "heat", "plasma", "inferno"))
 
               tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.palette
               tbl.colour[ii.colour, 3:6, expand = TRUE] <- combobox.palette
@@ -676,6 +676,13 @@ iNZightMapMod <- setRefClass(
                 } else {
                     if (svalue(colVarList, TRUE) > 1) {
                       map.vars$colby <<- svalue(colVarList) 
+                      map.vars$col.fun <<- switch(
+                        svalue(combobox.palette),
+                        viridis = viridis::viridis,
+                        heat = viridis::magma,
+                        inferno = viridis::inferno,
+                        plasma = viridis::plasma
+                      )
                     } else {
                       map.vars$colby <<- NULL
                     }
@@ -1054,6 +1061,7 @@ iNZightMapMod <- setRefClass(
                 if (!is.null(map.vars$colby)) {
                     args$colby <- activeData[[map.vars$colby]]
                     args$varnames$colby = map.vars$colby
+                    args$col.fun <- map.vars$col.fun
                 }
                 if (!is.null(map.vars$sizeby)) {
                     args$sizeby <- activeData[[map.vars$sizeby]]
