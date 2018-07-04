@@ -540,6 +540,12 @@ iNZightMapMod <- setRefClass(
             ii.size <- 1
             
             if (map.type != "shape") {
+              lbl.size <- glabel("Overall:")
+              cexSlider <- gslider(from = 0.05, to = 3.5, by = 0.05, value = map.vars$cex.pt)
+              tbl.size[ii.size, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.size
+              tbl.size[ii.size, 4:6, expand = TRUE] <- cexSlider
+              ii.size <- ii.size + 1
+              
               lbl.sizeby <- glabel("Size by :")
               rszVarList <- gcombobox(
                 c("", rszNames <- names(activeData)[sapply(activeData, is.numeric)]),
@@ -552,17 +558,14 @@ iNZightMapMod <- setRefClass(
               tbl.size[ii.size, 3:6, expand = TRUE] <- rszVarList
               ii.size <- ii.size + 1
               
-              lbl.size <- glabel("Point size :")
-              cexSlider <- gslider(from = 0.05, to = 3.5, by = 0.05, value = map.vars$cex.pt)
-              tbl.size[ii.size, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.size
-              tbl.size[ii.size, 4:6, expand = TRUE] <- cexSlider
-              ii.size <- ii.size + 1
-              
               lbl.sizemethod <- glabel("Resize method:")
               combobox.sizemethod <- gcombobox(c("proportional", "emphasize"))
               tbl.size[ii.size, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.sizemethod
               tbl.size[ii.size, 4:6, expand = TRUE] <- combobox.sizemethod
               ii.size <- ii.size + 1
+              
+              visible(lbl.sizemethod) <- FALSE
+              visible(combobox.sizemethod) <- FALSE
             }
             
 # Opacity Options ---------------------------------------------------------
@@ -585,6 +588,14 @@ iNZightMapMod <- setRefClass(
             ii.opacity <- 1
             
             if (map.type != "shape") {
+              ## Transparency
+              lbl.transp <- glabel("Overall:")
+              transpSlider <- gslider(from = 0, to = 100,
+                                      by = 1, value = 100 * (1 - map.vars$alpha))
+              tbl.opacity[ii.opacity, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.transp
+              tbl.opacity[ii.opacity, 4:6, expand = TRUE] <- transpSlider
+              ii.opacity <- ii.opacity + 1
+              
               lbl.opacityby <- glabel("Opacify by :")
               opctyVarList <- gcombobox(
                 c("", numNames <- names(activeData)[sapply(activeData, is.numeric)]),
@@ -595,14 +606,6 @@ iNZightMapMod <- setRefClass(
               )
               tbl.opacity[ii.opacity, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.opacityby
               tbl.opacity[ii.opacity, 3:6, expand = TRUE] <- opctyVarList
-              ii.opacity <- ii.opacity + 1
-              
-              ## Transparency
-              lbl.transp <- glabel("Transparency (TO MOVE?) :")
-              transpSlider <- gslider(from = 0, to = 100,
-                                      by = 1, value = 100 * (1 - map.vars$alpha))
-              tbl.opacity[ii.opacity, 2:3, anchor = c(1, 0), expand = TRUE] <- lbl.transp
-              tbl.opacity[ii.opacity, 4:6, expand = TRUE] <- transpSlider
               ii.opacity <- ii.opacity + 1
             }
             
@@ -781,9 +784,11 @@ iNZightMapMod <- setRefClass(
                     }
                   
                     if (svalue(rszVarList, TRUE) > 1) {
-                      map.vars$sizeby <<- svalue(rszVarList) 
+                      map.vars$sizeby <<- svalue(rszVarList)
+                      map.vars$resize.method <<- svalue(combobox.sizemethod)
                     } else { 
                       map.vars$sizeby <<- NULL
+                      map.vars$resize.method <<- NULL
                     }
                   
                     if (svalue(opctyVarList, TRUE) > 1) {
@@ -845,7 +850,10 @@ iNZightMapMod <- setRefClass(
               
                 addHandlerChanged(rszVarList, handler = function(h, ...) {
                   changeExpandTitle(expand.size, "Size", svalue(rszVarList))
-
+                  
+                  visible(lbl.sizemethod) <- svalue(rszVarList, TRUE) > 1
+                  visible(combobox.sizemethod) <- svalue(rszVarList, TRUE) > 1
+                  
                   updateEverything()
                 })
                 
@@ -863,6 +871,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(combobox.paletteCat, handler = function(h, ...) updateEverything())
                 addHandlerChanged(checkbox.reverse, handler = function(h, ...) updateEverything())
                 addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
+                
+                addHandlerChanged(combobox.sizemethod, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(cyclePrev, function(h, ...) {
                   nl <- if (map.vars$colby %in% characterVars()) {
@@ -1196,6 +1206,7 @@ iNZightMapMod <- setRefClass(
                 if (!is.null(map.vars$sizeby)) {
                     args$sizeby <- activeData[[map.vars$sizeby]]
                     args$varnames$sizeby = map.vars$sizeby
+                    args$resize.method <- map.vars$resize.method
                 }
                 if (!is.null(map.vars$opacity)) {
                     args$opacity <- map.vars$opacity
