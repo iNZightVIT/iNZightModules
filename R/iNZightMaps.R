@@ -411,6 +411,39 @@ iNZightMapMod <- setRefClass(
             add(expand.plotoptions, tbl.plotoptions)
             ii.plotopt <- 1
             
+            if (map.type != "shape") {
+              lbl <- glabel("Map type :")
+              typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
+              typeList <- gcombobox(typeOpts)
+              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
+              tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
+              ii.plotopt <- ii.plotopt + 1
+              
+              lbl.title <- glabel("Plot title:")
+              edit.title <- gedit()
+              
+              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.title
+              tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- edit.title
+              ii.plotopt <- ii.plotopt + 1
+              
+              lbl.limitxaxis <- glabel("x-axis :")
+              lbl.limityaxis <- glabel("y-axis :")
+              edit.limitxaxisMin <- gedit()
+              edit.limitxaxisMax <- gedit()
+              edit.limityaxisMin <- gedit()
+              edit.limityaxisMax <- gedit()
+              
+              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.limitxaxis
+              tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- edit.limitxaxisMin
+              tbl.plotoptions[ii.plotopt, 6, expand = TRUE] <- edit.limitxaxisMax
+              ii.plotopt <- ii.plotopt + 1
+              
+              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.limityaxis
+              tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- edit.limityaxisMin
+              tbl.plotoptions[ii.plotopt, 6, expand = TRUE] <- edit.limityaxisMax
+              ii.plotopt <- ii.plotopt + 1
+              
+            }
 
 # Colour Options ----------------------------------------------------------
             
@@ -688,14 +721,6 @@ iNZightMapMod <- setRefClass(
                 ii <- ii + 1
             }
 
-            if (map.type != "shape") {
-                lbl <- glabel("Map type :")
-                typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
-                typeList <- gcombobox(typeOpts)
-                tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
-                tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
-                ii.plotopt <- ii.plotopt + 1
-            }
 
 
             ## COLOUR
@@ -796,6 +821,12 @@ iNZightMapMod <- setRefClass(
                     } else {
                       map.vars$opacity <<- NULL
                     }
+                  
+                    if (isTRUE(svalue(edit.title) != "")) {
+                      map.vars$main <<- svalue(edit.title)
+                    } else {
+                      map.vars$main <<- NULL
+                    }
                     
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
@@ -873,6 +904,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(combobox.sizemethod, handler = function(h, ...) updateEverything())
+                
+                addHandlerChanged(edit.title, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(cyclePrev, function(h, ...) {
                   nl <- if (map.vars$colby %in% characterVars()) {
@@ -1211,6 +1244,10 @@ iNZightMapMod <- setRefClass(
                 if (!is.null(map.vars$opacity)) {
                     args$opacity <- map.vars$opacity
                     args$varnames$opacity = map.vars$opacity
+                }
+              
+                if (!is.null(map.vars$main)) {
+                  args$main <- map.vars$main
                 }
 
                 args$col.pt <- map.vars$col.pt
