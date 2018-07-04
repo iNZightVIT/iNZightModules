@@ -109,7 +109,6 @@ iNZightMapMod <- setRefClass(
                     ks <- floor(seq(1, n, length = ncat + 1))
                     k <- ks[k]:ks[k+1]
                   }
-                  #cols[k] <- iNZightPlots:::shade(cols[k], -0.4)
                   cols[-k] <- iNZightPlots:::shade(cols[-k], 0.7)
                   cols
                 })
@@ -470,10 +469,12 @@ iNZightMapMod <- setRefClass(
               ii.colour <- ii.colour + 1
 
               lbl.palette <- glabel("Palette:")
-              combobox.palette <- gcombobox(c("viridis", "heat", "plasma", "inferno"))
-
+              combobox.paletteCont <- gcombobox(names(colourPalettes$cont))
+              combobox.paletteCat <- gcombobox(names(colourPalettes$cat))
+              
               tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.palette
-              tbl.colour[ii.colour, 3:6, expand = TRUE] <- combobox.palette
+              tbl.colour[ii.colour, 3:6, expand = TRUE] <- combobox.paletteCont
+              tbl.colour[ii.colour, 3:6, expand = TRUE] <- combobox.paletteCat
               ii.colour <- ii.colour + 1
 
               checkbox.reverse <- gcheckbox("Reverse palette")
@@ -502,7 +503,8 @@ iNZightMapMod <- setRefClass(
               
               controls.colour <- list(
                 lbl.palette,
-                combobox.palette,
+                combobox.paletteCont,
+                combobox.paletteCat,
                 checkbox.reverse,
                 checkbox.ranks,
                 lbl.quantilecycle,
@@ -750,29 +752,28 @@ iNZightMapMod <- setRefClass(
                     if (svalue(colVarList, TRUE) > 1) {
                       map.vars$colby <<- svalue(colVarList)
                       
+                      print(svalue(combobox.paletteCont))
+                      print(svalue(combobox.paletteCat))
+                      
                     map.vars$col.fun <<- if (EMPH.LEVEL > 0) {
                         function(n)
                           colourPalettes$emphasize(
-                            n, k = EMPH.LEVEL, cat = is.factor(map.vars$colby),
+                            n, k = EMPH.LEVEL, cat = is.factor(map.object[[map.vars$colby]]),
                             ncat = svalue(cycleN),
-                            fn = if (is.numeric(map.vars$colby))
-                              colourPalettes$cont[[svalue(combobox.palette)]]
-                            else colourPalettes$cat[[svalue(combobox.palette)]]
+                            fn = if (map.vars$colby %in% numericVars()) {
+                              colourPalettes$cont[[svalue(combobox.paletteCont)]]
+                            } else {
+                              colourPalettes$cat[[svalue(combobox.paletteCat)]]
+                            }
                       )
                     } else {
-                      if (is.numeric(map.vars$colby))
-                        colourPalettes$cont[[svalue(combobox.palette)]]
-                      else colourPalettes$cat[[svalue(combobox.palette)]]
+                      if (map.vars$colby %in% numericVars()) {
+                        colourPalettes$cont[[svalue(combobox.paletteCont)]]
+                      } else {
+                        colourPalettes$cat[[svalue(combobox.paletteCat)]]
+                      }
                     }
                       
-                      
-                      # map.vars$col.fun <<- switch(
-                      #   svalue(combobox.palette),
-                      #   viridis = viridis::viridis,
-                      #   heat = viridis::magma,
-                      #   inferno = viridis::inferno,
-                      #   plasma = viridis::plasma
-                      # )
                       map.vars$reverse.palette <<- svalue(checkbox.reverse)
                       map.vars$col.method <<- ifelse(svalue(checkbox.ranks), "rank", "linear")
                     } else {
@@ -826,8 +827,14 @@ iNZightMapMod <- setRefClass(
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
                   changeExpandTitle(expand.colour, "Colour", svalue(colVarList))
-                  
+
                   changeVisibleControls(controls.colour, colVarList)
+                  
+                  if (svalue(colVarList, TRUE) > 1) {
+                    visible(combobox.paletteCont) <- svalue(colVarList) %in% numericVars()
+                    visible(combobox.paletteCat) <- !(svalue(colVarList) %in% numericVars())
+                  }
+
                   visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
                   visible(symbolColList) <- svalue(colVarList, TRUE) == 1
                   visible(sep.colour) <- svalue(colVarList, TRUE) == 1
@@ -852,22 +859,27 @@ iNZightMapMod <- setRefClass(
                 })
                 
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
-                addHandlerChanged(combobox.palette, handler = function(h, ...) updateEverything())
+                addHandlerChanged(combobox.paletteCont, handler = function(h, ...) updateEverything())
+                addHandlerChanged(combobox.paletteCat, handler = function(h, ...) updateEverything())
                 addHandlerChanged(checkbox.reverse, handler = function(h, ...) updateEverything())
                 addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(cyclePrev, function(h, ...) {
-                  nl <-
-                    if (is.factor(map.vars$colby)) length(levels(map.vars$colby))
-                  else svalue(cycleN)
+                  nl <- if (map.vars$colby %in% characterVars()) {
+                    length(levels(map.object[[map.vars$colby]]))
+                  } else {
+                    svalue(cycleN)
+                  }
                   EMPH.LEVEL <<- ifelse(EMPH.LEVEL == 0, nl, EMPH.LEVEL - 1)
                   updateEverything()
                 })
                 
                 addHandlerChanged(cycleNext, handler = function(h, ...) {
-                    nl <-
-                      if (is.factor(map.vars$colby)) length(levels(map.vars$colby))
-                    else svalue(cycleN)
+                    nl <- if (map.vars$colby %in% characterVars()) {
+                      length(levels(map.object[[map.vars$colby]]))
+                    } else { 
+                      svalue(cycleN)
+                    }
                     EMPH.LEVEL <<- ifelse(EMPH.LEVEL == nl, 0, EMPH.LEVEL + 1)
                     updateEverything()
                 })
