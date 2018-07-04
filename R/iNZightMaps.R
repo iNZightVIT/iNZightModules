@@ -319,7 +319,9 @@ iNZightMapMod <- setRefClass(
               size = 10
             )
             
-            ## PLOT OPTIONS
+
+# Plot Options ------------------------------------------------------------
+
             frame.plotoptions <- gframe(horizontal = FALSE)
             group.plotoptions <- ggroup(spacing = 5)
             group.plotoptions$set_borderwidth(10)
@@ -337,7 +339,9 @@ iNZightMapMod <- setRefClass(
             add(expand.plotoptions, tbl.plotoptions)
             ii.plotopt <- 1
             
-            ## COLOUR OPTIONS
+
+# Colour Options ----------------------------------------------------------
+            
             frame.colour <- gframe(horizontal = FALSE)
             group.colour <- ggroup(spacing = 5)
             group.colour$set_borderwidth(10)
@@ -382,9 +386,44 @@ iNZightMapMod <- setRefClass(
               tbl.colour[ii.colour, 3:4, expand = TRUE] <- checkbox.reverse
               tbl.colour[ii.colour, 5:6, expand = TRUE] <- checkbox.ranks
               ii.colour <- ii.colour + 1
+              
+              lbl.quantilecycle <- glabel("Cycle quantiles:")
+              
+              lbl.quantilenumber <- glabel("# quantiles:")
+              spin.quantilenumber <- gspinbutton(4)
+              
+              cyclePrev <- iNZight:::gimagebutton(stock.id = "1leftarrow")
+              cycleNext <- iNZight:::gimagebutton(stock.id = "1rightarrow")
+              cycleStop <- iNZight:::gimagebutton(filename = system.file("images/icon-undo.png", package = "iNZight"))
+              
+              tbl.colour[ii.colour, 1, expand = TRUE] <- lbl.quantilecycle
+              tbl.colour[ii.colour, 2, expand = TRUE] <- cyclePrev
+              tbl.colour[ii.colour, 3, expand = TRUE] <- cycleNext
+              tbl.colour[ii.colour, 4, expand = TRUE] <- cycleStop
+              tbl.colour[ii.colour, 5, expand = TRUE] <- lbl.quantilenumber
+              tbl.colour[ii.colour, 6, expand = TRUE] <- spin.quantilenumber
+              ii.colour <- ii.colour + 1
+              
+              controls.colour <- list(
+                lbl.palette,
+                combobox.palette,
+                checkbox.reverse,
+                checkbox.ranks,
+                lbl.quantilecycle,
+                cyclePrev,
+                cycleNext,
+                cycleStop,
+                lbl.quantilenumber,
+                spin.quantilenumber
+              )
+              
+              for (control in controls.colour) {
+                visible(control) <- svalue(colVarList, TRUE) > 1
+              }
             }
 
-            ## SIZE OPTIONS
+# Size Options ------------------------------------------------------------
+
             frame.size <- gframe(horizontal = FALSE)
             group.size <- ggroup(spacing = 5)
             group.size$set_borderwidth(10)
@@ -428,7 +467,8 @@ iNZightMapMod <- setRefClass(
               ii.size <- ii.size + 1
             }
             
-            ## OPACITY OPTIONS
+# Opacity Options ---------------------------------------------------------
+
             frame.opacity <- gframe(horizontal = FALSE)
             group.opacity <- ggroup(spacing = 5)
             group.opacity$set_borderwidth(10)
@@ -468,7 +508,8 @@ iNZightMapMod <- setRefClass(
               ii.opacity <- ii.opacity + 1
             }
             
-            ## CONNECT OPTIONS
+# Connect Options ---------------------------------------------------------
+
             frame.connect <- gframe(horizontal = FALSE)
             group.connect <- ggroup(spacing = 5)
             group.connect$set_borderwidth(10)
@@ -664,6 +705,12 @@ iNZightMapMod <- setRefClass(
               
               font(expandgroup) <- font
             }
+            
+            changeVisibleControls <- function(controls, based.on) {
+              for (control in controls) {
+                visible(control) <- svalue(based.on, TRUE) > 1
+              }
+            }
 
             ## in this case, no point in having a separate "show" button
             if (map.type == "shape") {
@@ -672,6 +719,9 @@ iNZightMapMod <- setRefClass(
             } else {
                 addHandlerChanged(colVarList, handler = function(h, ...) {
                   changeExpandTitle(expand.colour, "Colour\n", svalue(colVarList))
+                  
+                  changeVisibleControls(controls.colour, colVarList)
+                  
                   enabled(joinCol) <- svalue(colVarList, TRUE) == 1
                   updateEverything()
                 })
