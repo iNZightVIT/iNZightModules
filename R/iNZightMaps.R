@@ -35,7 +35,9 @@ iNZightMapMod <- setRefClass(
         map.object  = "ANY",
         map.type    = "ANY",
         extra.args  = "list",
-        grpTbl      = "ANY"
+        grpTbl      = "ANY",
+        EMPH.LEVEL  = "ANY",
+        colourPalettes = "ANY"
     ),
 
 
@@ -47,8 +49,73 @@ iNZightMapMod <- setRefClass(
     methods = list(
         ## Function with all GUI specifications
         initialize = function(GUI) {
+            .rcb = TRUE
+            .viridis = TRUE
             ## GUI
-            initFields(GUI = GUI)
+            initFields(
+              GUI = GUI,
+              colourPalettes = list(cat = c(
+                  if (.rcb)
+                    list("contrast (max 8)" =
+                           function(n)
+                             if (n > 8) iNZightPlots::inzpar()$col.default$cat(n)
+                         else RColorBrewer::brewer.pal(n, "Set2")[1:n],
+                         "bright (max 9)" =
+                           function(n)
+                             if (n > 9) iNZightPlots::inzpar()$col.default$cat(n)
+                         else RColorBrewer::brewer.pal(n, "Set1")[1:n],
+                         "light (max 12)" =
+                           function(n)
+                             if (n > 12) iNZightPlots::inzpar()$col.default$cat(n)
+                         else RColorBrewer::brewer.pal(n, "Set3")[1:n]),
+                  if (.viridis)
+                    list(viridis = viridis::viridis,
+                         magma = viridis::magma,
+                         plasma = viridis::plasma,
+                         inferno = viridis::inferno),
+                  list("Colourblind Friendly" = iNZightPlots::inzpar()$col.default$cat,
+                       'rainbow (hcl)' = function(n) hcl((1:n) / n * 360, c = 80, l = 50))
+                ),
+                cont = c(
+                  if (.viridis)
+                    list(viridis = viridis::viridis,
+                         magma = viridis::magma,
+                         plasma = viridis::plasma,
+                         inferno = viridis::inferno),
+                  list('rainbow (hcl)' = function(n) hcl((1:n) / n * 320 + 60, c = 100, l = 50),
+                       blue =
+                         function(n) colorspace::sequential_hcl(n, h = 260, c. = c(80, 10), l = c(30, 95), power = 0.7),
+                       green =
+                         function(n) colorspace::sequential_hcl(n, h = 135, c. = c(50, 10), l = c(40, 95), power = 0.4),
+                       red =
+                         function(n) colorspace::sequential_hcl(n, h = 10, c. = c(80, 10), l = c(30, 95), power = 0.7),
+                       "green-yellow" =
+                         function(n) colorspace::terrain_hcl(n, h = c(130, 30), c. = c(65, 0), l = c(45, 90),
+                                                 power = c(0.5, 1.5)),
+                       "red-blue" =
+                         function(n) colorspace::terrain_hcl(n, h = c(0, -100), c. = c(80, 40), l = c(40, 75),
+                                                 power = c(1, 1)),
+                       terrain = colorspace::terrain_hcl,
+                       heat = colorspace::heat_hcl,
+                       "blue/white/pink" =
+                         function(n) colorspace::diverge_hcl(n, h = c(180, 330), c = 59, l = c(75, 95), power = 1.5),
+                       "blue/white/red" =
+                         function(n) colorspace::diverge_hcl(n, h = c(260, 0), c = 100, l = c(50, 90), power = 1))
+                ),
+                emphasize = function(n, k, cat = TRUE, ncat = 5,
+                                     fn = if (cat) iNZightPlots::inzpar()$col.default$cat else iNZightPlots::inzpar()$col.default$cont) {
+                  cols <- fn(n)
+                  if (!cat) {
+                    ks <- floor(seq(1, n, length = ncat + 1))
+                    k <- ks[k]:ks[k+1]
+                  }
+                  #cols[k] <- iNZightPlots:::shade(cols[k], -0.4)
+                  cols[-k] <- iNZightPlots:::shade(cols[-k], 0.7)
+                  cols
+                })
+            )
+            
+            EMPH.LEVEL <<- 0
 
             if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
                 resp <- gconfirm("The Maps package isn't installed. Do you want to install it now?",
@@ -184,6 +251,12 @@ iNZightMapMod <- setRefClass(
 
 
         },
+
+
+        
+        
+        
+        
 
         ## Supplementary functions to be used in initialize()
         ##   - Can create as many as needed
@@ -413,7 +486,7 @@ iNZightMapMod <- setRefClass(
               lbl.quantilecycle <- glabel("Cycle quantiles:")
               
               lbl.quantilenumber <- glabel("# quantiles:")
-              spin.quantilenumber <- gspinbutton(4)
+              cycleN <- gspinbutton(4)
               
               cyclePrev <- iNZight:::gimagebutton(stock.id = "1leftarrow")
               cycleNext <- iNZight:::gimagebutton(stock.id = "1rightarrow")
@@ -424,7 +497,7 @@ iNZightMapMod <- setRefClass(
               tbl.colour[ii.colour, 3, expand = TRUE] <- cycleNext
               tbl.colour[ii.colour, 4, expand = TRUE] <- cycleStop
               tbl.colour[ii.colour, 5, expand = TRUE] <- lbl.quantilenumber
-              tbl.colour[ii.colour, 6, expand = TRUE] <- spin.quantilenumber
+              tbl.colour[ii.colour, 6, expand = TRUE] <- cycleN
               ii.colour <- ii.colour + 1
               
               controls.colour <- list(
@@ -437,7 +510,7 @@ iNZightMapMod <- setRefClass(
                 cycleNext,
                 cycleStop,
                 lbl.quantilenumber,
-                spin.quantilenumber
+                cycleN
               )
               
               for (control in controls.colour) {
@@ -675,14 +748,33 @@ iNZightMapMod <- setRefClass(
                     map.vars$map.labels <<- svalue(mapLbls, index = TRUE)
                 } else {
                     if (svalue(colVarList, TRUE) > 1) {
-                      map.vars$colby <<- svalue(colVarList) 
-                      map.vars$col.fun <<- switch(
-                        svalue(combobox.palette),
-                        viridis = viridis::viridis,
-                        heat = viridis::magma,
-                        inferno = viridis::inferno,
-                        plasma = viridis::plasma
+                      map.vars$colby <<- svalue(colVarList)
+                      
+                    map.vars$col.fun <<- if (EMPH.LEVEL > 0) {
+                        function(n)
+                          colourPalettes$emphasize(
+                            n, k = EMPH.LEVEL, cat = is.factor(map.vars$colby),
+                            ncat = svalue(cycleN),
+                            fn = if (is.numeric(map.vars$colby))
+                              colourPalettes$cont[[svalue(combobox.palette)]]
+                            else colourPalettes$cat[[svalue(combobox.palette)]]
                       )
+                    } else {
+                      if (is.numeric(map.vars$colby))
+                        colourPalettes$cont[[svalue(combobox.palette)]]
+                      else colourPalettes$cat[[svalue(combobox.palette)]]
+                    }
+                      
+                      
+                      # map.vars$col.fun <<- switch(
+                      #   svalue(combobox.palette),
+                      #   viridis = viridis::viridis,
+                      #   heat = viridis::magma,
+                      #   inferno = viridis::inferno,
+                      #   plasma = viridis::plasma
+                      # )
+                      map.vars$reverse.palette <<- svalue(checkbox.reverse)
+                      map.vars$col.method <<- ifelse(svalue(checkbox.ranks), "rank", "linear")
                     } else {
                       map.vars$colby <<- NULL
                     }
@@ -760,6 +852,30 @@ iNZightMapMod <- setRefClass(
                 })
                 
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
+                addHandlerChanged(combobox.palette, handler = function(h, ...) updateEverything())
+                addHandlerChanged(checkbox.reverse, handler = function(h, ...) updateEverything())
+                addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
+                
+                addHandlerChanged(cyclePrev, function(h, ...) {
+                  nl <-
+                    if (is.factor(map.vars$colby)) length(levels(map.vars$colby))
+                  else svalue(cycleN)
+                  EMPH.LEVEL <<- ifelse(EMPH.LEVEL == 0, nl, EMPH.LEVEL - 1)
+                  updateEverything()
+                })
+                
+                addHandlerChanged(cycleNext, handler = function(h, ...) {
+                    nl <-
+                      if (is.factor(map.vars$colby)) length(levels(map.vars$colby))
+                    else svalue(cycleN)
+                    EMPH.LEVEL <<- ifelse(EMPH.LEVEL == nl, 0, EMPH.LEVEL + 1)
+                    updateEverything()
+                })
+                
+                addHandlerChanged(cycleStop, handler = function(h, ...) {
+                  EMPH.LEVEL <<- 0
+                  updateEverything()
+                })
             }
 
             pcoltimer <- NULL
@@ -1062,6 +1178,8 @@ iNZightMapMod <- setRefClass(
                     args$colby <- activeData[[map.vars$colby]]
                     args$varnames$colby = map.vars$colby
                     args$col.fun <- map.vars$col.fun
+                    args$reverse.palette <- map.vars$reverse.palette
+                    args$col.method <- map.vars$col.method
                 }
                 if (!is.null(map.vars$sizeby)) {
                     args$sizeby <- activeData[[map.vars$sizeby]]
