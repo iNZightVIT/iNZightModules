@@ -737,14 +737,17 @@ iNZightMap2Mod <- setRefClass(
                 aggregation <- FALSE
             }
 
-            if (!plotPlay) {
-                grid::grid.rect(width = 0.25, height = 0.10, y = 0.05,
-                                gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
-                grid::grid.text("Please wait... Loading...", y = 0.05)
-                axis.limits <- plotScaleLimits
+            if (isTRUE(mapVars != "") && (plotPlay || isTRUE(combinedData$multiple.obs && multipleObsOption == "singleval"))) {
+              axis.limits <- c(
+                min(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE),
+                max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE)
+              )
+
             } else {
-                axis.limits <- c(min(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE),
-                                 max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE))
+              grid::grid.rect(width = 0.25, height = 0.10, y = 0.05,
+                              gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+              grid::grid.text("Please wait... Loading...", y = 0.05)
+              axis.limits <- plotScaleLimits
             }
 
             print(plotProjection)
