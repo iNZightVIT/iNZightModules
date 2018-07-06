@@ -37,7 +37,8 @@ iNZightMapMod <- setRefClass(
         extra.args  = "list",
         grpTbl      = "ANY",
         EMPH.LEVEL  = "ANY",
-        colourPalettes = "ANY"
+        colourPalettes = "ANY",
+        timer = "ANY"
     ),
 
 
@@ -433,16 +434,22 @@ iNZightMapMod <- setRefClass(
               edit.limityaxisMin <- gedit()
               edit.limityaxisMax <- gedit()
               
-              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.limitxaxis
-              tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- edit.limitxaxisMin
-              tbl.plotoptions[ii.plotopt, 6, expand = TRUE] <- edit.limitxaxisMax
-              ii.plotopt <- ii.plotopt + 1
+              # tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.limitxaxis
+              # tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- edit.limitxaxisMin
+              # tbl.plotoptions[ii.plotopt, 6, expand = TRUE] <- edit.limitxaxisMax
+              # ii.plotopt <- ii.plotopt + 1
+              # 
+              # tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.limityaxis
+              # tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- edit.limityaxisMin
+              # tbl.plotoptions[ii.plotopt, 6, expand = TRUE] <- edit.limityaxisMax
+              # ii.plotopt <- ii.plotopt + 1
               
-              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.limityaxis
-              tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- edit.limityaxisMin
-              tbl.plotoptions[ii.plotopt, 6, expand = TRUE] <- edit.limityaxisMax
-              ii.plotopt <- ii.plotopt + 1
+              lbl.plotsize <- glabel("Overall size scale:")
+              slider.plotsize <- gslider(0.5, 2, 0.05, value = 1)
               
+              tbl.plotoptions[ii.plotopt, 1:2, anchor = c(-1, 0), expand = TRUE] <- lbl.plotsize
+              tbl.plotoptions[ii.plotopt, 3, expand = TRUE] <- slider.plotsize
+              ii.plotopt <- ii.plotopt + 1
             }
 
 # Colour Options ----------------------------------------------------------
@@ -779,10 +786,7 @@ iNZightMapMod <- setRefClass(
                 } else {
                     if (svalue(colVarList, TRUE) > 1) {
                       map.vars$colby <<- svalue(colVarList)
-                      
-                      print(svalue(combobox.paletteCont))
-                      print(svalue(combobox.paletteCat))
-                      
+
                     map.vars$col.fun <<- if (EMPH.LEVEL > 0) {
                         function(n)
                           colourPalettes$emphasize(
@@ -827,12 +831,14 @@ iNZightMapMod <- setRefClass(
                     } else {
                       map.vars$main <<- NULL
                     }
-                    
+                  
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
                     map.vars$alpha <<- 1 - svalue(transpSlider) / 100
                     map.vars$join <<- svalue(joinPts)
                     map.vars$col.line <<- svalue(joinCol)
+                    
+                    map.vars$cex <<- svalue(slider.plotsize)
                     
                     map.type <<- svalue(typeList)
                 }
@@ -906,6 +912,13 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(combobox.sizemethod, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(edit.title, handler = function(h, ...) updateEverything())
+                
+                plotcextimer <- NULL
+                addHandlerChanged(slider.plotsize, handler = function(h, ...) {
+                  if (!is.null(plotcextimer))
+                    if (plotcextimer$started) plotcextimer$stop_timer()
+                  plotcextimer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                })
                 
                 addHandlerChanged(cyclePrev, function(h, ...) {
                   nl <- if (map.vars$colby %in% characterVars()) {
@@ -1256,6 +1269,8 @@ iNZightMapMod <- setRefClass(
                 args$join <- map.vars$join
                 args$col.line <- map.vars$col.line
                 
+                args$cex <- map.vars$cex
+                
                 args$type <- map.type
             }
 
@@ -1273,8 +1288,6 @@ iNZightMapMod <- setRefClass(
 
             if (!is.null(extra.args))
                 args <- c(args, extra.args)
-            
-            print(names(args))
 
             pl <- do.call(plot, args)
             GUI$plotType <<- map.type #attr(pl, "plottype")
