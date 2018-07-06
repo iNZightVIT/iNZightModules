@@ -724,6 +724,15 @@ iNZightMap2Mod <- setRefClass(
         createMapObject = function() {},
 
         updatePlot = function() {
+          
+          range2 <- function(x, na.rm = TRUE) {
+            if (is.character(x) || is.factor(x)) {
+              NULL
+            } else {
+              range(x, na.rm = na.rm)
+            }
+          }
+          
             gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), gdkCursorNew("GDK_WATCH"))
             if(length(mapVars) > 1) {
                 multiple.vars <- TRUE
@@ -737,11 +746,8 @@ iNZightMap2Mod <- setRefClass(
                 aggregation <- FALSE
             }
 
-            if (isTRUE(mapVars != "") && (plotPlay || isTRUE(combinedData$multiple.obs && multipleObsOption == "singleval"))) {
-              axis.limits <- c(
-                min(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE),
-                max(as.data.frame(combinedData$region.data)[, mapVars], na.rm = TRUE)
-              )
+            if (isTRUE(is.null(plotScaleLimits)) && isTRUE(!is.null(mapVars) && all(mapVars != "")) && (plotPlay || isTRUE(combinedData$multiple.obs && multipleObsOption == "singleval"))) {
+              axis.limits <- lapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], range2, na.rm = TRUE)
 
             } else {
               grid::grid.rect(width = 0.25, height = 0.10, y = 0.05,
@@ -750,7 +756,6 @@ iNZightMap2Mod <- setRefClass(
               axis.limits <- plotScaleLimits
             }
 
-            print(plotProjection)
             map.plot <- plot(combinedData, main = plotTitle,
                  axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
                  datum.lines = plotDatumLines, projection = plotProjection,
