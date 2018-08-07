@@ -951,7 +951,7 @@ iNZightMapMod <- setRefClass(
                               handler = function(h, ...) {
                                   if (!is.null(pcoltimer))
                                       pcoltimer$stop_timer()
-                                  pcoltimer <- gtimer(200, function(...) {
+                                  pcoltimer <<- gtimer(200, function(...) {
                                                           if (nchar(svalue(symbolColList)) >= 3)
                                                               updateEverything()
                                                       }, one.shot = TRUE)
@@ -963,7 +963,7 @@ iNZightMapMod <- setRefClass(
                                   handler = function(h, ...) {
                                       if (!is.null(cextimer))
                                           cextimer$stop_timer()
-                                      cextimer <- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                                      cextimer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                                   })
                 
                 transptimer <- NULL
@@ -971,7 +971,7 @@ iNZightMapMod <- setRefClass(
                                   handler = function(h, ...) {
                                       if (!is.null(transptimer))
                                           transptimer$stop_timer()
-                                      transptimer <- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                                      transptimer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                                   })
             }
 
