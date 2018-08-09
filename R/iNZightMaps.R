@@ -112,7 +112,8 @@ iNZightMapMod <- setRefClass(
                   }
                   cols[-k] <- iNZightPlots:::shade(cols[-k], 0.7)
                   cols
-                })
+                }),
+              timer = NULL
             )
             
             EMPH.LEVEL <<- 0
@@ -729,6 +730,11 @@ iNZightMapMod <- setRefClass(
               })
               
               addHandlerChanged(joinCol, function(h, ...) updateEverything())
+              addHandlerChanged(slider.linewidth, function(h, ...) {
+                if (!is.null(timer))
+                  if (timer$started) timer$stop_timer()
+                timer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+              })
             }
 
             if (map.type == "shape") {
@@ -852,6 +858,7 @@ iNZightMapMod <- setRefClass(
                     map.vars$alpha <<- 1 - svalue(transpSlider) / 100
                     map.vars$join <<- svalue(joinPts)
                     map.vars$col.line <<- svalue(joinCol)
+                    map.vars$lwd <<- svalue(slider.linewidth)
                     
                     map.vars$cex <<- svalue(slider.plotsize)
                     
@@ -912,7 +919,7 @@ iNZightMapMod <- setRefClass(
                   visible(symbolColList) <- svalue(colVarList, TRUE) == 1
                   visible(sep.colour) <- svalue(colVarList, TRUE) == 1
                   
-                  enabled(joinCol) <- svalue(colVarList, TRUE) == 1
+                  # enabled(joinCol) <- svalue(colVarList, TRUE) == 1
                   updateEverything()
                 })
               
@@ -944,11 +951,10 @@ iNZightMapMod <- setRefClass(
                 
                 addHandlerChanged(edit.title, handler = function(h, ...) updateEverything())
                 
-                plotcextimer <- NULL
                 addHandlerChanged(slider.plotsize, handler = function(h, ...) {
-                  if (!is.null(plotcextimer))
-                    if (plotcextimer$started) plotcextimer$stop_timer()
-                  plotcextimer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                  if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                  timer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                 })
                 
                 addHandlerChanged(cyclePrev, function(h, ...) {
@@ -977,32 +983,29 @@ iNZightMapMod <- setRefClass(
                 })
             }
 
-            pcoltimer <- NULL
             addHandlerChanged(symbolColList,
                               handler = function(h, ...) {
-                                  if (!is.null(pcoltimer))
-                                      pcoltimer$stop_timer()
-                                  pcoltimer <<- gtimer(200, function(...) {
+                                  if (!is.null(timer))
+                                      timer$stop_timer()
+                                  timer <<- gtimer(200, function(...) {
                                                           if (nchar(svalue(symbolColList)) >= 3)
                                                               updateEverything()
                                                       }, one.shot = TRUE)
                               })
 
             if (map.type != "shape") {
-                cextimer <- NULL
                 addHandlerChanged(cexSlider,
                                   handler = function(h, ...) {
-                                      if (!is.null(cextimer))
-                                          cextimer$stop_timer()
-                                      cextimer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                                      if (!is.null(timer))
+                                          timer$stop_timer()
+                                      timer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                                   })
                 
-                transptimer <- NULL
                 addHandlerChanged(transpSlider,
                                   handler = function(h, ...) {
-                                      if (!is.null(transptimer))
-                                          transptimer$stop_timer()
-                                      transptimer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
+                                      if (!is.null(timer))
+                                          timer$stop_timer()
+                                      timer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                                   })
             }
 
@@ -1299,6 +1302,7 @@ iNZightMapMod <- setRefClass(
                 args$alpha <- map.vars$alpha
                 args$join <- map.vars$join
                 args$col.line <- map.vars$col.line
+                args$lwd <- map.vars$lwd
                 
                 args$cex <- map.vars$cex
                 
