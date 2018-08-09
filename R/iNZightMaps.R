@@ -558,6 +558,14 @@ iNZightMapMod <- setRefClass(
               for (control in controls.colour) {
                 visible(control) <- svalue(colVarList, TRUE) > 1
               }
+              
+              if (svalue(colVarList, TRUE) > 1) {
+                if (svalue(colVarList) %in% numericVars()) {
+                  svalue(lbl.quantilecycle) <- "Cycle quantiles:"
+                } else {
+                  svalue(lbl.quantilecycle) <- "Cycle levels:"
+                }
+              }
             }
 
 # Size Options ------------------------------------------------------------
@@ -875,6 +883,13 @@ iNZightMapMod <- setRefClass(
                   if (svalue(colVarList, TRUE) > 1) {
                     visible(combobox.paletteCont) <- svalue(colVarList) %in% numericVars()
                     visible(combobox.paletteCat) <- !(svalue(colVarList) %in% numericVars())
+                    
+                    if (svalue(colVarList) %in% numericVars()) {
+                      svalue(lbl.quantilecycle) <- "Cycle quantiles:"
+                    } else {
+                      svalue(lbl.quantilecycle) <- "Cycle levels:"
+                    }
+                    
                   }
 
                   visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
