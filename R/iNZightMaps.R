@@ -919,7 +919,7 @@ iNZightMapMod <- setRefClass(
                   visible(symbolColList) <- svalue(colVarList, TRUE) == 1
                   visible(sep.colour) <- svalue(colVarList, TRUE) == 1
                   
-                  # enabled(joinCol) <- svalue(colVarList, TRUE) == 1
+                  enabled(joinCol) <- !(svalue(colVarList, TRUE) > 1 && svalue(colVarList) %in% characterVars())
                   updateEverything()
                 })
               
