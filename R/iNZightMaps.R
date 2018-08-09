@@ -546,13 +546,10 @@ iNZightMapMod <- setRefClass(
                 combobox.paletteCont,
                 combobox.paletteCat,
                 checkbox.reverse,
-                checkbox.ranks,
                 lbl.quantilecycle,
                 cyclePrev,
                 cycleNext,
-                cycleStop,
-                lbl.quantilenumber,
-                cycleN
+                cycleStop
               )
               
               for (control in controls.colour) {
@@ -562,9 +559,19 @@ iNZightMapMod <- setRefClass(
               if (svalue(colVarList, TRUE) > 1) {
                 if (svalue(colVarList) %in% numericVars()) {
                   svalue(lbl.quantilecycle) <- "Cycle quantiles:"
+                  visible(lbl.quantilenumber) <- TRUE
+                  visible(cycleN) <- TRUE
+                  visible(checkbox.ranks) <- TRUE
                 } else {
                   svalue(lbl.quantilecycle) <- "Cycle levels:"
+                  visible(lbl.quantilenumber) <- FALSE
+                  visible(cycleN) <- FALSE
+                  visible(checkbox.ranks) <- FALSE
                 }
+              } else {
+                visible(lbl.quantilenumber) <- FALSE
+                visible(cycleN) <- FALSE
+                visible(checkbox.ranks) <- FALSE
               }
             }
 
@@ -886,10 +893,19 @@ iNZightMapMod <- setRefClass(
                     
                     if (svalue(colVarList) %in% numericVars()) {
                       svalue(lbl.quantilecycle) <- "Cycle quantiles:"
+                      visible(lbl.quantilenumber) <- TRUE
+                      visible(cycleN) <- TRUE
+                      visible(checkbox.ranks) <- TRUE
                     } else {
                       svalue(lbl.quantilecycle) <- "Cycle levels:"
+                      visible(lbl.quantilenumber) <- FALSE
+                      visible(cycleN) <- FALSE
+                      visible(checkbox.ranks) <- FALSE
                     }
-                    
+                  } else {
+                    visible(lbl.quantilenumber) <- FALSE
+                    visible(cycleN) <- FALSE
+                    visible(checkbox.ranks) <- FALSE
                   }
 
                   visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
