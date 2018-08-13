@@ -665,6 +665,65 @@ iNZightMapMod <- setRefClass(
               ii.opacity <- ii.opacity + 1
             }
             
+# Shape Options ---------------------------------------------------------
+            
+            frame.shape <- gframe(horizontal = FALSE)
+            group.shape <- ggroup(spacing = 5)
+            group.shape$set_borderwidth(10)
+            expand.shape <- gexpandgroup(text = "Point Symbol", horizontal = FALSE)
+            font(expand.shape) <- list(weight = "bold", family = "normal", size = 10)
+            
+            add(mainGrp, frame.shape)
+            add(frame.shape, group.shape, expand = TRUE)
+            add(group.shape, expand.shape, expand = TRUE)
+            
+            visible(expand.shape) <- FALSE
+            
+            tbl.shape <- glayout()
+            
+            add(expand.shape, tbl.shape)
+            ii.shape <- 1
+            
+            if (map.type != "shape") {
+              symbolList <- c(
+                "circle"            = 21,
+                "square"            = 22,
+                "diamond"           = 23,
+                "triangle"          = 24,
+                "inverted triangle" = 25
+              )
+              
+              lbl.symbol <- glabel("Symbol:")
+              combobox.symbol <- gcombobox(names(symbolList), selected = 1)
+              
+              tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbol
+              tbl.shape[ii.shape, 3:6, expand = TRUE] <- combobox.symbol
+              ii.shape <- ii.shape + 1
+              
+              sep.shape <- gseparator()
+              tbl.shape[ii.shape, 1:6, expand = TRUE] <- sep.shape
+              ii.shape <- ii.shape + 1
+              
+              lbl.shapeby <- glabel("Symbol by :")
+              dropdown.shape <- gcombobox(
+                c("", numNames <- characterVars()),
+                selected = ifelse(
+                  is.null(map.vars$symbolby),
+                  1, which(numNames == map.vars$symbolby)[1] + 1
+                )
+              )
+              tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.shapeby
+              tbl.shape[ii.shape, 3:6, expand = TRUE] <- dropdown.shape
+              ii.shape <- ii.shape + 1
+              
+              lbl.symbolwidth <- glabel("Symbol line width:")
+              spin.symbolwidth <- gspinbutton(1, 4, by = 1, value = ifelse(is.null(map.vars$lwd.pt), 2, map.vars$lwd.pt))
+              
+              tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbolwidth
+              tbl.shape[ii.shape, 3:4, expand = TRUE] <- spin.symbolwidth
+              ii.shape <- ii.shape + 1
+            }
+            
 # Connect Options ---------------------------------------------------------
 
             frame.connect <- gframe(horizontal = FALSE)
@@ -847,6 +906,12 @@ iNZightMapMod <- setRefClass(
                       map.vars$opacity <<- NULL
                     }
                   
+                    if (svalue(dropdown.shape, TRUE) > 1) {
+                      map.vars$symbolby <<- svalue(dropdown.shape)
+                    } else {
+                      map.vars$symbolby <<- NULL
+                    }
+                  
                     if (isTRUE(svalue(edit.title) != "")) {
                       map.vars$main <<- svalue(edit.title)
                     } else {
@@ -859,6 +924,17 @@ iNZightMapMod <- setRefClass(
                     map.vars$join <<- svalue(joinPts)
                     map.vars$col.line <<- svalue(joinCol)
                     map.vars$lwd <<- svalue(slider.linewidth)
+                    
+                    symbolList <- c(
+                      "circle"            = 21,
+                      "square"            = 22,
+                      "diamond"           = 23,
+                      "triangle"          = 24,
+                      "inverted triangle" = 25
+                    )
+                    
+                    map.vars$pch <<- symbolList[svalue(combobox.symbol)]
+                    map.vars$lwd.pt <<- svalue(spin.symbolwidth)
                     
                     map.vars$cex <<- svalue(slider.plotsize)
                     
@@ -941,6 +1017,16 @@ iNZightMapMod <- setRefClass(
                   updateEverything()
                 })
                 
+                addHandlerChanged(dropdown.shape, handler = function(h, ...) {
+                  visible(lbl.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
+                  visible(combobox.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
+                  visible(sep.shape) <- !isTRUE(svalue(dropdown.shape) != "")
+                  
+                  changeExpandTitle(expand.shape, "Point Symbol", svalue(dropdown.shape))
+                  
+                  updateEverything()
+                })
+                
                 addHandlerChanged(typeList, handler = function(h, ...) updateEverything())
                 addHandlerChanged(combobox.paletteCont, handler = function(h, ...) updateEverything())
                 addHandlerChanged(combobox.paletteCat, handler = function(h, ...) updateEverything())
@@ -1007,6 +1093,9 @@ iNZightMapMod <- setRefClass(
                                           timer$stop_timer()
                                       timer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                                   })
+                
+                addHandlerChanged(combobox.symbol, handler = function(h, ...) updateEverything())
+                addHandlerChanged(spin.symbolwidth, handler = function(h, ...) updateEverything())
             }
 
 
@@ -1291,6 +1380,12 @@ iNZightMapMod <- setRefClass(
                 if (!is.null(map.vars$opacity)) {
                     args$opacity <- map.vars$opacity
                     args$varnames$opacity = map.vars$opacity
+                    args$reverse.opacity <- sample(0:1, size = 1)
+                }
+              
+                if (!is.null(map.vars$symbolby)) {
+                  args$symbolby <- activeData[[map.vars$symbolby]]
+                  args$varnames$symbolby <- map.vars$symbolby
                 }
               
                 if (!is.null(map.vars$main)) {
@@ -1303,6 +1398,8 @@ iNZightMapMod <- setRefClass(
                 args$join <- map.vars$join
                 args$col.line <- map.vars$col.line
                 args$lwd <- map.vars$lwd
+                args$pch <- map.vars$pch
+                args$lwd.pt <- map.vars$lwd.pt
                 
                 args$cex <- map.vars$cex
                 
