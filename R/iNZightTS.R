@@ -273,7 +273,8 @@ iNZightTSMod <- setRefClass(
                     visible(multivar) <- TRUE
                 }
 
-                if (!is.na(timeVar) || (!is.null(timePeriod) && !is.na(timeFreq)) ) {
+                if ((svalue(g1_opt1, TRUE) == 1 && !is.na(timeVar)) || 
+                    (svalue(g1_opt1, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
                     tryCatch({
                         if (svalue(g1_opt1, TRUE) == 1) {
                             tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,

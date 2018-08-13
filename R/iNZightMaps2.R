@@ -22,11 +22,16 @@ iNZightMap2Mod <- setRefClass(
         staleMap = "logical",
         has.multipleobs = "logical",
         mapSequenceVar = "ANY",
+        plotObject = "ANY",
 
         mapName = "character",
         mapType = "ANY",
         mapVars = "ANY",
         mapSizeVar = "ANY",
+        mapRegionsPlot = "ANY",
+        mapExcludedRegions = "ANY",
+        plotMaxSeqInd = "ANY",
+        plotCurrSeqInd = "ANY",
 
         plotTitle = "ANY",
         plotAxes = "logical",
@@ -39,7 +44,15 @@ iNZightMap2Mod <- setRefClass(
         plotConstantAlpha = "ANY",
         plotConstantSize = "ANY",
         plotCurrentSeqVal = "ANY",
+        plotSparklinesType = "ANY",
         timer = "ANY",
+        plotPlay = "ANY",
+        playdelay = "ANY",
+        playTimer = "ANY",
+        plotLabelVar = "ANY",
+        plotScaleLimits = "ANY",
+        plotAxisScale = "ANY",
+        plotLabelScale = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -92,6 +105,8 @@ iNZightMap2Mod <- setRefClass(
             mapVars <<- NULL
             mapSizeVar <<- NULL
             mapSequenceVar <<- NULL
+            mapRegionsPlot <<- NULL
+            mapExcludedRegions <<- TRUE
 
             plotTitle <<- ""
             plotAxes <<- FALSE
@@ -100,11 +115,18 @@ iNZightMap2Mod <- setRefClass(
             plotDatumLines <<- FALSE
             plotProjection <<- NULL
             plotTheme <<- FALSE
-            plotPalette <<- "Default"
+            plotPalette <<- "Viridis"
             plotConstantAlpha <<- 1.0
             plotConstantSize <<- 1.0
             plotCurrentSeqVal <<- NULL
+            plotSparklinesType <<- "Absolute"
             timer <<- NULL
+            plotPlay <<- FALSE
+            playdelay <<- 0.1
+            playTimer <<- NULL
+            plotLabelVar <<- NULL
+            plotAxisScale <<- 1
+            plotLabelScale <<- 4
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
@@ -138,46 +160,49 @@ iNZightMap2Mod <- setRefClass(
                 gmessage('Cannot create shape directory to load/save shapefiles.',
                          title='Cannot load shapefiles', icon = 'error')
 
-            mapTypeDialog()
+            GUI$rhistory$add(c("SEP", "## New Maps Module"))
+
+            importDialog()
         },
 
-        mapTypeDialog = function() {
-            w <- gwindow("Define Geographical Variables",
-                         width = 400,
-                         height = 500,
-                         parent = GUI$win,
-                         visible = FALSE)
-
-            gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
-            gv$set_borderwidth(15)
-
-            lbl <- glabel("Type of Map Data")
-            font(lbl) <- list(weight = "bold", size = 12, family = "normal")
-            radioMapType <- gradio(c("Coordinate (latitude, longitude)",
-                                     "Regions (country, state, county, etc.)"))
-            add(gv, lbl)
-            add(gv, radioMapType)
-
-            coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
-            svalue(radioMapType, index = TRUE) <- if(coord.or.region) 1 else 2
-
-            addSpace(gv, 10)
-
-            btnFinish <- gbutton("OK")
-            add(gv, btnFinish)
-
-            addHandlerClicked(btnFinish, function(h, ...) {
-                if(svalue(radioMapType, index = TRUE) == 1) {
-                    print("Coordinate")
-                } else {
-                    dispose(w)
-                    importDialog()
-                }
-            })
-
-            visible(w) <- TRUE
-        },
+        # mapTypeDialog = function() {
+        #     w <- gwindow("Define Geographical Variables",
+        #                  width = 400,
+        #                  height = 500,
+        #                  parent = GUI$win,
+        #                  visible = FALSE)
+        # 
+        #     gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
+        #     gv$set_borderwidth(15)
+        # 
+        #     lbl <- glabel("Type of Map Data")
+        #     font(lbl) <- list(weight = "bold", size = 12, family = "normal")
+        #     radioMapType <- gradio(c("Coordinate (latitude, longitude)",
+        #                              "Regions (country, state, county, etc.)"))
+        #     add(gv, lbl)
+        #     add(gv, radioMapType)
+        # 
+        #     coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
+        #     svalue(radioMapType, index = TRUE) <- if(coord.or.region) 1 else 2
+        # 
+        #     addSpace(gv, 10)
+        # 
+        #     btnFinish <- gbutton("OK")
+        #     add(gv, btnFinish)
+        # 
+        #     addHandlerClicked(btnFinish, function(h, ...) {
+        #         if(svalue(radioMapType, index = TRUE) == 1) {
+        #             print("Coordinate")
+        #         } else {
+        #             dispose(w)
+        #             importDialog()
+        #         }
+        #     })
+        # 
+        #     visible(w) <- TRUE
+        # },
         importDialog = function() {
+          requireNamespace("sf")
             GUI$initializeModuleWindow(.self)
             lbl.inzightmaps <- glabel("iNZight Maps")
             font(lbl.inzightmaps) <- list(weight = "bold",
@@ -216,8 +241,9 @@ iNZightMap2Mod <- setRefClass(
             visible(expand.variables) <- FALSE
             enabled(frame.variables) <- FALSE
 
-            btn.finish <- gbutton("Finish")
+            btn.finish <- gbutton(action = gaction("Use Map", icon = "apply"))
             enabled(btn.finish) <- FALSE
+            font(btn.finish) <- list(weight = "bold")
 
             btn.back <- gbutton("Cancel Map Change")
             visible(btn.back) <- class(mapData) != "uninitializedField"
@@ -237,34 +263,6 @@ iNZightMap2Mod <- setRefClass(
 
                                         # Map Source Box
             ## Function definitions
-### Change filesystem directory names to more readable names (i.e. nzl
-### to New Zealand)
-### --- UNFINISHED ---
-            decodeMapDir <- function(mapdir.mat) {
-                mapdir.mat <- mapdir.contents
-                ## Replace filenames
-
-                have.tidy <- !is.na(mapdir.mat$tidy_filename)
-
-                mapdir.mat$tidy_filepath[have.tidy] <- sub("^.*/([-_\\.A-z0-9]+\\.(shp|rds))$",
-                                                           mapdir.mat$tidy_filename[have.tidy],
-                                                           mapdir.mat$x[have.tidy])
-
-                iso.matrix <- matrix(c("nzl", "New Zealand",
-                                       "usa", "United States"),
-                                     ncol = 2, byrow = TRUE)
-                ## Replace ISO codes
-                country.ind <- grepl("^countries/", dir.vect)
-                country.iso <- sub("^countries/([A-z]+)/.*$", "\\1", dir.vect[country.ind])
-                country.name <- iso.matrix[which(country.iso == iso.matrix[,1]), 2]
-                dir.vect[country.ind] <- sub("^countries/([A-z]+)/",
-                                             paste0("countries/", country.name, "/"),
-                                             dir.vect[country.ind])
-
-                ## Replace first directories with capitals
-                sub("^([A-z])([A-z0-9]*)/", "\\U\\1\\E\\2/", dir.vect, perl = TRUE)
-            }
-
 ### Helper function for gtree()
             offspring.files <- function(path, obj) {
                 if(length(path) > 0) {
@@ -342,6 +340,7 @@ iNZightMap2Mod <- setRefClass(
                                       chosen.col = "filename",
                                       offspring.col = "has.children")
             mapInbuiltBrowse$widget$`headers-visible` <- FALSE
+            tooltip(mapInbuiltBrowse) <- "Select an inbuilt map using the +/- icons. Double click to preview the map"
 
             lbl.mapdesc <- gtext("Description: No description available.")
             font(lbl.mapdesc) <- list(weight = "bold", size = 10, family = "normal")
@@ -573,18 +572,26 @@ iNZightMap2Mod <- setRefClass(
             ## Widget definitions
 
             tbl.variables <- glayout()
-
+            lbl.datavars <- glabel("Data Variable: ")
+            lbl.mapvars <- glabel("Map Variable: ")
             combobox.mapvars <- gcombobox(items = c(""))
             combobox.datavars <- gcombobox(items = colnames(activeData))
 
-            tbl.variables[1, 1] <- glabel("Data Variable: ")
+            tbl.variables[1, 1] <- lbl.datavars
             tbl.variables[1, 2, expand = TRUE] <- combobox.datavars
 
-            tbl.variables[1, 4] <- glabel("Map Variable: ")
+            tbl.variables[1, 4] <- lbl.mapvars
             tbl.variables[1, 5, expand = TRUE] <- combobox.mapvars
 
+            tooltip(lbl.datavars) <- "Variable in the dataset used to match each observation to a region in the map"
+            tooltip(lbl.mapvars) <- "Variable in the map used to match each region in the map to an observation"
+
+            tooltip(combobox.datavars) <- tooltip(lbl.datavars)
+            tooltip(combobox.mapvars) <- tooltip(lbl.mapvars)
+
+
             lbl.nonmatchedtitle <- glabel("Unmatched Data")
-            lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no corresponding region in the map file")
+            lbl.nonmatchedsubtitle <- glabel("Observations in the dataset with no corresponding region in the map")
             font(lbl.nonmatchedtitle) <- list(weight = "bold", family = "normal", size = 10)
             table.nonmatched <- gtable(nomatch.df)
 
@@ -664,6 +671,12 @@ iNZightMap2Mod <- setRefClass(
                     mapType <<- "region"
                 }
 
+                if (has.multipleobs) {
+                    sequence.var <- svalue(combobox.sequencevar)
+                } else {
+                    sequence.var <- NULL
+                }
+
                 ## TODO: Simplification
                 combinedData <<- iNZightMaps::iNZightMapPlot(data = activeData,
                                                              map = mapData,
@@ -672,7 +685,7 @@ iNZightMap2Mod <- setRefClass(
                                                              by.map = map.var,
                                                              simplification.level = 0.01,
                                                              multiple.obs = has.multipleobs,
-                                                             sequence.var = svalue(combobox.sequencevar))
+                                                             sequence.var = sequence.var)
 
                 mapSequenceVar <<- svalue(combobox.sequencevar)
 
@@ -709,24 +722,123 @@ iNZightMap2Mod <- setRefClass(
         },
         ## Create the map object based on the options given in the importation dialog box
         createMapObject = function() {},
+
+        updatePlot = function() {
+          
+          range2 <- function(x, na.rm = TRUE) {
+            if (is.character(x) || is.factor(x)) {
+              NULL
+            } else {
+              range(x, na.rm = na.rm)
+            }
+          }
+          
+            gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), gdkCursorNew("GDK_WATCH"))
+            if(length(mapVars) > 1) {
+                multiple.vars <- TRUE
+            } else {
+                multiple.vars <- FALSE
+            }
+
+            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
+                aggregation <- TRUE
+            } else {
+                aggregation <- FALSE
+            }
+
+            if (isTRUE(is.null(plotScaleLimits)) && isTRUE(!is.null(mapVars) && all(mapVars != "")) && (plotPlay || isTRUE(combinedData$multiple.obs && multipleObsOption == "singleval"))) {
+              axis.limits <- lapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], range2, na.rm = TRUE)
+
+            } else {
+              grid::grid.rect(width = 0.25, height = 0.10, y = 0.05,
+                              gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
+              grid::grid.text("Please wait... Loading...", y = 0.05)
+              axis.limits <- plotScaleLimits
+            }
+
+            map.plot <- plot(combinedData, main = plotTitle,
+                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
+                 datum.lines = plotDatumLines, projection = plotProjection,
+                 multiple.vars = multiple.vars, colour.var = mapVars,
+                 size.var = mapSizeVar, aggregate = aggregation,
+                 darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
+                 current.seq = plotCurrentSeqVal, palette = plotPalette,
+                 sparkline.type = plotSparklinesType,
+                 regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
+                 scale.limits = axis.limits, label.var = plotLabelVar,
+                 scale.axis = plotAxisScale, scale.label = plotLabelScale)
+
+            GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
+
+            dev.hold()
+            grid::grid.newpage()
+            grid::grid.draw(map.plot)
+            dev.flush()
+            gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), NULL)
+
+            invisible(map.plot)
+            plotObject <<- map.plot
+        },
+
         ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
         initiateModule = function() {
             updateOptions = function() {
                 ## Plot Options
+                print("UpdateOptions")
                 plotTitle <<- svalue(edit.plottitle)
                 plotAxes <<- svalue(checkbox.axislabels)
                 plotXLab <<- svalue(edit.xaxis)
                 plotYLab <<- svalue(edit.yaxis)
                 plotDatumLines <<- svalue(checkbox.datum)
-                plotProjection <<- proj.df[svalue(combobox.mapproj, index = TRUE), "PROJ4"]
+
+                plotProjection <<- ifelse(svalue(combobox.mapproj) == "From Shapefile",
+                                          "Default",
+                                          proj.df[svalue(combobox.mapproj, index = TRUE) - 1, "PROJ4"])
+
                 plotTheme <<- svalue(checkbox.darktheme)
                 plotPalette <<- svalue(combobox.palette)
-                plotConstantAlpha <<- svalue(slider.constalpha)
-                plotConstantSize <<- svalue(slider.constsize)
+                plotConstantAlpha <<- 1 - svalue(slider.constalpha)
+                plotAxisScale <<- svalue(slider.scaleaxis)
+                plotLabelScale <<- svalue(slider.scalelabels)
+
+                if (combinedData$type == "sparklines") {
+                    plotConstantSize <<- svalue(slider.constsizespark)
+                } else {
+                    plotConstantSize <<- svalue(slider.constsize)
+                }
+
+                if (svalue(checkbox.labels)) {
+                    if (svalue(combobox.labels, index = TRUE) == 1) {
+                        plotLabelVar <<- "use_colour_var"
+                    } else {
+                        plotLabelVar <<- svalue(combobox.labels)
+                    }
+                } else {
+                    plotLabelVar <<- NULL
+                }
 
                 ## Variable Options
                 mapVars <<- svalue(table.vars)
                 mapSizeVar <<- svalue(combobox.sizeselect)
+
+                plotScaleLimits <<- switch(svalue(combobox.scale),
+                                          "Independent scales" = NULL,
+                                          "Same for all plots" = iNZightMaps::getMinMax(combinedData, mapVars),
+                                          "Scales fixed at 0-1" = c(0, 1),
+                                          "Scales fixed at 0-100" = c(0, 100),
+                                          "Scales fixed at custom range" = as.numeric(c(svalue(input.scalemin),
+                                                                          svalue(input.scalemax))))
+
+
+                ## Only assign value if at least one is unchecked. This prevents
+                ## the plot function from needing to run filter() for no reason.
+                if (length(svalue(checkbox.regions)) != length(checkbox.regions)) {
+                    mapRegionsPlot <<- svalue(checkbox.regions)
+                    ## mapExcludedRegions <<- svalue(checkbox.showexcluded)
+                    mapExcludedRegions <<- TRUE
+                } else {
+                    mapRegionsPlot <<- NULL
+                }
 
                 if(length(mapVars) == 0) {
                     mapVars <<- NULL
@@ -736,11 +848,26 @@ iNZightMap2Mod <- setRefClass(
                     mapSizeVar <<- NULL
                 }
 
+                ## Sparklines Options
+                if (combinedData$multiple.obs) {
+                    plotSparklinesType <<- svalue(combobox.sparkline)
+                }
+
                 updatePlot()
             }
 
-            GUI$initializeModuleWindow(.self)
+            playPlot <- function(currSeq = 1) {
+                if (currSeq < length(combobox.singleval$items)) {
+                    svalue(combobox.singleval, index = TRUE) <- currSeq + 1
+                } else {
+                    plotPlay <<- FALSE
+                }
+            }
 
+
+            GUI$initializeModuleWindow(.self)
+            GUI$rhistory$add(c(sprintf("## Using the %s map", mapName)), keep = TRUE)
+            GUI$rhistory$add(attr(combinedData, "code"), keep = TRUE)
 
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
             visible(mainGrp) <<- FALSE
@@ -759,7 +886,7 @@ iNZightMap2Mod <- setRefClass(
             frame.mapoptions <- gframe(horizontal = FALSE)
             group.mapoptions <- ggroup(spacing = 5)
             group.mapoptions$set_borderwidth(10)
-            expand.mapoptions <- gexpandgroup(text = "Advanced Map Options", horizontal = FALSE)
+            expand.mapoptions <- gexpandgroup(text = "Map Options", horizontal = FALSE)
             font(expand.mapoptions) <- list(weight = "bold", family = "normal", size = 10)
 
             add(mainGrp, frame.mapoptions)
@@ -769,7 +896,7 @@ iNZightMap2Mod <- setRefClass(
             frame.plotoptions <- gframe(horizontal = FALSE)
             group.plotoptions <- ggroup(spacing = 5)
             group.plotoptions$set_borderwidth(10)
-            expand.plotoptions <- gexpandgroup(text = "Advanced Plot Options", horizontal = FALSE)
+            expand.plotoptions <- gexpandgroup(text = "Extra Plot Options", horizontal = FALSE)
             font(expand.plotoptions) <- list(weight = "bold", family = "normal", size = 10)
 
             add(mainGrp, frame.plotoptions)
@@ -799,19 +926,62 @@ iNZightMap2Mod <- setRefClass(
 
 #####
             proj.df <- iNZightMaps::iNZightMapProjections()
-            ## proj.df <- read.csv("H:/echome/inzightwork/package/iNZightMaps/projections.csv",
-                                ## stringsAsFactors = FALSE)
 
             lbl.mapproj <- glabel("Projection:")
-            combobox.mapproj <- gcombobox(proj.df$Name)
+            combobox.mapproj <- gcombobox(c("From Shapefile", proj.df$Name))
 
             if(!is.null(plotProjection)) {
-                svalue(combobox.mapproj, index = TRUE) <- which(proj.df$PROJ4 == plotProjection)
+                if (plotProjection == "Default")
+                    svalue(combobox.mapproj, index = TRUE) <- 1
+                else
+                    svalue(combobox.mapproj) <- proj.df[which(proj.df$PROJ4 == plotProjection), "Name"]
             }
 
-            tbl.mapoptions[2, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
-            ## tbl.mapoptions[2, 2] <- gcombobox(c("World", "Continent", "Country"))
-            tbl.mapoptions[2, 2:4, expand = TRUE] <- combobox.mapproj
+            tbl.mapoptions[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.mapproj
+            tbl.mapoptions[4, 2:4, expand = TRUE] <- combobox.mapproj
+
+
+            ######
+            group.regions <- ggroup(use.scrollwindow = TRUE)
+            checkbox.regions <- gcheckboxgroup(iNZightMaps::iNZightMapRegions(combinedData),
+                                               horizontal=FALSE, checked = TRUE)
+            checkbox.regionall <- gcheckbox("Select All")
+            checkbox.regionnone <- gcheckbox("Select None")
+            ## checkbox.showexcluded <- gcheckbox("Plot Excluded Regions", checked = TRUE)
+            add(group.regions, checkbox.regions, expand = TRUE, fill = TRUE)
+
+            tbl.mapoptions[2, 1:4, expand = TRUE, fill = TRUE] <- group.regions
+            tbl.mapoptions[3, 1, expand = TRUE, fill = TRUE] <- checkbox.regionall
+            tbl.mapoptions[3, 2, expand = TRUE, fill = TRUE] <- checkbox.regionnone
+            ## tbl.mapoptions[4, 1:4, expand = TRUE, fill = TRUE] <- checkbox.showexcluded
+
+            addHandlerChanged(checkbox.regions, function(h, ...) {
+                if (length(svalue(checkbox.regions, index = TRUE)) != length(checkbox.regions)) {
+                    svalue(checkbox.regionall) <- FALSE
+                }
+                if (length(svalue(checkbox.regions, index = TRUE)) > 0) {
+                    svalue(checkbox.regionnone) <- FALSE
+                }
+
+                updateOptions()
+            })
+
+            ## addHandlerChanged(checkbox.showexcluded, function(h, ...) {
+                ## updateOptions()
+            ## })
+
+            addHandlerChanged(checkbox.regionall, function(h, ...) {
+                if (svalue(checkbox.regionall)) {
+                    svalue(checkbox.regions, index = TRUE) <- 1:length(checkbox.regions)
+                }
+            })
+
+            addHandlerChanged(checkbox.regionnone, function(h, ...) {
+                if (svalue(checkbox.regionnone)) {
+                    svalue(checkbox.regions) <- FALSE
+                }
+            })
+            ######
 
             add(expand.mapoptions, tbl.mapoptions, expand = TRUE, fill = TRUE)
 
@@ -836,7 +1006,24 @@ iNZightMap2Mod <- setRefClass(
                                             "Accent", "Dark2", "Paired", "Pastel1", "Set1",
                                             "Blues", "BuGn", "BuPu", "GnBu"))
 
+            svalue(combobox.palette) <- plotPalette
             svalue(checkbox.darktheme) <- plotTheme
+
+            lbl.labels <- glabel("Region Labels:")
+            checkbox.labels <- gcheckbox("Region Labels")
+            combobox.labels <- gcombobox(c("Current Variable", iNZightMaps::iNZightMapVars(combinedData, map.vars = TRUE)))
+            visible(combobox.labels) <- FALSE
+
+            addHandlerChanged(checkbox.labels, function(h, ...) {
+                visible(combobox.labels) <- svalue(checkbox.labels)
+                visible(lbl.scalelabels) <- svalue(checkbox.labels)
+                visible(slider.scalelabels) <- svalue(checkbox.labels)
+                updateOptions()
+            })
+
+            addHandlerChanged(combobox.labels, function(h, ...) {
+                updateOptions()
+            })
 
             addHandlerChanged(checkbox.darktheme, function(h, ...) {
                 updateOptions()
@@ -844,6 +1031,54 @@ iNZightMap2Mod <- setRefClass(
 
             addHandlerChanged(combobox.palette, function(h, ...) {
               updateOptions()
+            })
+
+            ## checkbox.scaleprop <- gcheckbox("Fixed Scale for Proportions", visible = TRUE)
+            lbl.scale <- glabel("Map Scales:")
+            combobox.scale <- gcombobox(c("Independent scales",
+                                          "Same for all plots",
+                                          "Scales fixed at 0-1",
+                                          "Scales fixed at 0-100",
+                                          "Scales fixed at custom range"))
+            input.scalemin <- gedit(initial.msg = "Min", width = 4)
+            input.scalemax <- gedit(initial.msg = "Max", width = 4)
+            tbl.scales <- glayout()
+            tbl.scales[1, 1] <- input.scalemin
+            tbl.scales[1, 2] <- input.scalemax
+
+            visible(tbl.scales) <- FALSE
+
+            lbl.scaleaxis <- glabel("Plot title font size:")
+            lbl.scalelabels <- glabel("Label font size:")
+            slider.scaleaxis <- gslider(7, 15, value = 11)
+            slider.scalelabels <- gslider(2, 6, value = 4, by = 0.5)
+
+            visible(lbl.scalelabels) <- svalue(checkbox.labels)
+            visible(slider.scalelabels) <- svalue(checkbox.labels)
+
+            addHandlerChanged(combobox.scale, function(h, ...) {
+                visible(tbl.scales) <- svalue(combobox.scale) == "Scales fixed at custom range"
+                updateOptions()
+            })
+
+            addHandlerChanged(input.scalemin, function(h, ...) {
+                updateOptions()
+            })
+
+            addHandlerChanged(input.scalemax, function(h, ...) {
+                updateOptions()
+            })
+
+            addHandlerChanged(slider.scaleaxis, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
+            })
+
+            addHandlerChanged(slider.scalelabels, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
             })
 
             tbl.xaxisedit <- glayout()
@@ -857,30 +1092,43 @@ iNZightMap2Mod <- setRefClass(
 
             tbl.plotoptions[2, 1, expand = TRUE,  anchor = c(1, 0)] <- lbl.palette
             tbl.plotoptions[2, 2:3, expand = TRUE] <- combobox.palette
-            tbl.plotoptions[2, 4, expand = TRUE] <- checkbox.darktheme
+            tbl.plotoptions[2, 4] <- checkbox.darktheme
 
-            tbl.plotoptions[3, 2:4, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
+            tbl.plotoptions[3, 2, expand = TRUE, anchor = c(-1, 0)] <- checkbox.datum
 
-            tbl.plotoptions[4, 2:4, expand = TRUE] <- checkbox.axislabels
-            tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.xaxis
-            tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
-            tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
-            tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
+            tbl.plotoptions[3, 4, expand = TRUE] <- checkbox.axislabels
+            ## tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.xaxis
+            ## tbl.plotoptions[5, 2:4, expand = TRUE] <- tbl.xaxisedit
+            ## tbl.plotoptions[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.yaxis
+            ## tbl.plotoptions[6, 2:4, expand = TRUE] <- tbl.yaxisedit
 
-            slider.constalpha <- gslider(1, 0, by = -0.1)
-            slider.constsize <- gslider(1, 10, by = 1)
+            ## tbl.plotoptions[4, 1, expand = TRUE] <- lbl.labels
+            tbl.plotoptions[6, 2] <- checkbox.labels
+            tbl.plotoptions[6, 3:4, expand = TRUE] <- combobox.labels
 
-            lbl.constalpha <- glabel("Transparency:")
-            lbl.constsize <- glabel("Size:")
-            tbl.plotoptions[7, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constalpha
-            tbl.plotoptions[7, 2:4, expand = TRUE] <- slider.constalpha
-            tbl.plotoptions[8, 1, expand = TRUE, anchor = c(0, 0)] <- lbl.constsize
-            tbl.plotoptions[8, 2:4, expand = TRUE] <- slider.constsize
+            tbl.plotoptions[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scale
+            tbl.plotoptions[4, 2:3, expand = TRUE] <- combobox.scale
+            tbl.plotoptions[4, 4] <- tbl.scales
 
-            visible(slider.constalpha) <- mapType != "region"
-            visible(lbl.constalpha) <- mapType != "region"
-            visible(slider.constsize) <- mapType != "region"
-            visible(lbl.constsize) <- mapType != "region"
+            tbl.plotoptions[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scaleaxis
+            tbl.plotoptions[5, 2:4] <- slider.scaleaxis
+            tbl.plotoptions[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.scalelabels
+            tbl.plotoptions[7, 2:4] <- slider.scalelabels
+
+            slider.constalpha     <- gslider(0, 0.9, by = 0.1)
+            slider.constsize      <- gslider(1, 10, by = 1, value = 5)
+            slider.constsizespark <- gslider(0.5, 2.0, by = 0.25, value = 1.25)
+
+            lbl.constalpha     <- glabel("Transparency of map:")
+            lbl.constsize      <- glabel("Overall size:")
+            lbl.constsizespark <- glabel("Overall size:")
+
+            visible(slider.constalpha) <- mapType == "point"
+            visible(lbl.constalpha)    <- mapType == "point"
+            visible(slider.constsize)  <- mapType == "point"
+            visible(lbl.constsize)     <- mapType == "point"
+
+            visible(slider.constsizespark) <- FALSE
 
             addHandlerChanged(slider.constalpha, function(h, ...) {
                 if (!is.null(timer))
@@ -894,23 +1142,29 @@ iNZightMap2Mod <- setRefClass(
                 timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
             })
 
+            addHandlerChanged(slider.constsizespark, function(h, ...) {
+                if (!is.null(timer))
+                    if (timer$started) timer$stop_timer()
+                timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
+            })
+
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
 
-            visible(lbl.xaxis) <- plotAxes
+            visible(lbl.xaxis)     <- plotAxes
             visible(tbl.xaxisedit) <- plotAxes
-            visible(lbl.yaxis) <- plotAxes
+            visible(lbl.yaxis)     <- plotAxes
             visible(tbl.yaxisedit) <- plotAxes
 
             addHandlerChanged(checkbox.axislabels, function (h, ...) {
                 if(svalue(checkbox.axislabels)) {
-                    visible(lbl.xaxis) <- TRUE
+                    visible(lbl.xaxis)     <- TRUE
                     visible(tbl.xaxisedit) <- TRUE
-                    visible(lbl.yaxis) <- TRUE
+                    visible(lbl.yaxis)     <- TRUE
                     visible(tbl.yaxisedit) <- TRUE
                 } else {
-                    visible(lbl.xaxis) <- FALSE
+                    visible(lbl.xaxis)     <- FALSE
                     visible(tbl.xaxisedit) <- FALSE
-                    visible(lbl.yaxis) <- FALSE
+                    visible(lbl.yaxis)     <- FALSE
                     visible(tbl.yaxisedit) <- FALSE
                 }
                 updateOptions()
@@ -980,6 +1234,10 @@ iNZightMap2Mod <- setRefClass(
 
                 tbl.main[3, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
                 tbl.main[3, 2,   expand = TRUE] <- combobox.sizeselect
+                tbl.main[5, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constalpha
+                tbl.main[5, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
+                tbl.main[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constsize
+                tbl.main[4, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
             } else {
                 separator.timevariable <- gseparator()
                 lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
@@ -991,60 +1249,157 @@ iNZightMap2Mod <- setRefClass(
                     multipleObsOption <<- "singleval"
                 }
 
+                lbl.singleval <- glabel(sprintf("Value of %s variable:", mapSequenceVar))
                 unique.singlevals <- unique(as.data.frame(combinedData[["region.data"]])[, combinedData$sequence.var])
-                # combobox.singleval <- gcombobox(unique.singlevals[!is.na(unique.singlevals)])
                 combobox.singleval <- gslider(unique.singlevals[!is.na(unique.singlevals)])
                 svalue(combobox.singleval) <- combobox.singleval$items[length(combobox.singleval$items)]
 
-                radio.allvalues <- gradio(c("Sparklines", "Grid (TODO)"), horizontal = TRUE)
+                radio.allvalues <- gradio(c("Sparklines"), horizontal = TRUE)
 
                 # Relative       [ ]
                 # Percent change [ ]
                 # Starting/Ending positions |----[]-------|
+                lbl.aggregate <- glabel("Aggregation type:")
                 combobox.aggregate <- gcombobox(c("Mean", "Median"))
-                combobox.sparkline <- gcombobox(c("Absolute", "Relative"))
+                lbl.sparkline <- glabel("Line Chart Type:")
+                combobox.sparkline <- gcombobox(c("Absolute", "Relative", "Percent Change"))
 
                 tbl.main[2, 1:3] <- lbl.timevariable
+
                 tbl.main[3, 1:3] <- radio.multipleobs
-                tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.singleval
-                tbl.main[4, 2:3,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.aggregate
+
+                tbl.main[4, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.singleval
+                tbl.main[4, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.singleval
+                tbl.main[4, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.aggregate
+                tbl.main[4, 2:3, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- combobox.aggregate
+
                 tbl.main[5, 1:3] <- separator.timevariable
-                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
-                tbl.main[6, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
-                tbl.main[6, 2,   expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
 
-                tbl.main[7, 1,   expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
-                tbl.main[7, 2,   expand = TRUE] <- combobox.sizeselect
+                tbl.main[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.maptype
+                tbl.main[6, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.allvalues
+                tbl.main[6, 2, expand = TRUE, anchor = c(-1, 0), fill = "x"] <- radio.maptype
 
-                visible(radio.allvalues) <- FALSE
+                tbl.main[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.sizeselect
+                tbl.main[7, 2, expand = TRUE] <- combobox.sizeselect
+                tbl.main[7, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.sparkline
+                tbl.main[7, 2, expand = TRUE] <- combobox.sparkline
+
+                tbl.main[9, 1, expand = TRUE, anchor = c(1, 0)]  <- lbl.constalpha
+                tbl.main[9, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
+                tbl.main[8, 1, expand = TRUE, anchor = c(1, 0)]  <- lbl.constsize
+                tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
+                tbl.main[8, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsizespark
+
+                img.playicon <- system.file("images/icon-play.png", package = "iNZight")
+                img.stopicon <- system.file("images/icon-stop.png", package = "iNZight")
+
+                btn.play <- iNZight:::gimagebutton(filename = img.playicon, size = "button")
+                btn.delay <- iNZight:::gimagebutton(filename = system.file("images/icon-clock.png", package = "iNZight"),
+                                                    size = "button")
+
+                addHandlerClicked(btn.play, function(h, ...) {
+                    if (!is.null(playTimer)) {
+                      playTimer$stop_timer()
+                      plotPlay <<- FALSE
+                      btn.play$set_value(img.playicon)
+                      playTimer <<- NULL
+                      svalue(edit.plottitle) <- sprintf("%s (%s)", mapVars, svalue(combobox.singleval))
+                    } else {
+                      if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                        plotPlay <<- TRUE
+                        btn.play$set_value(img.stopicon)
+                        
+                        svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
+                      }
+                    }
+
+                })
+                
+                addHandlerClicked(btn.delay, function(h, ...) {
+                  w <- gwindow(title = "Play Settings", width = 200, height = 80,
+                               parent = GUI$win)
+                  g <- gvbox(spacing = 10, container = w)
+                  g$set_borderwidth(10)
+                  
+                  g1 <- ggroup(container = g)
+                  glabel("Time delay between plots :", container = g1)
+                  spin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay, container = g1)
+                  glabel("(seconds)", container = g1)
+                  
+                  g2 <- ggroup(container = g)
+                  addSpring(g2)
+                  gbutton("OK", container = g, handler = function(h, ...) {
+                    playdelay <<- svalue(spin)
+                    dispose(w)
+                  })
+                })
+
+                tbl.playcontrol <- glayout()
+                tbl.playcontrol[1, 1, anchor = c(-1, 1)] <- btn.play
+                tbl.playcontrol[1, 2, anchor = c(-1, 1)] <- btn.delay
+
+                tbl.main[4, 3, anchor = c(-1, 1)] <- tbl.playcontrol
+
+                visible(radio.allvalues)    <- FALSE
+                visible(lbl.aggregate)      <- FALSE
                 visible(combobox.aggregate) <- FALSE
+                visible(combobox.sparkline) <- FALSE
 
                 addHandlerChanged(radio.multipleobs, function(h, ...) {
                     radio.choice <- svalue(radio.multipleobs, index = TRUE)
 
-                    visible(combobox.singleval) <- radio.choice == 1
-                    visible(combobox.aggregate) <- radio.choice == 3
-
                     if (isTRUE(!is.null(mapVars))) {
-                        visible(radio.allvalues) <- radio.choice == 2
+                        visible(lbl.singleval)      <- radio.choice == 1
+                        visible(combobox.singleval) <- radio.choice == 1
+                        visible(radio.allvalues)    <- radio.choice == 2
+                        visible(lbl.aggregate)      <- radio.choice == 3
+                        visible(combobox.aggregate) <- radio.choice == 3
+
+                        visible(lbl.maptype)   <- TRUE
                         visible(radio.maptype) <- radio.choice != 2
-                        visible(lbl.sizeselect) <- radio.choice != 2 && mapType == "point"
+
+                        visible(lbl.sizeselect)      <- radio.choice != 2 && mapType == "point"
                         visible(combobox.sizeselect) <- radio.choice != 2 && mapType == "point"
+
+                        visible(lbl.constsize)    <- mapType == "point" || radio.choice == 2
+                        visible(slider.constsize) <- mapType == "point" && radio.choice != 2
+
+                        visible(lbl.constalpha)    <- mapType == "point" || radio.choice == 2
+                        visible(slider.constalpha) <- mapType == "point" || radio.choice == 2
+
+                        visible(lbl.sparkline)         <- radio.choice == 2
+                        visible(combobox.sparkline)    <- radio.choice == 2
+                        visible(slider.constsizespark) <- radio.choice == 2
+
+                        visible(btn.play) <- radio.choice == 1
+                        visible(btn.delay) <- radio.choice == 1
                     } else {
-                        visible(radio.allvalues) <- FALSE
-                        visible(radio.maptype) <- FALSE
-                        visible(lbl.sizeselect) <- FALSE
+                        visible(lbl.singleval)       <- FALSE
+                        visible(combobox.singleval)  <- FALSE
+                        visible(radio.allvalues)     <- FALSE
+                        visible(lbl.aggregate)       <- FALSE
+                        visible(combobox.aggregate)  <- FALSE
+                        visible(lbl.maptype)         <- FALSE
+                        visible(radio.maptype)       <- FALSE
+                        visible(lbl.sizeselect)      <- FALSE
                         visible(combobox.sizeselect) <- FALSE
-                        visible(lbl.maptype) <- FALSE
+                        visible(lbl.constsize)       <- FALSE
+                        visible(slider.constsize)    <- FALSE
+                        visible(lbl.constalpha)      <- FALSE
+                        visible(slider.constalpha)   <- FALSE
+                        visible(lbl.sparkline)       <- FALSE
+                        visible(combobox.sparkline)  <- FALSE
+                        visible(btn.play)            <- FALSE
+                        visible(btn.delay)           <- FALSE
                     }
 
                     if (radio.choice == 1) {
                         multipleObsOption <<- "singleval"
                         combinedData$type <<- mapType
-                        combinedData <<- iNZightMapAggregation(combinedData,
+                        plotCurrentSeqVal <<- svalue(combobox.singleval)
+                        combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                "singlevalue",
                                                                single.value = svalue(combobox.singleval))
-                        plotCurrentSeqVal <<- svalue(combobox.singleval)
                     } else if (radio.choice == 2) {
                         multipleObsOption <<- "allvalues"
                         combinedData$type <<- "sparklines"
@@ -1059,9 +1414,9 @@ iNZightMap2Mod <- setRefClass(
                         }
                     } else if (radio.choice == 3) {
                         multipleObsOption <<- "aggregate"
-                        plotCurrentSeqVal <<- svalue(combobox.aggregate)
                         combinedData$type <<- mapType
-                        combinedData <<- iNZightMapAggregation(combinedData,
+                        plotCurrentSeqVal <<- svalue(combobox.aggregate)
+                        combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                tolower(svalue(combobox.aggregate)))
                     }
 
@@ -1080,31 +1435,41 @@ iNZightMap2Mod <- setRefClass(
                             svalue(edit.plottitle) <- svalue(table.vars)
                         }
                     }
-
-                    ## updateOptions()
                 })
 
                 addHandlerChanged(combobox.singleval, function(h, ...) {
-#                   if (!is.null(timer))
-#                     if (timer$started) timer$stop_timer()
-#                   timer <<- gtimer(1000, function(...) {
-
-                    combinedData <<- iNZightMapAggregation(combinedData, "singlevalue",
+                    combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData, "singlevalue",
                                                            single.value = svalue(combobox.singleval))
                     plotCurrentSeqVal <<- svalue(combobox.singleval)
 
-                    if (isTRUE(length(svalue(table.vars)) > 1)) {
-                        svalue(edit.plottitle) <- ""
-                    } else {
-                        if (isTRUE(has.multipleobs && multipleObsOption == "singleval")) {
-                            svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.singleval), ")")
+                    if (plotPlay) {
+                        ## playPlot(svalue(combobox.singleval, index = TRUE))
+                        plotTitle <<- sprintf("%s (%s)", mapVars, plotCurrentSeqVal)
+                        updatePlot()
+
+                        if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
+                            playTimer <<- gtimer(
+                              playdelay * 1000, 
+                              function(i) { svalue(combobox.singleval, index = TRUE) <- i + 1 }, 
+                              data = svalue(combobox.singleval, index = TRUE),
+                              one.shot = TRUE
+                            )
+                            # svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                         } else {
-                            svalue(edit.plottitle) <- svalue(table.vars)
+                            btn.play$set_value(img.playicon)
+                            plotPlay <<- FALSE
+                        }
+                    } else {
+                        if (isTRUE(length(svalue(table.vars)) > 1)) {
+                            svalue(edit.plottitle) <- ""
+                        } else {
+                            if (isTRUE(has.multipleobs && multipleObsOption == "singleval")) {
+                                svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.singleval), ")")
+                            } else {
+                                svalue(edit.plottitle) <- svalue(table.vars)
+                            }
                         }
                     }
-#                     }, one.shot = TRUE)
-
-                    ## updatePlot()
                 })
 
                 addHandlerChanged(radio.allvalues, function(h, ...) {
@@ -1112,27 +1477,27 @@ iNZightMap2Mod <- setRefClass(
                 })
 
                 addHandlerChanged(combobox.aggregate, function(h, ...) {
-                    combinedData <<- iNZightMapAggregation(combinedData,
-                                                           tolower(svalue(combobox.aggregate)))
-                    plotCurrentSeqVal <<- svalue(combobox.aggregate)
-
-                    if (isTRUE(length(svalue(table.vars)) > 1)) {
-                        svalue(edit.plottitle) <- ""
+                  combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
+                                                                      tolower(svalue(combobox.aggregate)))
+                  plotCurrentSeqVal <<- svalue(combobox.aggregate)
+                  
+                  if (isTRUE(length(svalue(table.vars)) > 1)) {
+                    svalue(edit.plottitle) <- ""
+                  } else {
+                    if (isTRUE(has.multipleobs && multipleObsOption == "aggregate")) {
+                      svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.aggregate), ")")
                     } else {
-                        if (isTRUE(has.multipleobs && multipleObsOption == "aggregate")) {
-                            svalue(edit.plottitle) <- paste0(svalue(table.vars), " (", svalue(combobox.singleval), ")")
-                        } else {
-                            svalue(edit.plottitle) <- svalue(table.vars)
-                        }
+                      svalue(edit.plottitle) <- svalue(table.vars)
                     }
-                    ## updatePlot()
+                  }
                 })
-
-
+                
+                addHandlerChanged(combobox.sparkline, function(h, ...) {
+                  updateOptions()
+                })
             }
 
             tbl.main[1, 1:3, expand = TRUE, fill = "both"] <- table.vars
-
 
             visible(lbl.maptype) <- !is.null(mapVars)
             visible(radio.maptype) <- !is.null(mapVars)
@@ -1142,6 +1507,11 @@ iNZightMap2Mod <- setRefClass(
             add(group.main, lbl.maintitle)
             add(group.main, lbl.mainsubtitle)
             add(group.main, tbl.main, expand = TRUE, fill = TRUE)
+
+            addDropSource(table.vars, function(h, ...) {
+                varname <- svalue(h$obj)
+                varname
+            })
 
             addHandlerSelectionChanged(table.vars, function(h, ...) {
                 if (isTRUE(length(svalue(table.vars)) > 0)) {
@@ -1194,35 +1564,32 @@ iNZightMap2Mod <- setRefClass(
                         svalue(edit.plottitle) <- svalue(table.vars)
                     }
                 }
-
-                ## updateOptions()
             })
 
             addHandlerChanged(radio.maptype, function(h, ...) {
                 if (svalue(radio.maptype, index = TRUE) == 1) {
-                    visible(lbl.sizeselect) <- FALSE
-                    visible(combobox.sizeselect) <- FALSE
-                    visible(lbl.constalpha) <- FALSE
-                    visible(slider.constalpha) <- FALSE
-                    visible(lbl.constsize) <- FALSE
-                    visible(slider.constsize) <- FALSE
                     combinedData$type <<- "region"
                     mapType <<- "region"
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
-                    visible(lbl.sizeselect) <- TRUE
-                    visible(combobox.sizeselect) <- TRUE
-                    visible(lbl.constalpha) <- TRUE
-                    visible(slider.constalpha) <- TRUE
-                    visible(lbl.constsize) <- TRUE
-                    visible(slider.constsize) <- TRUE
                     combinedData$type <<- "point"
                     mapType <<- "point"
                 }
+                    visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+
                 updateOptions()
             })
 
             addHandlerChanged(combobox.sizeselect, function(h, ...) {
                 updateOptions()
+            })
+
+            addDropTarget(combobox.sizeselect, function(h, ...) {
+                svalue(combobox.sizeselect) <- h$dropdata
             })
 
             btmGrp <- ggroup(container = mainGrp)
@@ -1241,61 +1608,20 @@ iNZightMap2Mod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
-            ## GUI$plotToolbar$update(NULL, refresh = "updatePlot")
 
-            test.btn <- gbutton("interactivity", cont = mainGrp)
-            addHandlerClicked(test.btn, function(h, ...) {
-                library(grid)
-                library(gridSVG)
-                grid.force()
-                regions <- grid::grid.grep("pathgrob", grep = TRUE, global = TRUE)
+            exportButton <- iNZight:::gimagebutton(stock.id = "zoom-in",
+                                         tooltip = "Export interactive map", size = "button")
 
-                for (i in 1:length(regions)) {
-                    curr.region.tooltip <- paste0(combinedData$data$NAME[i],
-                                                  " (", mapVars, ": ", combinedData$data[i, mapVars], ")")
-                    curr.region.tooltip <- gsub("'", "\\\\'", curr.region.tooltip)
-                    curr.region.tooltip <- gsub('"', '\\\\"', curr.region.tooltip)
-                    grid.garnish(regions[[i]],
-                                 onmouseover = paste("showTooltip(evt, '", curr.region.tooltip, "')"),
-                                 onmouseout = "hideTooltip()")
-                }
-
-                grid.script(filename = "tooltip.js", inline = TRUE)
-                grid.export("testinzight.svg")
+            addHandlerClicked(exportButton, function(h, ...) {
+                browseURL(iNZightPlots::exportHTML(x = plotObject,
+                                         mapObj = combinedData,
+                                         file = tempfile(fileext = ".html")))
             })
+
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
 
             visible(mainGrp) <<- TRUE
             updateOptions()
-        },
-        ## Update and plot the map given
-        updatePlot = function() {
-            print("Updating plot...")
-            if(length(mapVars) > 1) {
-                multiple.vars <- TRUE
-            } else {
-                multiple.vars <- FALSE
-            }
-
-            if (isTRUE(combinedData$multiple.obs && multipleObsOption != "allvalues")) {
-                aggregation <- TRUE
-            } else {
-                aggregation <- FALSE
-            }
-
-            grid::grid.rect(width = 0.25, height = 0.10,
-                            gp = grid::gpar(fill = "#FFFFFF80", colour = "#FFFFFF80"))
-            grid::grid.text("Please wait... Loading...")
-
-            dev.hold()
-            grid::grid.newpage()
-            grid::grid.draw(plot(combinedData, main = plotTitle,
-                 axis.labels = plotAxes, xlab = plotXLab, ylab = plotYLab,
-                 datum.lines = plotDatumLines, projection = plotProjection,
-                 multiple.vars = multiple.vars, colour.var = mapVars,
-                 size.var = mapSizeVar, aggregate = aggregation,
-                 darkTheme = plotTheme, alpha.const = plotConstantAlpha, size.const = plotConstantSize,
-                 current.seq = plotCurrentSeqVal, palette = plotPalette))
-            dev.flush()
-
         }
+        ## Update and plot the map given
     ))
