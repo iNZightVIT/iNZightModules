@@ -663,6 +663,10 @@ iNZightMapMod <- setRefClass(
               tbl.opacity[ii.opacity, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.opacityby
               tbl.opacity[ii.opacity, 3:6, expand = TRUE] <- opctyVarList
               ii.opacity <- ii.opacity + 1
+              
+              checkbox.opacityrev <- gcheckbox("Reverse Opacification")
+              tbl.opacity[ii.opacity, 1:4, anchor = c(1, 0), expand = TRUE] <- checkbox.opacityrev
+              ii.opacity <- ii.opacity + 1
             }
             
 # Shape Options ---------------------------------------------------------
@@ -901,9 +905,11 @@ iNZightMapMod <- setRefClass(
                     }
                   
                     if (svalue(opctyVarList, TRUE) > 1) {
-                      map.vars$opacity <<- svalue(opctyVarList) 
+                      map.vars$opacity <<- svalue(opctyVarList)
+                      map.vars$reverse.opacity <<- svalue(checkbox.opacityrev)
                     } else {
                       map.vars$opacity <<- NULL
+                      map.vars$reverse.opacity <<- NULL
                     }
                   
                     if (svalue(dropdown.shape, TRUE) > 1) {
@@ -1093,6 +1099,7 @@ iNZightMapMod <- setRefClass(
                                           timer$stop_timer()
                                       timer <<- gtimer(500, function(...) updateEverything(), one.shot = TRUE)
                                   })
+                addHandlerChanged(checkbox.opacityrev, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(combobox.symbol, handler = function(h, ...) updateEverything())
                 addHandlerChanged(spin.symbolwidth, handler = function(h, ...) updateEverything())
@@ -1380,7 +1387,7 @@ iNZightMapMod <- setRefClass(
                 if (!is.null(map.vars$opacity)) {
                     args$opacity <- map.vars$opacity
                     args$varnames$opacity = map.vars$opacity
-                    args$reverse.opacity <- sample(0:1, size = 1)
+                    # args$reverse.opacity <- map.vars$reverse.opacity
                 }
               
                 if (!is.null(map.vars$symbolby)) {
