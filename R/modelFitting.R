@@ -2,23 +2,23 @@ square <- function(x) x^2
 
 root <- function(x, k) x^(1/k)
 
-addHist <-
-  function(txt) {
-    # This simple function adds text (a function call)
-    # to the history object, and returns the call.
+# addHist <-
+#   function(txt) {
+#     # This simple function adds text (a function call)
+#     # to the history object, and returns the call.
     
-    e$hist <<- c(e$hist, txt)
-    txt
-  }
+#     e$hist <<- c(e$hist, txt)
+#     txt
+#   }
 
 
-cHist <-
-  function(txt) {
-    # A wrapper for addHist if the call is already made,
-    # and simply needs to be added to the history.
+# cHist <-
+#   function(txt) {
+#     # A wrapper for addHist if the call is already made,
+#     # and simply needs to be added to the history.
 
-    eval(parse(text = addHist(txt)))
-  }
+#     eval(parse(text = addHist(txt)))
+#   }
 
 as.catergory <- function(x, ...)
   factor(x, ...)
@@ -36,7 +36,6 @@ as.catergory <- function(x, ...)
 ##'
 ##' @import iNZightRegression
 ##' @importFrom iNZightTools fitModel fitDesign
-##' @import survey
 ##'
 ##' @export
 modelFitting = function(e) {
