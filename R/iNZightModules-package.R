@@ -6,7 +6,7 @@
 ##' @name iNZightModules
 ##' @docType package
 ##'
-##' @import methods
+##' @import methods stats graphics utils grDevices
 ##' 
 ##' @author Tom Elliott, Eric Lim, Junjie Zeng, Simon Potter, Dineika Chandranada, David Banks
 ##'

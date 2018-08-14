@@ -3,6 +3,7 @@
 language: R
 sudo: true
 cache: packages
+latex: false
 
 r:
   - release
