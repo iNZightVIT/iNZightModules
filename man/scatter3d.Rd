@@ -13,12 +13,12 @@ scatter3d(x, y, z, xlab = deparse(substitute(x)),
   "yellow", "gray"), neg.res.col = "red", pos.res.col = "green",
   square.col = if (bg.col == "white") "black" else "gray",
   point.col = "yellow", text.col = axis.col, grid.col = if (bg.col ==
-  "white") "black" else "gray", fogtype = c("exp2", "linear", "exp", "none"),
-  residuals = (length(fit) == 1), surface = TRUE, fill = TRUE,
-  grid = TRUE, grid.lines = 26, df.smooth = NULL, df.additive = NULL,
-  sphere.size = 1, threshold = 0.01, speed = 1, fov = 60,
-  fit = "linear", groups = NULL, parallel = TRUE, ellipsoid = FALSE,
-  level = 0.5, model.summary = FALSE)
+  "white") "black" else "gray", fogtype = c("exp2", "linear", "exp",
+  "none"), residuals = (length(fit) == 1), surface = TRUE,
+  fill = TRUE, grid = TRUE, grid.lines = 26, df.smooth = NULL,
+  df.additive = NULL, sphere.size = 1, threshold = 0.01, speed = 1,
+  fov = 60, fit = "linear", groups = NULL, parallel = TRUE,
+  ellipsoid = FALSE, level = 0.5, model.summary = FALSE)
 }
 \arguments{
 \item{x}{a parameter}
