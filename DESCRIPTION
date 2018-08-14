@@ -14,16 +14,19 @@ Authors@R: c(person("Tom", "Elliott", role = c("aut", "cre"),
 Depends:
     R (>= 3.2)
 Imports:
+    stats,
+    graphics,
+    utils,
+    grDevices,
+    methods,
+    gpairs,
     gWidgets2,
     gWidgets2RGtk2,
     iNZightPlots,
     iNZightRegression,
     iNZightTools,
     iNZightMR,
-    iNZightTS,
-    gpairs,
-    methods,
-    survey
+    iNZightTS
 Suggests:
     iNZightMaps,
     rgl,

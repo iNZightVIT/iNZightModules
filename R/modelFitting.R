@@ -36,7 +36,6 @@ as.catergory <- function(x, ...)
 ##'
 ##' @import iNZightRegression
 ##' @importFrom iNZightTools fitModel fitDesign
-##' @import survey
 ##'
 ##' @export
 modelFitting = function(e) {
