@@ -12,7 +12,7 @@ Authors@R: c(person("Tom", "Elliott", role = c("aut", "cre"),
              person("Simon", "Potter", role = "aut"),
              person("David", "Banks", role = "aut"))
 Depends:
-    R (>= 2.13)
+    R (>= 3.2)
 Imports:
     gWidgets2,
     gWidgets2RGtk2,
@@ -33,3 +33,4 @@ License: GPL-3 | file LICENSE
 Description: A suite of add-on modules for the iNZight GUI, including model
     fitting module, multiple response, time series, and some advanced plotting.
 RoxygenNote: 6.1.0.9000
+Encoding: UTF-8

@@ -1,11 +1,5 @@
-RDEVEL := $(shell command -v R-devel 2> /dev/null)
 R := R
 RCMD := $(R) --vanilla --slave
-ifndef RDEVEL
-	Rdev := $(R)
-else
-	Rdev := R-devel
-endif
 
 default: document
 
@@ -20,11 +14,11 @@ revcheck:
 	@$(RCMD) -f "revdep/check.R"
 
 crancheck:
-	@$(Rdev) CMD build .
-	@$(Rdev) CMD check *.tar.gz
+	@$(R) CMD build .
+	@$(R) CMD check *.tar.gz
 
 install:
 	$(R) CMD INSTALL ./
 
 clean:
-	@rm -rf *.tar.gz *.Rcheck revdep
+	@rm -rf *.tar.gz *.Rcheck revdep **/*.Rhistory
