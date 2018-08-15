@@ -3,6 +3,7 @@
 language: R
 sudo: true
 cache: packages
+latex: false
 
 r:
   - release
@@ -24,3 +25,7 @@ apt_packages:
   - r-cran-rgtk2
   - r-cran-cairodevice
 
+env:
+  global:
+  - _R_CHECK_FORCE_SUGGESTS_=false
+  
