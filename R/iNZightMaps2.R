@@ -301,7 +301,7 @@ iNZightMap2Mod <- setRefClass(
 
                 if (shapefileDL) {
                     tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
-                                                 shapefileDir, shapefileDir),
+                                                 shapefileDir),
                              error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
                              )
                     stored.shapefiles <- list.files(shapefileDir,
