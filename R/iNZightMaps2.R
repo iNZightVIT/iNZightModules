@@ -1049,7 +1049,7 @@ iNZightMap2Mod <- setRefClass(
 
             visible(tbl.scales) <- FALSE
 
-            lbl.scaleaxis <- glabel("Plot label font size:")
+            lbl.scaleaxis <- glabel("Font size:")
             lbl.scalelabels <- glabel("Region label font size:")
             slider.scaleaxis <- gslider(7, 15, value = 11)
             slider.scalelabels <- gslider(2, 6, value = 4, by = 0.5)
