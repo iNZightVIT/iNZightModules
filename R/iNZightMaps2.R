@@ -786,7 +786,6 @@ iNZightMap2Mod <- setRefClass(
         initiateModule = function() {
             updateOptions = function() {
                 ## Plot Options
-                print("UpdateOptions")
                 plotTitle <<- svalue(edit.plottitle)
                 plotAxes <<- svalue(checkbox.axislabels)
                 plotXLab <<- svalue(edit.xaxis)
