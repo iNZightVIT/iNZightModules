@@ -1297,28 +1297,36 @@ iNZightMapMod <- setRefClass(
                 add(sliderGrp, glabel(paste(lbl, collapse = "   ")))
 
             ## Play button
-            ## playBtn <- gbutton("Play", expand = FALSE,
-            ##                 handler = function(h, ...) {
-            ##                     oldSet <- GUI$getActiveDoc()$getSettings()
-            ##                     for (i in 1:length(levels(grpData))) {
-            ##                         changePlotSettings(
-            ##                             structure(list(i),
-            ##                                       .Names = paste(
-            ##                                           grp,
-            ##                                           "level",
-            ##                                           sep = ".")
-            ##                                       )
-            ##                             )
-            ##                       # This effectively freezes the R session,
-            ##                       # and therefore iNZight --- so increase with
-            ##                       # discression!!!!!
-            ##                         Sys.sleep(0.6)
-            ##                     }
-            ##                     changePlotSettings(oldSet)
-            ##                 })
+            img.playicon <- system.file("images/icon-play.png", package = "iNZight")
+            img.stopicon <- system.file("images/icon-stop.png", package = "iNZight")
+            
+            playBtn <- gimagebutton(filename = img.playicon, size = "button",
+                            handler = function(h, ...) {
+                                oldSet <- GUI$getActiveDoc()$getSettings()
+                                for (i in 1:length(levels(grpData))) {
+                                    changePlotSettings(
+                                        structure(
+                                          list(i, oldSet$varnames),
+                                          .Names = c(paste(
+                                            grp,
+                                            "level",
+                                            sep = "."), "varnames")
+                                        )
+                                    )
+                                  # This effectively freezes the R session,
+                                  # and therefore iNZight --- so increase with
+                                  # discression!!!!!
+                                    Sys.sleep(1.0)
+                                }
+                                
+                                oldSet[["x"]] <- NULL
+                                oldSet[[paste(grp, "level", sep = ".")]] <- "_MULTI"
+                                oldSet[[grp]] <- map.vars[[grp]]
+                                changePlotSettings(oldSet)
+                            })
             add(hzGrp, sliderGrp, expand = TRUE)
 
-            ## tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
+            tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
 
         },
         deleteSlider = function(pos) {
