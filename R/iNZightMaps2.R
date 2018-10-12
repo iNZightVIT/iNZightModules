@@ -778,8 +778,9 @@ iNZightMap2Mod <- setRefClass(
             dev.flush()
             gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), NULL)
 
-            invisible(map.plot)
             plotObject <<- map.plot
+            enabled(GUI$plotToolbar$exportplotBtn) <<- iNZightPlots::can.interact(map.plot)
+            invisible(map.plot)
         },
 
         ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
@@ -1611,16 +1612,18 @@ iNZightMap2Mod <- setRefClass(
                                       visible(GUI$gp1) <<- TRUE
                                   })
 
-            exportButton <- iNZight:::gimagebutton(stock.id = "zoom-in",
-                                         tooltip = "Export interactive map", size = "button")
+            # exportButton <- iNZight:::gimagebutton(stock.id = "zoom-in",
+            #                              tooltip = "Export interactive map", size = "button")
 
-            addHandlerClicked(exportButton, function(h, ...) {
-                browseURL(iNZightPlots::exportHTML(x = plotObject,
-                                         mapObj = combinedData,
-                                         file = tempfile(fileext = ".html")))
-            })
+            # addHandlerClicked(exportButton, function(h, ...) {
+            # })
 
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
+            GUI$plotToolbar$update("export", refresh = "updatePlot", 
+                                export = function() {
+                                    browseURL(iNZightPlots::exportHTML(x = plotObject,
+                                        mapObj = combinedData,
+                                        file = tempfile(fileext = ".html")))
+                                })
 
             visible(mainGrp) <<- TRUE
             updateOptions()
