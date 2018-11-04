@@ -29,11 +29,14 @@ iNZightRegMod <- setRefClass(
         working     = "logical",
         showBoots   = "ANY",
         plottype    = "numeric", numVarList = "ANY", catVarList = "ANY", compMatrix = "ANY",
-        codehistory = "ANY"
+        codehistory = "ANY",
+        isSurveyObject = "logical"
     ),
     methods = list(
         initialize = function(GUI) {
             initFields(GUI = GUI, working = TRUE, plottype = 1, codehistory = NULL)
+            
+            isSurveyObject <<- !is.null(getdesign())
 
             GUI$initializeModuleWindow(.self)
             mainGrp <<- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
@@ -83,6 +86,13 @@ iNZightRegMod <- setRefClass(
                                family = "normal",
                                size   = 11)
             add(mainGrp, lbl1, anchor = c(0, 0))
+
+            if (isSurveyObject) {
+                lbl2 <- glabel("Using complex survey design")
+                font(lbl2) <- list(size = 9)
+                add(mainGrp, lbl2, anchor = c(0, 0))
+            }
+
             addSpace(mainGrp, 5)
 
             
@@ -678,6 +688,10 @@ iNZightRegMod <- setRefClass(
             watchData()
         },
         getdata = function() GUI$getActiveData(),
+        getdesign = function() {
+            if (is.null(GUI$getActiveDoc()$dataModel$getDesign())) return(NULL)
+            GUI$getActiveDoc()$dataModel$createSurveyObject()
+        },
         setAvailVars = function() {
             if (is.null(response) || length(response) == 0) {
                 vars <- "Select response"
