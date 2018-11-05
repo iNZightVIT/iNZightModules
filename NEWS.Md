@@ -1,6 +1,8 @@
 Model Fitting:
 - [add] use survey design object in regression module
 - [fix] confounding variables not displayed in call, y ~ x
+- [fix] code writing include temporary model for plots-only
+
 
 Maps:
 - [change] use base iNZight interact button
