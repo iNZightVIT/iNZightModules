@@ -818,7 +818,8 @@ iNZightRegMod <- setRefClass(
             addOutput(summaryOutput)
             rule()
 
-            addOutput(paste0("# Summary of ", modelname, ": ", resp, " ~ ", xexpr))
+            addOutput(paste0("# Summary of ", modelname, ": ", resp, " ~ ", 
+              if (length(variables)) variables else "1"))
             if (inherits(fit, "try-error")) {
                 addOutput("Unable to fit model.")
                 rule()
