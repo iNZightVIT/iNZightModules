@@ -39,7 +39,8 @@ iNZightRegMod <- setRefClass(
             isSurveyObject <<- !is.null(getdesign())
 
             GUI$initializeModuleWindow(.self)
-            mainGrp <<- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
             mainGrp$set_borderwidth(5)
             # character, datasheet, evaluate, history, preview, rlogo, 
             addhistbtn <- iNZight:::gimagebutton(stock.id = "rlogo", tooltip = "Save code for current plot",
@@ -548,7 +549,7 @@ iNZightRegMod <- setRefClass(
                                    unblockHandler(h$obj)
                                })
             modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- modelName
+            # modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- modelName
             modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- saveBtn
             ii <- ii + 1
 
@@ -686,11 +687,26 @@ iNZightRegMod <- setRefClass(
             working <<- FALSE
             
             watchData()
+            ## add to code output
+            GUI$rhistory$add(sprintf("svy.design <- %s", capture.output(getdesign()$call)),
+                keep = TRUE, tidy = TRUE)
         },
-        getdata = function() GUI$getActiveData(),
+        getdata = function() {
+            des <- getdesign()
+            if (!is.null(des)) return(des$variables)
+            GUI$getActiveData()
+        },
         getdesign = function() {
             if (is.null(GUI$getActiveDoc()$dataModel$getDesign())) return(NULL)
-            GUI$getActiveDoc()$dataModel$createSurveyObject()
+            des <- GUI$getActiveDoc()$dataModel$createSurveyObject()
+
+            ## set the name
+            dname <- attr(GUI$getActiveData(), "name", exact = TRUE)
+            if (is.null(dname) || dname == "")
+                dname <- sprintf("data%s", ifelse(GUI$activeDoc == 1, "", GUI$activeDoc))
+            dname <- iNZightTools:::create_varname(dname)
+            des$call$data <- eval(parse(text = sprintf("quote(%s)", dname)))
+            des
         },
         setAvailVars = function() {
             if (is.null(response) || length(response) == 0) {
@@ -775,7 +791,7 @@ iNZightRegMod <- setRefClass(
             if (working) return()
 
             xexpr <- paste(c(if (length(variables) > 0) variables else "1", confounding), collapse = " + ")
-            dataset <- getdata()
+            dataset <- if (isSurveyObject) getdesign() else getdata()
             resp <- response
             if (length(responseTransform) == 1 && responseTransform != "") {
                 trans <- responseTransform
@@ -788,8 +804,10 @@ iNZightRegMod <- setRefClass(
             }
             mcall <- NULL
             if (new) {
+                svy.design <- getdesign()
                 mcall <- iNZightTools::fitModel(resp, xexpr, data = "dataset",
-                                                family = switch(responseType, "gaussian", "binomial", "poisson"))
+                                                family = switch(responseType, "gaussian", "binomial", "poisson"),
+                                                design = ifelse(isSurveyObject, "survey", "simple"))
                 fit <<- try(eval(parse(text = mcall)), TRUE)
             }
             
