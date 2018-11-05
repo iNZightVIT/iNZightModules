@@ -1,3 +1,7 @@
+- [add] use survey design object in regression module
+
+- [change] use base iNZight interact button
+
 # Version 2.4
 _Release date__: 14 August 2018
 
