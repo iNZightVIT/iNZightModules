@@ -688,8 +688,9 @@ iNZightRegMod <- setRefClass(
             
             watchData()
             ## add to code output
-            GUI$rhistory$add(sprintf("svy.design <- %s", capture.output(getdesign()$call)),
-                keep = TRUE, tidy = TRUE)
+            if (!is.null(getdesign()))
+                GUI$rhistory$add(sprintf("svy.design <- %s", capture.output(getdesign()$call)),
+                    keep = TRUE, tidy = TRUE)
         },
         getdata = function() {
             des <- getdesign()
@@ -895,8 +896,19 @@ iNZightRegMod <- setRefClass(
             e <- new.env()
             assign("dataset", getdata(), e)
 
+
             fitn <- sprintf("fit%s",  ifelse(svalue(modelList, TRUE) == 2, "",
                                              svalue(modelList, TRUE) - 1))
+            ## Is the model the one that's saved? Or is it a temporary one ...
+            mcall <- ""
+            if (savecode && (length(fits) == 0 || !identical(fit, fits[[svalue(modelList, TRUE) - 1]]$fit))) {
+                mcall <- gsub("formula = ", "", paste(capture.output(fit$call), collapse = "\n"))
+                dname <- sprintf("data%s", ifelse(GUI$activeDoc == 1, "", GUI$activeDoc))
+                fname <- "tmpfit"
+                mcall <- sprintf("%s <- %s", fname, gsub("dataset", dname, mcall))
+                fitn <- fname
+            }
+            
             fmla <- character()
             
             if (plottype %in% 1:7) {
@@ -968,6 +980,7 @@ iNZightRegMod <- setRefClass(
             }
             
             if (savecode && length(fmla) == 1) {
+                if (mcall != "") fmla <- c(mcall, fmla)
                 GUI$rhistory$add(fmla, keep = TRUE)
                 if (!is.null(codehistory)) {
                     svalue(codehistory) <<- ""
