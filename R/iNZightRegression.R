@@ -498,7 +498,6 @@ iNZightRegMod <- setRefClass(
             modelTbl <- glayout(homogeneous = TRUE, container = modelGp)
             ii <- 1
 
-            lbl <- glabel("Select Model :")
             modelList <<- gcombobox(c("(new)", names(fits)), ## if (length(fits) > 0) names(fits) else "(new)",
                                     handler = function(h, ...) {
                                         ## reset response, framework, variables ...
@@ -506,6 +505,8 @@ iNZightRegMod <- setRefClass(
                                             newBtn$invoke_change_handler()
                                             return()
                                         }
+                                        enabled(renameBtn) <- TRUE
+                                        enabled(newBtn) <- TRUE
                                         obj <- fits[[svalue(h$obj, index = TRUE) - 1]]
                                         working <<- TRUE
                                         svalue(responseBox) <<- obj$response
@@ -515,7 +516,7 @@ iNZightRegMod <- setRefClass(
                                         setExplVars()
                                         confounding <<- obj$confounding
                                         setConfVars()
-                                        svalue(modelName) <<- svalue(h$obj)
+                                        modelName <<- svalue(h$obj)
                                         blockHandlers(saveBtn)
                                         svalue(saveBtn) <- "Update"
                                         unblockHandlers(saveBtn)
@@ -526,31 +527,48 @@ iNZightRegMod <- setRefClass(
 
             newBtn <- gbutton("New",
                               handler = function(h, ...) {
-                                  svalue(modelName) <<- paste("Model", length(fits) + 1)
+                                  modelName <<- paste("Model", length(fits) + 1)
                                   blockHandlers(modelList)
                                   svalue(modelList, index = TRUE) <<- 1
                                   unblockHandlers(modelList)
                                   blockHandlers(saveBtn)
                                   svalue(saveBtn) <- "Save Model"
                                   unblockHandlers(saveBtn)
+                                  enabled(renameBtn) <- FALSE
+                                  enabled(newBtn) <- FALSE
                               })
-            modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- modelList
-            modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- newBtn
-            ii <- ii + 1
 
-            lbl <- glabel("Name :")
-            modelName <<- gedit(paste("Model", length(fits) + 1))
+            modelName <<- sprintf("Model %i", length(fits) + 1)
+            renameBtn <- gbutton("Rename", 
+                                 handler = function(h, ...) {
+                                     modelName <<- 
+                                        ginput(
+                                            "Type the new name for the model", 
+                                            title = "Rename Model",
+                                            text = modelName, icon = "question",
+                                            parent = GUI$win
+                                        )
+                                     updateModel(save = TRUE)
+                                 })
             saveBtn <- gbutton("Save Model",
                                handler = function(h, ...) {
                                    updateModel(save = TRUE)
                                    blockHandler(h$obj)
                                    svalue(h$obj) <- "Update"
                                    unblockHandler(h$obj)
+                                   enabled(renameBtn) <- TRUE
+                                   enabled(newBtn) <- TRUE
                                })
-            modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            # modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- modelName
-            modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- saveBtn
+
+            enabled(renameBtn) <- FALSE
+            enabled(newBtn) <- FALSE
+
+            modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- glabel("Select Model :")
+            modelTbl[ii, 2:3, expand = TRUE, fill = TRUE] <- modelList
+            ii <- ii + 1
+            modelTbl[ii, 1, expand = TRUE, fill = TRUE] <- newBtn
+            modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- saveBtn
+            modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- renameBtn
             ii <- ii + 1
 
             ## ---------------------------------------------------------------------------------------------------------
@@ -812,15 +830,13 @@ iNZightRegMod <- setRefClass(
                 fit <<- try(eval(parse(text = mcall)), TRUE)
             }
             
-            modelname <- svalue(modelName)
-                
 
             svalue(smryOut) <<- ""
             addOutput(summaryOutput)
             rule()
 
-            addOutput(paste0("# Summary of ", modelname, ": ", resp, " ~ ", 
-              if (length(variables)) variables else "1"))
+            addOutput(paste0("# Summary of ", modelName, ": ", resp, " ~ ", 
+              if (length(variables)) paste(variables, collapse = " + ") else "1"))
             if (inherits(fit, "try-error")) {
                 addOutput("Unable to fit model.")
                 rule()
@@ -848,15 +864,15 @@ iNZightRegMod <- setRefClass(
                                 variables = variables, confounding = confounding)
                     if (svalue(modelList, index = TRUE) == 1) {
                         ## Creating a new model
-                        fits <<- c(fits, structure(list(obj), .Names = modelname))
+                        fits <<- c(fits, structure(list(obj), .Names = modelName))
                     } else {
                         ## Updating an existing model
                         fits[[svalue(modelList, index = TRUE) - 1]] <<- obj
-                        names(fits)[svalue(modelList, index = TRUE) - 1] <<- modelname
+                        names(fits)[svalue(modelList, index = TRUE) - 1] <<- modelName
                     }
                     blockHandlers(modelList)
                     modelList$set_items(c("(new)", names(fits)))
-                    svalue(modelList) <<- modelname
+                    svalue(modelList) <<- modelName
                     unblockHandlers(modelList)
                     summaryOutput <<- svalue(smryOut)
 
