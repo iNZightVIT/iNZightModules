@@ -267,7 +267,7 @@ iNZightMapMod <- setRefClass(
         ##   - Can create as many as needed
         setVars = function(names, type) {
             map.vars <<- names
-            map.type <<- ifelse(type == "shape", "shape", "roadmap")
+            map.type <<- ifelse(type == "shape", "shape", "terrain")
 
             ## defaults:
             map.vars$alpha <<- 1
@@ -419,7 +419,7 @@ iNZightMapMod <- setRefClass(
             
             if (map.type != "shape") {
               lbl <- glabel("Map type :")
-              typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
+              typeOpts <- c("terrain", "terrain-background", "toner", "toner-lite")
               typeList <- gcombobox(typeOpts)
               tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
               tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
