@@ -371,9 +371,8 @@ iNZightMapMod <- setRefClass(
                                   })
             }
             
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
             
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(zoomBtn, zoomOutBtn, aboutBtn))
-
             ## mainGrp
             mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
             mainGrp$set_borderwidth(5)
