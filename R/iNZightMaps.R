@@ -272,6 +272,7 @@ iNZightMapMod <- setRefClass(
             ## defaults:
             map.vars$alpha <<- 1
             map.vars$cex.pt <<- 1
+            map.vars$col.pt <<- ifelse(type == "shape", NULL, "mediumvioletred")
             extra.args <<- list()
 
             createMapObject()
@@ -477,7 +478,7 @@ iNZightMapMod <- setRefClass(
 
             if (map.type != "shape") {
               lbl.colourstatic <- glabel("Point colour :")
-              pointCols <- c("grey50", "black", "darkblue", "darkgreen",
+              pointCols <- c("mediumvioletred", "grey50", "black", "darkblue", "darkgreen",
                              "darkmagenta", "darkslateblue", "hotpink4",
                              "lightsalmon2", "palegreen3", "steelblue3")
               symbolColList <- gcombobox(
@@ -488,8 +489,6 @@ iNZightMapMod <- setRefClass(
                   which(pointCols == map.vars$col.pt)[1]),
                 editable = TRUE)
               
-              
-            
             tbl.colour[ii.colour,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colourstatic
             tbl.colour[ii.colour,  3:6, expand = TRUE] <- symbolColList
             ii.colour <- ii.colour + 1
