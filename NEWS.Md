@@ -1,3 +1,8 @@
+- [change] update available map types after switching from Google to Stamen maps
+- [fix] add scrollbars to lat/lon UI to prevent window resizing
+- [change] remove zoom feature until it is reimplemented for stamen maps
+
+
 # Version 2.4
 _Release date__: 14 August 2018
 

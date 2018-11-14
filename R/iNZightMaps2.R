@@ -787,7 +787,6 @@ iNZightMap2Mod <- setRefClass(
         initiateModule = function() {
             updateOptions = function() {
                 ## Plot Options
-                print("UpdateOptions")
                 plotTitle <<- svalue(edit.plottitle)
                 plotAxes <<- svalue(checkbox.axislabels)
                 plotXLab <<- svalue(edit.xaxis)
@@ -1051,8 +1050,8 @@ iNZightMap2Mod <- setRefClass(
 
             visible(tbl.scales) <- FALSE
 
-            lbl.scaleaxis <- glabel("Plot title font size:")
-            lbl.scalelabels <- glabel("Label font size:")
+            lbl.scaleaxis <- glabel("Font size:")
+            lbl.scalelabels <- glabel("Region label font size:")
             slider.scaleaxis <- gslider(7, 15, value = 11)
             slider.scalelabels <- gslider(2, 6, value = 4, by = 0.5)
 
@@ -1611,8 +1610,10 @@ iNZightMap2Mod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
+            
+            # img.dynamic <- system.file("images/toolbar-interact.png", package = "iNZight")
 
-            # exportButton <- iNZight:::gimagebutton(stock.id = "zoom-in",
+            # exportButton <- iNZight:::gimagebutton(filename = img.dynamic,
             #                              tooltip = "Export interactive map", size = "button")
 
             # addHandlerClicked(exportButton, function(h, ...) {
