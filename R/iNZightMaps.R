@@ -374,7 +374,8 @@ iNZightMapMod <- setRefClass(
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
             
             ## mainGrp
-            mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
             mainGrp$set_borderwidth(5)
 
             addSpace(mainGrp, 10)
