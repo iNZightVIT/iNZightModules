@@ -507,8 +507,16 @@ iNZightMapMod <- setRefClass(
                   which(names(GUI$getActiveData()) == map.vars$colby)[1] + 1
                 )
               )
+              
+              clear.colour <- gbutton("",
+                                      handler = function(h,...) {
+                                        svalue(colVarList, index = TRUE) <- 1
+                                      })
+              clear.colour$set_icon("Cancel")
+              
               tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colour
-              tbl.colour[ii.colour, 3:6, expand = TRUE] <- colVarList
+              tbl.colour[ii.colour, 3:5, expand = TRUE] <- colVarList
+              tbl.colour[ii.colour,    6] <- clear.colour
               ii.colour <- ii.colour + 1
 
               lbl.palette <- glabel("Palette:")
@@ -552,7 +560,8 @@ iNZightMapMod <- setRefClass(
                 lbl.quantilecycle,
                 cyclePrev,
                 cycleNext,
-                cycleStop
+                cycleStop,
+                clear.colour
               )
               
               for (control in controls.colour) {
@@ -560,6 +569,7 @@ iNZightMapMod <- setRefClass(
               }
               
               if (svalue(colVarList, TRUE) > 1) {
+                visible(clear.colour) <- TRUE
                 if (svalue(colVarList) %in% numericVars()) {
                   svalue(lbl.quantilecycle) <- "Cycle quantiles:"
                   visible(lbl.quantilenumber) <- TRUE
@@ -575,6 +585,7 @@ iNZightMapMod <- setRefClass(
                 visible(lbl.quantilenumber) <- FALSE
                 visible(cycleN) <- FALSE
                 visible(checkbox.ranks) <- FALSE
+                visible(clear.colour) <- FALSE
               }
             }
 
@@ -993,6 +1004,8 @@ iNZightMapMod <- setRefClass(
                     visible(combobox.paletteCont) <- svalue(colVarList) %in% numericVars()
                     visible(combobox.paletteCat) <- !(svalue(colVarList) %in% numericVars())
                     
+                    visible(clear.colour) <- TRUE
+                    
                     if (svalue(colVarList) %in% numericVars()) {
                       svalue(lbl.quantilecycle) <- "Cycle quantiles:"
                       visible(lbl.quantilenumber) <- TRUE
@@ -1008,6 +1021,7 @@ iNZightMapMod <- setRefClass(
                     visible(lbl.quantilenumber) <- FALSE
                     visible(cycleN) <- FALSE
                     visible(checkbox.ranks) <- FALSE
+                    visible(clear.colour) <- FALSE
                   }
 
                   visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
