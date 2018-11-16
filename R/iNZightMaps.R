@@ -1017,9 +1017,6 @@ iNZightMapMod <- setRefClass(
                 })
                 
                 addHandlerChanged(opctyVarList, handler = function(h, ...) {
-                  visible(lbl.transp) <- !isTRUE(svalue(opctyVarList) != "")
-                  visible(transpSlider) <- !isTRUE(svalue(opctyVarList) != "")
-                  
                   changeExpandTitle(expand.opacity, "Opacity", svalue(opctyVarList))
                   
                   updateEverything()
