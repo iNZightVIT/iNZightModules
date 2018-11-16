@@ -521,7 +521,7 @@ iNZightMapMod <- setRefClass(
               ii.colour <- ii.colour + 1
 
               checkbox.reverse <- gcheckbox("Reverse palette")
-              checkbox.ranks <- gcheckbox("Use Ranks")
+              checkbox.ranks <- gcheckbox("Use Percentiles")
 
               tbl.colour[ii.colour, 3:4, expand = TRUE] <- checkbox.reverse
               tbl.colour[ii.colour, 5:6, expand = TRUE] <- checkbox.ranks
