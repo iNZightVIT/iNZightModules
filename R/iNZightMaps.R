@@ -38,7 +38,9 @@ iNZightMapMod <- setRefClass(
         grpTbl      = "ANY",
         EMPH.LEVEL  = "ANY",
         colourPalettes = "ANY",
-        timer = "ANY"
+        timer = "ANY",
+        playButton = "list",
+        playdelay = "numeric"
     ),
 
 
@@ -113,7 +115,8 @@ iNZightMapMod <- setRefClass(
                   cols[-k] <- iNZightPlots:::shade(cols[-k], 0.7)
                   cols
                 }),
-              timer = NULL
+              timer = NULL,
+              playdelay = 0.6
             )
             
             EMPH.LEVEL <<- 0
@@ -264,7 +267,7 @@ iNZightMapMod <- setRefClass(
         ##   - Can create as many as needed
         setVars = function(names, type) {
             map.vars <<- names
-            map.type <<- ifelse(type == "shape", "shape", "roadmap")
+            map.type <<- ifelse(type == "shape", "shape", "terrain")
 
             ## defaults:
             map.vars$alpha <<- 1
@@ -368,11 +371,11 @@ iNZightMapMod <- setRefClass(
                                   })
             }
             
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
             
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(zoomBtn, zoomOutBtn, aboutBtn))
-
             ## mainGrp
-            mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
             mainGrp$set_borderwidth(5)
 
             addSpace(mainGrp, 10)
@@ -416,7 +419,7 @@ iNZightMapMod <- setRefClass(
             
             if (map.type != "shape") {
               lbl <- glabel("Map type :")
-              typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
+              typeOpts <- c("terrain", "terrain-background", "toner", "toner-lite")
               typeList <- gcombobox(typeOpts)
               tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
               tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
@@ -1297,29 +1300,75 @@ iNZightMapMod <- setRefClass(
                 add(sliderGrp, glabel(paste(lbl, collapse = "   ")))
 
             ## Play button
-            ## playBtn <- gbutton("Play", expand = FALSE,
-            ##                 handler = function(h, ...) {
-            ##                     oldSet <- GUI$getActiveDoc()$getSettings()
-            ##                     for (i in 1:length(levels(grpData))) {
-            ##                         changePlotSettings(
-            ##                             structure(list(i),
-            ##                                       .Names = paste(
-            ##                                           grp,
-            ##                                           "level",
-            ##                                           sep = ".")
-            ##                                       )
-            ##                             )
-            ##                       # This effectively freezes the R session,
-            ##                       # and therefore iNZight --- so increase with
-            ##                       # discression!!!!!
-            ##                         Sys.sleep(0.6)
-            ##                     }
-            ##                     changePlotSettings(oldSet)
-            ##                 })
+            PLAY <- function(data) {
+              playButton$levi <<- playButton$levi + 1
+              if (playButton$levi > playButton$Nlev) {
+                playButton$playtimer$stop_timer()
+                playBtn$set_value(img.playicon)
+                playButton$playtimer <<- NULL
+              } else {
+                changePlotSettings(structure(list(playButton$levi, data$varnames),
+                                             .Names = c(paste(grp, "level", sep = "."), "varnames")))
+                ri <- playButton$row
+                tb <- slider
+                blockHandlers(tb)
+                ## This line creates "IA__gtk_table_attach: assertion 'child->parent == NULL' failed" error.
+                svalue(tb, index = TRUE) <- playButton$levi + 1
+                unblockHandlers(tb)
+              }
+            }
+            clickPlay <- function(h, ...) {
+              if (!is.null(playButton$playtimer)) {
+                ## time is running - so stop the animation
+                playButton$playtimer$stop_timer()
+                playBtn$set_value(img.playicon)
+                playButton$playtimer <<- NULL
+                return()
+              }
+              oldSet <- GUI$getActiveDoc()$getSettings()
+              playBtn$set_value(img.stopicon)
+              pr <- h$obj$parent
+              wc <- which(sapply(pr$child_positions, function(x) identical(h$obj, x$child)))
+              playButton <<- list(playtimer = NULL, row = pr$child_positions[[wc]]$x,
+                                  Nlev = length(levels(grpData)),
+                                  levi = 0, oldSet = oldSet)
+              PLAY(oldSet)
+              playButton$playtimer <<- gtimer(playdelay * 1000, PLAY, data = oldSet, one.shot = FALSE)
+            }
+            img.playicon <- system.file("images/icon-play.png", package = "iNZight")
+            img.stopicon <- system.file("images/icon-stop.png", package = "iNZight")
+            playBtn <- gimagebutton(filename = img.playicon, size = "button", handler = clickPlay,
+                                    tooltip = "Play through levels")
+            
+            ## Play time delay - time in milliseconds
+            img.clockicon <- system.file("images/icon-clock.png", package = "iNZight")
+            delayBtn <- gimagebutton(filename = img.clockicon, size = "button",
+                                     tooltip = "Set play timing options",
+                                     handler = function(h, ...) {
+                                       w <- gwindow(title = "Play Settings", width = 200, height = 80,
+                                                    parent = GUI$win)
+                                       g <- gvbox(spacing = 10, container = w)
+                                       g$set_borderwidth(10)
+                                       
+                                       g1 <- ggroup(container = g)
+                                       glabel("Time delay between plots :", container = g1)
+                                       spin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay, container = g1)
+                                       glabel("(seconds)", container = g1)
+                                       
+                                       g2 <- ggroup(container = g)
+                                       addSpring(g2)
+                                       gbutton("OK", container = g, handler = function(h, ...) {
+                                         playdelay <<- svalue(spin)
+                                         dispose(w)
+                                       })
+                                     })
+            delaySpin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay,
+                                     handler = function(h, ...) playdelay <<- svalue(h$obj))
+            
             add(hzGrp, sliderGrp, expand = TRUE)
 
-            ## tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
-
+            tbl[pos, 6, anchor = c(0, 0), expand = FALSE] <- delayBtn
+            tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
         },
         deleteSlider = function(pos) {
             ## get the child that is at the specified positions

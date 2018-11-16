@@ -778,15 +778,15 @@ iNZightMap2Mod <- setRefClass(
             dev.flush()
             gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), NULL)
 
-            invisible(map.plot)
             plotObject <<- map.plot
+            enabled(GUI$plotToolbar$exportplotBtn) <<- iNZightPlots::can.interact(map.plot)
+            invisible(map.plot)
         },
 
         ## After the map object has been constructed, initialize the interface for the Maps module (sidebar)
         initiateModule = function() {
             updateOptions = function() {
                 ## Plot Options
-                print("UpdateOptions")
                 plotTitle <<- svalue(edit.plottitle)
                 plotAxes <<- svalue(checkbox.axislabels)
                 plotXLab <<- svalue(edit.xaxis)
@@ -1050,8 +1050,8 @@ iNZightMap2Mod <- setRefClass(
 
             visible(tbl.scales) <- FALSE
 
-            lbl.scaleaxis <- glabel("Plot title font size:")
-            lbl.scalelabels <- glabel("Label font size:")
+            lbl.scaleaxis <- glabel("Font size:")
+            lbl.scalelabels <- glabel("Region label font size:")
             slider.scaleaxis <- gslider(7, 15, value = 11)
             slider.scalelabels <- gslider(2, 6, value = 4, by = 0.5)
 
@@ -1610,17 +1610,21 @@ iNZightMap2Mod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
+            
+            # img.dynamic <- system.file("images/toolbar-interact.png", package = "iNZight")
 
-            exportButton <- iNZight:::gimagebutton(stock.id = "zoom-in",
-                                         tooltip = "Export interactive map", size = "button")
+            # exportButton <- iNZight:::gimagebutton(filename = img.dynamic,
+            #                              tooltip = "Export interactive map", size = "button")
 
-            addHandlerClicked(exportButton, function(h, ...) {
-                browseURL(iNZightPlots::exportHTML(x = plotObject,
-                                         mapObj = combinedData,
-                                         file = tempfile(fileext = ".html")))
-            })
+            # addHandlerClicked(exportButton, function(h, ...) {
+            # })
 
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(exportButton))
+            GUI$plotToolbar$update("export", refresh = "updatePlot", 
+                                export = function() {
+                                    browseURL(iNZightPlots::exportHTML(x = plotObject,
+                                        mapObj = combinedData,
+                                        file = tempfile(fileext = ".html")))
+                                })
 
             visible(mainGrp) <<- TRUE
             updateOptions()
