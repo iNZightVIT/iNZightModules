@@ -631,7 +631,7 @@ iNZightMapMod <- setRefClass(
             frame.opacity <- gframe(horizontal = FALSE)
             group.opacity <- ggroup(spacing = 5)
             group.opacity$set_borderwidth(10)
-            expand.opacity <- gexpandgroup(text = "Opacity", horizontal = FALSE)
+            expand.opacity <- gexpandgroup(text = "Transparency", horizontal = FALSE)
             font(expand.opacity) <- list(weight = "bold", family = "normal", size = 10)
             
             add(mainGrp, frame.opacity)
@@ -701,9 +701,14 @@ iNZightMapMod <- setRefClass(
               
               lbl.symbol <- glabel("Symbol:")
               combobox.symbol <- gcombobox(names(symbolList), selected = 1)
+              checkbox.filledin <- gcheckbox("Filled in symbols")
               
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbol
               tbl.shape[ii.shape, 3:6, expand = TRUE] <- combobox.symbol
+              ii.shape <- ii.shape + 1
+              
+              tbl.shape[ii.shape, 1:6, expand = TRUE] <- checkbox.filledin
+              
               ii.shape <- ii.shape + 1
               
               sep.shape <- gseparator()
@@ -928,7 +933,13 @@ iNZightMapMod <- setRefClass(
                   
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
-                    map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    
+                    if (svalue(checkbox.filledin) && svalue(transpSlider) == 0) {
+                      map.vars$alpha <<- 0.999
+                    } else {
+                      map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    }
+                    
                     map.vars$join <<- svalue(joinPts)
                     map.vars$col.line <<- svalue(joinCol)
                     map.vars$lwd <<- svalue(slider.linewidth)
@@ -1017,7 +1028,7 @@ iNZightMapMod <- setRefClass(
                 })
                 
                 addHandlerChanged(opctyVarList, handler = function(h, ...) {
-                  changeExpandTitle(expand.opacity, "Opacity", svalue(opctyVarList))
+                  changeExpandTitle(expand.opacity, "Transparency", svalue(opctyVarList))
                   
                   updateEverything()
                 })
@@ -1025,7 +1036,6 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(dropdown.shape, handler = function(h, ...) {
                   visible(lbl.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
                   visible(combobox.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
-                  visible(sep.shape) <- !isTRUE(svalue(dropdown.shape) != "")
                   
                   changeExpandTitle(expand.shape, "Point Symbol", svalue(dropdown.shape))
                   
@@ -1039,6 +1049,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(combobox.sizemethod, handler = function(h, ...) updateEverything())
+                
+                addHandlerChanged(checkbox.filledin, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(edit.title, handler = function(h, ...) updateEverything())
                 
