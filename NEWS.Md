@@ -1,8 +1,3 @@
-- [change] update available map types after switching from Google to Stamen maps
-- [fix] add scrollbars to lat/lon UI to prevent window resizing
-- [change] remove zoom feature until it is reimplemented for stamen maps
-
-
 # Version 2.4
 _Release date__: 14 August 2018
 
@@ -15,6 +10,14 @@ _Release date__: 14 August 2018
 
 * many additions and fixes to the shapes maps module
 * removed some redundant code from timeseries and modelfitting modules
+
+## Patches
+
+### Patch 2.4.1 - 15/11/2018
+
+- [change] update available map types after switching from Google to Stamen maps
+- [change] remove zoom feature until it is reimplemented for stamen maps
+- [fix] add scrollbars to lat/lon UI to prevent window resizing
 
 
 ***
