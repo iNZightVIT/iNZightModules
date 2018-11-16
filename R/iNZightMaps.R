@@ -419,7 +419,7 @@ iNZightMapMod <- setRefClass(
             
             if (map.type != "shape") {
               lbl <- glabel("Map type :")
-              typeOpts <- c("terrain", "terrain-background", "toner", "toner-lite")
+              typeOpts <- c("terrain", "terrain-background", "toner-lite", "toner")
               typeList <- gcombobox(typeOpts)
               tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
               tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
