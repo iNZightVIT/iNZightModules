@@ -623,8 +623,16 @@ iNZightMapMod <- setRefClass(
                   1, which(rszNames == map.vars$sizeby)[1] + 1
                 )
               )
+              
+              clear.size <- gbutton("",
+                                      handler = function(h,...) {
+                                        svalue(rszVarList, index = TRUE) <- 1
+                                      })
+              clear.size$set_icon("Cancel")
+              
               tbl.size[ii.size, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.sizeby
-              tbl.size[ii.size, 3:6, expand = TRUE] <- rszVarList
+              tbl.size[ii.size, 3:5, expand = TRUE] <- rszVarList
+              tbl.size[ii.size, 6] <- clear.size
               ii.size <- ii.size + 1
               
               lbl.sizemethod <- glabel("Resize method:")
@@ -635,6 +643,7 @@ iNZightMapMod <- setRefClass(
               
               visible(lbl.sizemethod) <- FALSE
               visible(combobox.sizemethod) <- FALSE
+              visible(clear.size) <- FALSE
             }
             
 # Opacity Options ---------------------------------------------------------
@@ -673,13 +682,23 @@ iNZightMapMod <- setRefClass(
                   1, which(numNames == map.vars$opacity)[1] + 1
                 )
               )
+              
+              clear.opacity <- gbutton("",
+                                    handler = function(h,...) {
+                                      svalue(opctyVarList, index = TRUE) <- 1
+                                    })
+              clear.opacity$set_icon("Cancel")
+              
               tbl.opacity[ii.opacity, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.opacityby
-              tbl.opacity[ii.opacity, 3:6, expand = TRUE] <- opctyVarList
+              tbl.opacity[ii.opacity, 3:5, expand = TRUE] <- opctyVarList
+              tbl.opacity[ii.opacity, 6] <- clear.opacity
               ii.opacity <- ii.opacity + 1
               
               checkbox.opacityrev <- gcheckbox("Reverse Opacification")
               tbl.opacity[ii.opacity, 1:4, anchor = c(1, 0), expand = TRUE] <- checkbox.opacityrev
               ii.opacity <- ii.opacity + 1
+              
+              visible(clear.opacity) <- FALSE
             }
             
 # Shape Options ---------------------------------------------------------
@@ -734,8 +753,16 @@ iNZightMapMod <- setRefClass(
                   1, which(numNames == map.vars$symbolby)[1] + 1
                 )
               )
+              
+              clear.shape <- gbutton("",
+                                       handler = function(h,...) {
+                                         svalue(dropdown.shape, index = TRUE) <- 1
+                                       })
+              clear.shape$set_icon("Cancel")
+              
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.shapeby
-              tbl.shape[ii.shape, 3:6, expand = TRUE] <- dropdown.shape
+              tbl.shape[ii.shape, 3:5, expand = TRUE] <- dropdown.shape
+              tbl.shape[ii.shape, 6] <- clear.shape
               ii.shape <- ii.shape + 1
               
               lbl.symbolwidth <- glabel("Symbol line width:")
@@ -744,6 +771,8 @@ iNZightMapMod <- setRefClass(
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbolwidth
               tbl.shape[ii.shape, 3:4, expand = TRUE] <- spin.symbolwidth
               ii.shape <- ii.shape + 1
+              
+              visible(clear.shape) <- FALSE
             }
             
 # Connect Options ---------------------------------------------------------
@@ -1037,6 +1066,7 @@ iNZightMapMod <- setRefClass(
                   
                   visible(lbl.sizemethod) <- svalue(rszVarList, TRUE) > 1
                   visible(combobox.sizemethod) <- svalue(rszVarList, TRUE) > 1
+                  visible(clear.size) <- svalue(rszVarList, TRUE) > 1
                   
                   updateEverything()
                 })
@@ -1044,12 +1074,16 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(opctyVarList, handler = function(h, ...) {
                   changeExpandTitle(expand.opacity, "Transparency", svalue(opctyVarList))
                   
+                  visible(clear.opacity) <- svalue(opctyVarList, TRUE) > 1
+                  
                   updateEverything()
                 })
                 
                 addHandlerChanged(dropdown.shape, handler = function(h, ...) {
                   visible(lbl.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
                   visible(combobox.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
+                  
+                  visible(clear.shape) <- isTRUE(svalue(dropdown.shape) != "")
                   
                   changeExpandTitle(expand.shape, "Point Symbol", svalue(dropdown.shape))
                   
