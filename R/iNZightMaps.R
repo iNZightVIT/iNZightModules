@@ -272,6 +272,7 @@ iNZightMapMod <- setRefClass(
             ## defaults:
             map.vars$alpha <<- 1
             map.vars$cex.pt <<- 1
+            map.vars$col.pt <<- ifelse(type == "shape", NULL, "mediumvioletred")
             extra.args <<- list()
 
             createMapObject()
@@ -419,7 +420,7 @@ iNZightMapMod <- setRefClass(
             
             if (map.type != "shape") {
               lbl <- glabel("Map type :")
-              typeOpts <- c("terrain", "terrain-background", "toner", "toner-lite")
+              typeOpts <- c("terrain", "terrain-background", "toner-lite", "toner")
               typeList <- gcombobox(typeOpts)
               tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
               tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
@@ -478,7 +479,7 @@ iNZightMapMod <- setRefClass(
 
             if (map.type != "shape") {
               lbl.colourstatic <- glabel("Point colour :")
-              pointCols <- c("grey50", "black", "darkblue", "darkgreen",
+              pointCols <- c("mediumvioletred", "grey50", "black", "darkblue", "darkgreen",
                              "darkmagenta", "darkslateblue", "hotpink4",
                              "lightsalmon2", "palegreen3", "steelblue3")
               symbolColList <- gcombobox(
@@ -489,8 +490,6 @@ iNZightMapMod <- setRefClass(
                   which(pointCols == map.vars$col.pt)[1]),
                 editable = TRUE)
               
-              
-            
             tbl.colour[ii.colour,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colourstatic
             tbl.colour[ii.colour,  3:6, expand = TRUE] <- symbolColList
             ii.colour <- ii.colour + 1
@@ -509,8 +508,16 @@ iNZightMapMod <- setRefClass(
                   which(names(GUI$getActiveData()) == map.vars$colby)[1] + 1
                 )
               )
+              
+              clear.colour <- gbutton("",
+                                      handler = function(h,...) {
+                                        svalue(colVarList, index = TRUE) <- 1
+                                      })
+              clear.colour$set_icon("Cancel")
+              
               tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colour
-              tbl.colour[ii.colour, 3:6, expand = TRUE] <- colVarList
+              tbl.colour[ii.colour, 3:5, expand = TRUE] <- colVarList
+              tbl.colour[ii.colour,    6] <- clear.colour
               ii.colour <- ii.colour + 1
 
               lbl.palette <- glabel("Palette:")
@@ -523,7 +530,7 @@ iNZightMapMod <- setRefClass(
               ii.colour <- ii.colour + 1
 
               checkbox.reverse <- gcheckbox("Reverse palette")
-              checkbox.ranks <- gcheckbox("Use Ranks")
+              checkbox.ranks <- gcheckbox("Use Percentiles")
 
               tbl.colour[ii.colour, 3:4, expand = TRUE] <- checkbox.reverse
               tbl.colour[ii.colour, 5:6, expand = TRUE] <- checkbox.ranks
@@ -554,7 +561,8 @@ iNZightMapMod <- setRefClass(
                 lbl.quantilecycle,
                 cyclePrev,
                 cycleNext,
-                cycleStop
+                cycleStop,
+                clear.colour
               )
               
               for (control in controls.colour) {
@@ -562,6 +570,7 @@ iNZightMapMod <- setRefClass(
               }
               
               if (svalue(colVarList, TRUE) > 1) {
+                visible(clear.colour) <- TRUE
                 if (svalue(colVarList) %in% numericVars()) {
                   svalue(lbl.quantilecycle) <- "Cycle quantiles:"
                   visible(lbl.quantilenumber) <- TRUE
@@ -577,6 +586,7 @@ iNZightMapMod <- setRefClass(
                 visible(lbl.quantilenumber) <- FALSE
                 visible(cycleN) <- FALSE
                 visible(checkbox.ranks) <- FALSE
+                visible(clear.colour) <- FALSE
               }
             }
 
@@ -614,8 +624,16 @@ iNZightMapMod <- setRefClass(
                   1, which(rszNames == map.vars$sizeby)[1] + 1
                 )
               )
+              
+              clear.size <- gbutton("",
+                                      handler = function(h,...) {
+                                        svalue(rszVarList, index = TRUE) <- 1
+                                      })
+              clear.size$set_icon("Cancel")
+              
               tbl.size[ii.size, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.sizeby
-              tbl.size[ii.size, 3:6, expand = TRUE] <- rszVarList
+              tbl.size[ii.size, 3:5, expand = TRUE] <- rszVarList
+              tbl.size[ii.size, 6] <- clear.size
               ii.size <- ii.size + 1
               
               lbl.sizemethod <- glabel("Resize method:")
@@ -626,6 +644,7 @@ iNZightMapMod <- setRefClass(
               
               visible(lbl.sizemethod) <- FALSE
               visible(combobox.sizemethod) <- FALSE
+              visible(clear.size) <- FALSE
             }
             
 # Opacity Options ---------------------------------------------------------
@@ -633,7 +652,7 @@ iNZightMapMod <- setRefClass(
             frame.opacity <- gframe(horizontal = FALSE)
             group.opacity <- ggroup(spacing = 5)
             group.opacity$set_borderwidth(10)
-            expand.opacity <- gexpandgroup(text = "Opacity", horizontal = FALSE)
+            expand.opacity <- gexpandgroup(text = "Transparency", horizontal = FALSE)
             font(expand.opacity) <- list(weight = "bold", family = "normal", size = 10)
             
             add(mainGrp, frame.opacity)
@@ -664,13 +683,23 @@ iNZightMapMod <- setRefClass(
                   1, which(numNames == map.vars$opacity)[1] + 1
                 )
               )
+              
+              clear.opacity <- gbutton("",
+                                    handler = function(h,...) {
+                                      svalue(opctyVarList, index = TRUE) <- 1
+                                    })
+              clear.opacity$set_icon("Cancel")
+              
               tbl.opacity[ii.opacity, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.opacityby
-              tbl.opacity[ii.opacity, 3:6, expand = TRUE] <- opctyVarList
+              tbl.opacity[ii.opacity, 3:5, expand = TRUE] <- opctyVarList
+              tbl.opacity[ii.opacity, 6] <- clear.opacity
               ii.opacity <- ii.opacity + 1
               
               checkbox.opacityrev <- gcheckbox("Reverse Opacification")
               tbl.opacity[ii.opacity, 1:4, anchor = c(1, 0), expand = TRUE] <- checkbox.opacityrev
               ii.opacity <- ii.opacity + 1
+              
+              visible(clear.opacity) <- FALSE
             }
             
 # Shape Options ---------------------------------------------------------
@@ -703,9 +732,14 @@ iNZightMapMod <- setRefClass(
               
               lbl.symbol <- glabel("Symbol:")
               combobox.symbol <- gcombobox(names(symbolList), selected = 1)
+              checkbox.filledin <- gcheckbox("Filled in symbols")
               
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbol
               tbl.shape[ii.shape, 3:6, expand = TRUE] <- combobox.symbol
+              ii.shape <- ii.shape + 1
+              
+              tbl.shape[ii.shape, 1:6, expand = TRUE] <- checkbox.filledin
+              
               ii.shape <- ii.shape + 1
               
               sep.shape <- gseparator()
@@ -720,8 +754,16 @@ iNZightMapMod <- setRefClass(
                   1, which(numNames == map.vars$symbolby)[1] + 1
                 )
               )
+              
+              clear.shape <- gbutton("",
+                                       handler = function(h,...) {
+                                         svalue(dropdown.shape, index = TRUE) <- 1
+                                       })
+              clear.shape$set_icon("Cancel")
+              
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.shapeby
-              tbl.shape[ii.shape, 3:6, expand = TRUE] <- dropdown.shape
+              tbl.shape[ii.shape, 3:5, expand = TRUE] <- dropdown.shape
+              tbl.shape[ii.shape, 6] <- clear.shape
               ii.shape <- ii.shape + 1
               
               lbl.symbolwidth <- glabel("Symbol line width:")
@@ -730,6 +772,8 @@ iNZightMapMod <- setRefClass(
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbolwidth
               tbl.shape[ii.shape, 3:4, expand = TRUE] <- spin.symbolwidth
               ii.shape <- ii.shape + 1
+              
+              visible(clear.shape) <- FALSE
             }
             
 # Connect Options ---------------------------------------------------------
@@ -930,7 +974,13 @@ iNZightMapMod <- setRefClass(
                   
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
-                    map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    
+                    if (svalue(checkbox.filledin) && svalue(transpSlider) == 0) {
+                      map.vars$alpha <<- 0.999
+                    } else {
+                      map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    }
+                    
                     map.vars$join <<- svalue(joinPts)
                     map.vars$col.line <<- svalue(joinCol)
                     map.vars$lwd <<- svalue(slider.linewidth)
@@ -984,6 +1034,8 @@ iNZightMapMod <- setRefClass(
                     visible(combobox.paletteCont) <- svalue(colVarList) %in% numericVars()
                     visible(combobox.paletteCat) <- !(svalue(colVarList) %in% numericVars())
                     
+                    visible(clear.colour) <- TRUE
+                    
                     if (svalue(colVarList) %in% numericVars()) {
                       svalue(lbl.quantilecycle) <- "Cycle quantiles:"
                       visible(lbl.quantilenumber) <- TRUE
@@ -999,6 +1051,7 @@ iNZightMapMod <- setRefClass(
                     visible(lbl.quantilenumber) <- FALSE
                     visible(cycleN) <- FALSE
                     visible(checkbox.ranks) <- FALSE
+                    visible(clear.colour) <- FALSE
                   }
 
                   visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
@@ -1014,15 +1067,15 @@ iNZightMapMod <- setRefClass(
                   
                   visible(lbl.sizemethod) <- svalue(rszVarList, TRUE) > 1
                   visible(combobox.sizemethod) <- svalue(rszVarList, TRUE) > 1
+                  visible(clear.size) <- svalue(rszVarList, TRUE) > 1
                   
                   updateEverything()
                 })
                 
                 addHandlerChanged(opctyVarList, handler = function(h, ...) {
-                  visible(lbl.transp) <- !isTRUE(svalue(opctyVarList) != "")
-                  visible(transpSlider) <- !isTRUE(svalue(opctyVarList) != "")
+                  changeExpandTitle(expand.opacity, "Transparency", svalue(opctyVarList))
                   
-                  changeExpandTitle(expand.opacity, "Opacity", svalue(opctyVarList))
+                  visible(clear.opacity) <- svalue(opctyVarList, TRUE) > 1
                   
                   updateEverything()
                 })
@@ -1030,7 +1083,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(dropdown.shape, handler = function(h, ...) {
                   visible(lbl.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
                   visible(combobox.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
-                  visible(sep.shape) <- !isTRUE(svalue(dropdown.shape) != "")
+                  
+                  visible(clear.shape) <- isTRUE(svalue(dropdown.shape) != "")
                   
                   changeExpandTitle(expand.shape, "Point Symbol", svalue(dropdown.shape))
                   
@@ -1044,6 +1098,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(combobox.sizemethod, handler = function(h, ...) updateEverything())
+                
+                addHandlerChanged(checkbox.filledin, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(edit.title, handler = function(h, ...) updateEverything())
                 
