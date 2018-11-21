@@ -19,6 +19,10 @@ _Release date__: 14 August 2018
 - [change] remove zoom feature until it is reimplemented for stamen maps
 - [fix] add scrollbars to lat/lon UI to prevent window resizing
 
+### Patch 2.4.2 - 21/11/2018
+- minor changes to GUI defaults
+- "Percentiles" replaces "Ranks" (underlying method exactly the same)
+- fixes for UI, etc.
 
 ***
 
