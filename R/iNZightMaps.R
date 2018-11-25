@@ -38,7 +38,9 @@ iNZightMapMod <- setRefClass(
         grpTbl      = "ANY",
         EMPH.LEVEL  = "ANY",
         colourPalettes = "ANY",
-        timer = "ANY"
+        timer = "ANY",
+        playButton = "list",
+        playdelay = "numeric"
     ),
 
 
@@ -113,7 +115,8 @@ iNZightMapMod <- setRefClass(
                   cols[-k] <- iNZightPlots:::shade(cols[-k], 0.7)
                   cols
                 }),
-              timer = NULL
+              timer = NULL,
+              playdelay = 0.6
             )
             
             EMPH.LEVEL <<- 0
@@ -264,11 +267,12 @@ iNZightMapMod <- setRefClass(
         ##   - Can create as many as needed
         setVars = function(names, type) {
             map.vars <<- names
-            map.type <<- ifelse(type == "shape", "shape", "roadmap")
+            map.type <<- ifelse(type == "shape", "shape", "terrain")
 
             ## defaults:
             map.vars$alpha <<- 1
             map.vars$cex.pt <<- 1
+            map.vars$col.pt <<- ifelse(type == "shape", NULL, "mediumvioletred")
             extra.args <<- list()
 
             createMapObject()
@@ -368,11 +372,11 @@ iNZightMapMod <- setRefClass(
                                   })
             }
             
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
             
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(zoomBtn, zoomOutBtn, aboutBtn))
-
             ## mainGrp
-            mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
             mainGrp$set_borderwidth(5)
 
             addSpace(mainGrp, 10)
@@ -416,7 +420,7 @@ iNZightMapMod <- setRefClass(
             
             if (map.type != "shape") {
               lbl <- glabel("Map type :")
-              typeOpts <- c("roadmap", "satellite", "terrain", "hybrid")
+              typeOpts <- c("terrain", "terrain-background", "toner-lite", "toner")
               typeList <- gcombobox(typeOpts)
               tbl.plotoptions[ii.plotopt, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl
               tbl.plotoptions[ii.plotopt, 3:6, expand = TRUE] <- typeList
@@ -475,7 +479,7 @@ iNZightMapMod <- setRefClass(
 
             if (map.type != "shape") {
               lbl.colourstatic <- glabel("Point colour :")
-              pointCols <- c("grey50", "black", "darkblue", "darkgreen",
+              pointCols <- c("mediumvioletred", "grey50", "black", "darkblue", "darkgreen",
                              "darkmagenta", "darkslateblue", "hotpink4",
                              "lightsalmon2", "palegreen3", "steelblue3")
               symbolColList <- gcombobox(
@@ -486,8 +490,6 @@ iNZightMapMod <- setRefClass(
                   which(pointCols == map.vars$col.pt)[1]),
                 editable = TRUE)
               
-              
-            
             tbl.colour[ii.colour,  1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colourstatic
             tbl.colour[ii.colour,  3:6, expand = TRUE] <- symbolColList
             ii.colour <- ii.colour + 1
@@ -506,8 +508,16 @@ iNZightMapMod <- setRefClass(
                   which(names(GUI$getActiveData()) == map.vars$colby)[1] + 1
                 )
               )
+              
+              clear.colour <- gbutton("",
+                                      handler = function(h,...) {
+                                        svalue(colVarList, index = TRUE) <- 1
+                                      })
+              clear.colour$set_icon("Cancel")
+              
               tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.colour
-              tbl.colour[ii.colour, 3:6, expand = TRUE] <- colVarList
+              tbl.colour[ii.colour, 3:5, expand = TRUE] <- colVarList
+              tbl.colour[ii.colour,    6] <- clear.colour
               ii.colour <- ii.colour + 1
 
               lbl.palette <- glabel("Palette:")
@@ -520,7 +530,7 @@ iNZightMapMod <- setRefClass(
               ii.colour <- ii.colour + 1
 
               checkbox.reverse <- gcheckbox("Reverse palette")
-              checkbox.ranks <- gcheckbox("Use Ranks")
+              checkbox.ranks <- gcheckbox("Use Percentiles")
 
               tbl.colour[ii.colour, 3:4, expand = TRUE] <- checkbox.reverse
               tbl.colour[ii.colour, 5:6, expand = TRUE] <- checkbox.ranks
@@ -551,7 +561,8 @@ iNZightMapMod <- setRefClass(
                 lbl.quantilecycle,
                 cyclePrev,
                 cycleNext,
-                cycleStop
+                cycleStop,
+                clear.colour
               )
               
               for (control in controls.colour) {
@@ -559,6 +570,7 @@ iNZightMapMod <- setRefClass(
               }
               
               if (svalue(colVarList, TRUE) > 1) {
+                visible(clear.colour) <- TRUE
                 if (svalue(colVarList) %in% numericVars()) {
                   svalue(lbl.quantilecycle) <- "Cycle quantiles:"
                   visible(lbl.quantilenumber) <- TRUE
@@ -574,6 +586,7 @@ iNZightMapMod <- setRefClass(
                 visible(lbl.quantilenumber) <- FALSE
                 visible(cycleN) <- FALSE
                 visible(checkbox.ranks) <- FALSE
+                visible(clear.colour) <- FALSE
               }
             }
 
@@ -611,8 +624,16 @@ iNZightMapMod <- setRefClass(
                   1, which(rszNames == map.vars$sizeby)[1] + 1
                 )
               )
+              
+              clear.size <- gbutton("",
+                                      handler = function(h,...) {
+                                        svalue(rszVarList, index = TRUE) <- 1
+                                      })
+              clear.size$set_icon("Cancel")
+              
               tbl.size[ii.size, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.sizeby
-              tbl.size[ii.size, 3:6, expand = TRUE] <- rszVarList
+              tbl.size[ii.size, 3:5, expand = TRUE] <- rszVarList
+              tbl.size[ii.size, 6] <- clear.size
               ii.size <- ii.size + 1
               
               lbl.sizemethod <- glabel("Resize method:")
@@ -623,6 +644,7 @@ iNZightMapMod <- setRefClass(
               
               visible(lbl.sizemethod) <- FALSE
               visible(combobox.sizemethod) <- FALSE
+              visible(clear.size) <- FALSE
             }
             
 # Opacity Options ---------------------------------------------------------
@@ -630,7 +652,7 @@ iNZightMapMod <- setRefClass(
             frame.opacity <- gframe(horizontal = FALSE)
             group.opacity <- ggroup(spacing = 5)
             group.opacity$set_borderwidth(10)
-            expand.opacity <- gexpandgroup(text = "Opacity", horizontal = FALSE)
+            expand.opacity <- gexpandgroup(text = "Transparency", horizontal = FALSE)
             font(expand.opacity) <- list(weight = "bold", family = "normal", size = 10)
             
             add(mainGrp, frame.opacity)
@@ -661,13 +683,23 @@ iNZightMapMod <- setRefClass(
                   1, which(numNames == map.vars$opacity)[1] + 1
                 )
               )
+              
+              clear.opacity <- gbutton("",
+                                    handler = function(h,...) {
+                                      svalue(opctyVarList, index = TRUE) <- 1
+                                    })
+              clear.opacity$set_icon("Cancel")
+              
               tbl.opacity[ii.opacity, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.opacityby
-              tbl.opacity[ii.opacity, 3:6, expand = TRUE] <- opctyVarList
+              tbl.opacity[ii.opacity, 3:5, expand = TRUE] <- opctyVarList
+              tbl.opacity[ii.opacity, 6] <- clear.opacity
               ii.opacity <- ii.opacity + 1
               
               checkbox.opacityrev <- gcheckbox("Reverse Opacification")
               tbl.opacity[ii.opacity, 1:4, anchor = c(1, 0), expand = TRUE] <- checkbox.opacityrev
               ii.opacity <- ii.opacity + 1
+              
+              visible(clear.opacity) <- FALSE
             }
             
 # Shape Options ---------------------------------------------------------
@@ -700,9 +732,14 @@ iNZightMapMod <- setRefClass(
               
               lbl.symbol <- glabel("Symbol:")
               combobox.symbol <- gcombobox(names(symbolList), selected = 1)
+              checkbox.filledin <- gcheckbox("Filled in symbols")
               
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbol
               tbl.shape[ii.shape, 3:6, expand = TRUE] <- combobox.symbol
+              ii.shape <- ii.shape + 1
+              
+              tbl.shape[ii.shape, 1:6, expand = TRUE] <- checkbox.filledin
+              
               ii.shape <- ii.shape + 1
               
               sep.shape <- gseparator()
@@ -717,8 +754,16 @@ iNZightMapMod <- setRefClass(
                   1, which(numNames == map.vars$symbolby)[1] + 1
                 )
               )
+              
+              clear.shape <- gbutton("",
+                                       handler = function(h,...) {
+                                         svalue(dropdown.shape, index = TRUE) <- 1
+                                       })
+              clear.shape$set_icon("Cancel")
+              
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.shapeby
-              tbl.shape[ii.shape, 3:6, expand = TRUE] <- dropdown.shape
+              tbl.shape[ii.shape, 3:5, expand = TRUE] <- dropdown.shape
+              tbl.shape[ii.shape, 6] <- clear.shape
               ii.shape <- ii.shape + 1
               
               lbl.symbolwidth <- glabel("Symbol line width:")
@@ -727,6 +772,8 @@ iNZightMapMod <- setRefClass(
               tbl.shape[ii.shape, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.symbolwidth
               tbl.shape[ii.shape, 3:4, expand = TRUE] <- spin.symbolwidth
               ii.shape <- ii.shape + 1
+              
+              visible(clear.shape) <- FALSE
             }
             
 # Connect Options ---------------------------------------------------------
@@ -927,7 +974,13 @@ iNZightMapMod <- setRefClass(
                   
                     map.vars$col.pt <<- svalue(symbolColList)
                     map.vars$cex.pt <<- svalue(cexSlider)
-                    map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    
+                    if (svalue(checkbox.filledin) && svalue(transpSlider) == 0) {
+                      map.vars$alpha <<- 0.999
+                    } else {
+                      map.vars$alpha <<- 1 - svalue(transpSlider) / 100
+                    }
+                    
                     map.vars$join <<- svalue(joinPts)
                     map.vars$col.line <<- svalue(joinCol)
                     map.vars$lwd <<- svalue(slider.linewidth)
@@ -981,6 +1034,8 @@ iNZightMapMod <- setRefClass(
                     visible(combobox.paletteCont) <- svalue(colVarList) %in% numericVars()
                     visible(combobox.paletteCat) <- !(svalue(colVarList) %in% numericVars())
                     
+                    visible(clear.colour) <- TRUE
+                    
                     if (svalue(colVarList) %in% numericVars()) {
                       svalue(lbl.quantilecycle) <- "Cycle quantiles:"
                       visible(lbl.quantilenumber) <- TRUE
@@ -996,6 +1051,7 @@ iNZightMapMod <- setRefClass(
                     visible(lbl.quantilenumber) <- FALSE
                     visible(cycleN) <- FALSE
                     visible(checkbox.ranks) <- FALSE
+                    visible(clear.colour) <- FALSE
                   }
 
                   visible(lbl.colourstatic) <- svalue(colVarList, TRUE) == 1
@@ -1011,15 +1067,15 @@ iNZightMapMod <- setRefClass(
                   
                   visible(lbl.sizemethod) <- svalue(rszVarList, TRUE) > 1
                   visible(combobox.sizemethod) <- svalue(rszVarList, TRUE) > 1
+                  visible(clear.size) <- svalue(rszVarList, TRUE) > 1
                   
                   updateEverything()
                 })
                 
                 addHandlerChanged(opctyVarList, handler = function(h, ...) {
-                  visible(lbl.transp) <- !isTRUE(svalue(opctyVarList) != "")
-                  visible(transpSlider) <- !isTRUE(svalue(opctyVarList) != "")
+                  changeExpandTitle(expand.opacity, "Transparency", svalue(opctyVarList))
                   
-                  changeExpandTitle(expand.opacity, "Opacity", svalue(opctyVarList))
+                  visible(clear.opacity) <- svalue(opctyVarList, TRUE) > 1
                   
                   updateEverything()
                 })
@@ -1027,7 +1083,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(dropdown.shape, handler = function(h, ...) {
                   visible(lbl.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
                   visible(combobox.symbol) <- !isTRUE(svalue(dropdown.shape) != "")
-                  visible(sep.shape) <- !isTRUE(svalue(dropdown.shape) != "")
+                  
+                  visible(clear.shape) <- isTRUE(svalue(dropdown.shape) != "")
                   
                   changeExpandTitle(expand.shape, "Point Symbol", svalue(dropdown.shape))
                   
@@ -1041,6 +1098,8 @@ iNZightMapMod <- setRefClass(
                 addHandlerChanged(checkbox.ranks, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(combobox.sizemethod, handler = function(h, ...) updateEverything())
+                
+                addHandlerChanged(checkbox.filledin, handler = function(h, ...) updateEverything())
                 
                 addHandlerChanged(edit.title, handler = function(h, ...) updateEverything())
                 
@@ -1297,29 +1356,75 @@ iNZightMapMod <- setRefClass(
                 add(sliderGrp, glabel(paste(lbl, collapse = "   ")))
 
             ## Play button
-            ## playBtn <- gbutton("Play", expand = FALSE,
-            ##                 handler = function(h, ...) {
-            ##                     oldSet <- GUI$getActiveDoc()$getSettings()
-            ##                     for (i in 1:length(levels(grpData))) {
-            ##                         changePlotSettings(
-            ##                             structure(list(i),
-            ##                                       .Names = paste(
-            ##                                           grp,
-            ##                                           "level",
-            ##                                           sep = ".")
-            ##                                       )
-            ##                             )
-            ##                       # This effectively freezes the R session,
-            ##                       # and therefore iNZight --- so increase with
-            ##                       # discression!!!!!
-            ##                         Sys.sleep(0.6)
-            ##                     }
-            ##                     changePlotSettings(oldSet)
-            ##                 })
+            PLAY <- function(data) {
+              playButton$levi <<- playButton$levi + 1
+              if (playButton$levi > playButton$Nlev) {
+                playButton$playtimer$stop_timer()
+                playBtn$set_value(img.playicon)
+                playButton$playtimer <<- NULL
+              } else {
+                changePlotSettings(structure(list(playButton$levi, data$varnames),
+                                             .Names = c(paste(grp, "level", sep = "."), "varnames")))
+                ri <- playButton$row
+                tb <- slider
+                blockHandlers(tb)
+                ## This line creates "IA__gtk_table_attach: assertion 'child->parent == NULL' failed" error.
+                svalue(tb, index = TRUE) <- playButton$levi + 1
+                unblockHandlers(tb)
+              }
+            }
+            clickPlay <- function(h, ...) {
+              if (!is.null(playButton$playtimer)) {
+                ## time is running - so stop the animation
+                playButton$playtimer$stop_timer()
+                playBtn$set_value(img.playicon)
+                playButton$playtimer <<- NULL
+                return()
+              }
+              oldSet <- GUI$getActiveDoc()$getSettings()
+              playBtn$set_value(img.stopicon)
+              pr <- h$obj$parent
+              wc <- which(sapply(pr$child_positions, function(x) identical(h$obj, x$child)))
+              playButton <<- list(playtimer = NULL, row = pr$child_positions[[wc]]$x,
+                                  Nlev = length(levels(grpData)),
+                                  levi = 0, oldSet = oldSet)
+              PLAY(oldSet)
+              playButton$playtimer <<- gtimer(playdelay * 1000, PLAY, data = oldSet, one.shot = FALSE)
+            }
+            img.playicon <- system.file("images/icon-play.png", package = "iNZight")
+            img.stopicon <- system.file("images/icon-stop.png", package = "iNZight")
+            playBtn <- gimagebutton(filename = img.playicon, size = "button", handler = clickPlay,
+                                    tooltip = "Play through levels")
+            
+            ## Play time delay - time in milliseconds
+            img.clockicon <- system.file("images/icon-clock.png", package = "iNZight")
+            delayBtn <- gimagebutton(filename = img.clockicon, size = "button",
+                                     tooltip = "Set play timing options",
+                                     handler = function(h, ...) {
+                                       w <- gwindow(title = "Play Settings", width = 200, height = 80,
+                                                    parent = GUI$win)
+                                       g <- gvbox(spacing = 10, container = w)
+                                       g$set_borderwidth(10)
+                                       
+                                       g1 <- ggroup(container = g)
+                                       glabel("Time delay between plots :", container = g1)
+                                       spin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay, container = g1)
+                                       glabel("(seconds)", container = g1)
+                                       
+                                       g2 <- ggroup(container = g)
+                                       addSpring(g2)
+                                       gbutton("OK", container = g, handler = function(h, ...) {
+                                         playdelay <<- svalue(spin)
+                                         dispose(w)
+                                       })
+                                     })
+            delaySpin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay,
+                                     handler = function(h, ...) playdelay <<- svalue(h$obj))
+            
             add(hzGrp, sliderGrp, expand = TRUE)
 
-            ## tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
-
+            tbl[pos, 6, anchor = c(0, 0), expand = FALSE] <- delayBtn
+            tbl[pos, 7, anchor = c(0, 0), expand = FALSE] <- playBtn
         },
         deleteSlider = function(pos) {
             ## get the child that is at the specified positions
