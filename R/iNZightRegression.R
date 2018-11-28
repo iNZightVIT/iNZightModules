@@ -29,6 +29,7 @@ iNZightRegMod <- setRefClass(
         working     = "logical",
         showBoots   = "ANY",
         plottype    = "numeric", numVarList = "ANY", catVarList = "ANY", compMatrix = "ANY",
+        svyname     = "character",
         codehistory = "ANY",
         isSurveyObject = "logical"
     ),
@@ -693,9 +694,11 @@ iNZightRegMod <- setRefClass(
             
             watchData()
             ## add to code output
-            if (!is.null(getdesign()))
-                GUI$rhistory$add(sprintf("svy.design <- %s", capture.output(getdesign()$call)),
-                    keep = TRUE, tidy = TRUE)
+            if (!is.null(getdesign())) {
+                svyname <<- sprintf("%s", GUI$getActiveDoc()$getModel()$dataDesignName)
+                # GUI$rhistory$add(sprintf("%s <- %s", capture.output(getdesign()$call)),
+                #     keep = TRUE, tidy = TRUE)
+            }
         },
         getdata = function() {
             des <- getdesign()
@@ -868,7 +871,7 @@ iNZightRegMod <- setRefClass(
                                                          svalue(modelList, TRUE) - 1))
                         dname <- sprintf("data%s", ifelse(GUI$activeDoc == 1, "", GUI$activeDoc))
                         GUI$rhistory$add(c(sprintf("%s <- %s", fname,
-                                                   gsub("dataset", dname, mcall)),
+                                                   gsub("svy.design", svyname, gsub("dataset", dname, mcall))),
                                            sprintf("iNZightSummary(%s%s)", fname,
                                                    ifelse(length(confounding) == 0, "",
                                                           sprintf(", exclude = c(\"%s\")",

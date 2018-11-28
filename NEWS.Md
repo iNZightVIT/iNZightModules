@@ -3,7 +3,7 @@ Model Fitting:
 - [fix] confounding variables not displayed in call, y ~ x
 - [fix] code writing include temporary model for plots-only
 - [update] create & rename models (hopefully) easier to use (buttons [de]activate)
-
+- [update] menu changes to be context specific to the module (currently not much happening)
 
 Maps:
 - [change] use base iNZight interact button
