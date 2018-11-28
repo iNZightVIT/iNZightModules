@@ -2,7 +2,6 @@
 
 export(allBivarPlots)
 export(allUniPlots)
-export(getModules)
 export(iNZightMap2Mod)
 export(iNZightMapMod)
 export(iNZightMultiRes)

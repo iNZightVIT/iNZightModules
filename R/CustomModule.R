@@ -18,7 +18,6 @@ CustomModule <- setRefClass(
     )
 )
 
-#' @export 
 getModules <- function(load) {
     dir <- file.path("~", "Documents", "iNZightVIT", "modules")
     mods <- list.files(dir, full.names = TRUE)
