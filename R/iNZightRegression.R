@@ -76,6 +76,22 @@ iNZightRegMod <- setRefClass(
                                                   })
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addhistbtn, showhistbtn))
 
+            ## and set the menubar
+            GUI$menuBarWidget$setMenu(
+                "Model Fitting" = list(
+                    home = 
+                        gaction("Close", 
+                            icon = "close", 
+                            tooltip = "Close model fitting module",
+                            handler = function(h, ...) .self$close()),
+                    exit = 
+                        gaction("Exit iNZight",
+                            icon = "symbol_diamond",
+                            tooltip = "Exit iNZight completely",
+                            handler = function(h, ...) GUI$close())
+                )
+            )
+
             if (!is.null(GUI$moduledata) && !is.null(GUI$moduledata$regression) &&
                 !is.null(GUI$moduledata$regression$fits))
                 fits <<- GUI$moduledata$regression$fits
@@ -628,36 +644,7 @@ iNZightRegMod <- setRefClass(
                                   handler = function(h, ...) {
                                       browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=model_fitting")
                                   })
-            homeButton <- gbutton("Home",
-                                  handler = function(h, ...) {
-                                      ## save fits
-                                      GUI$moduledata$regression <<- list(fits = fits)
-                                      
-                                      ## clean up tabs ...
-                                      if ("Model Plots" %in% names(GUI$plotWidget$plotNb)) {
-                                          showTab("plot")
-                                          GUI$plotWidget$closePlot()
-                                          GUI$plotWidget$addPlot()
-                                      }
-                                      if ("Model Output" %in% names(GUI$plotWidget$plotNb)) {
-                                          showTab("summary")
-                                          GUI$plotWidget$closePlot()
-                                      }
-                                      if ("Instructions" %in% names(GUI$plotWidget$plotNb)) {
-                                          showTab("instructions")
-                                          GUI$plotWidget$closePlot()
-                                      }
-
-                                      GUI$rhistory$add(c("", "## End Model Fitting", "SEP"),
-                                                       tidy = FALSE)
-                                      
-                                      
-                                      ## delete the module window
-                                      delete(GUI$leftMain, GUI$leftMain$children[[2]])
-                                      ## display the default view (data, variable, etc.)
-                                      GUI$plotToolbar$restore()
-                                      visible(GUI$gp1) <<- TRUE
-                                })
+            homeButton <- gbutton("Home", handler = function(h, ...) close())
 
             add(bot, helpButton, expand = TRUE, fill = TRUE)
             add(bot, homeButton, expand = TRUE, fill = TRUE)
@@ -1088,6 +1075,36 @@ iNZightRegMod <- setRefClass(
                     }
                 }, silent = TRUE)
                 )
+        },
+        close = function() {
+            ## save fits
+            GUI$moduledata$regression <<- list(fits = fits)
+            
+            ## clean up tabs ...
+            if ("Model Plots" %in% names(GUI$plotWidget$plotNb)) {
+                showTab("plot")
+                GUI$plotWidget$closePlot()
+                GUI$plotWidget$addPlot()
+            }
+            if ("Model Output" %in% names(GUI$plotWidget$plotNb)) {
+                showTab("summary")
+                GUI$plotWidget$closePlot()
+            }
+            if ("Instructions" %in% names(GUI$plotWidget$plotNb)) {
+                showTab("instructions")
+                GUI$plotWidget$closePlot()
+            }
+
+            GUI$rhistory$add(c("", "## End Model Fitting", "SEP"),
+                             tidy = FALSE)
+            
+            ## delete the module window
+            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            ## display the default view (data, variable, etc.)
+            GUI$plotToolbar$restore()
+            GUI$menuBarWidget$defaultMenu()
+            GUI$updatePlot()
+            visible(GUI$gp1) <<- TRUE
         }
     )
 )
