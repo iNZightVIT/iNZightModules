@@ -1,19 +1,24 @@
+##' iNZight Custom Module
+##'
+##' Provides a basic module for extending new ones
+##'
+##' @title iNZight Custom Module
+##'
+##' @author Tom Elliott
+##'
+##' @export CustomModule
+##' @exportClass CustomModule
 CustomModule <- setRefClass(
     "CustomModule",
     fields = list(
         GUI = "ANY",
-        moduledir = "character"
+        win = "ANY"
     ),
     methods = list(
         initialize = function(gui) {
             initFields(GUI = gui)
 
-            ## set the moduledirectory
-            # moduledir <<- file.path("~", "Documents", "iNZightVIT", "modules")
-
-            ## check for and load any existing modules
-            # mods <- listModules(moduledir)
-
+            w 
         }
     )
 )
