@@ -24,6 +24,9 @@ _Release date__: 14 August 2018
 - "Percentiles" replaces "Ranks" (underlying method exactly the same)
 - fixes for UI, etc.
 
+### Patch 2.4.3 - 07/01/2019
+- revert to single landing window for both maps submodules
+
 ***
 
 # Version 2.3
