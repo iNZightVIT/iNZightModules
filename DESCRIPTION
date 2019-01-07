@@ -1,8 +1,8 @@
 Package: iNZightModules
 Type: Package
 Title: iNZight GUI Modules
-Version: 2.4.2
-Date: 2018-11-21
+Version: 2.4.3
+Date: 2019-01-07
 Authors@R: c(person("Tom", "Elliott", role = c("aut", "cre"),
                     email = "inzight_support@stat.auckland.ac.nz"),
              person("Daniel", "Barnett", role = "aut"),
