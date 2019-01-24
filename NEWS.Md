@@ -1,6 +1,7 @@
 ## iNZight 2.4.3.9000
 __Release date__: TBA
 
+- add interactive plot button to location maps
 
 
 ## iNZight 2.4.3
