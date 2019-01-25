@@ -29,14 +29,19 @@ iNZightRegMod <- setRefClass(
         working     = "logical",
         showBoots   = "ANY",
         plottype    = "numeric", numVarList = "ANY", catVarList = "ANY", compMatrix = "ANY",
-        codehistory = "ANY"
+        svyname     = "character",
+        codehistory = "ANY",
+        isSurveyObject = "logical"
     ),
     methods = list(
         initialize = function(GUI) {
             initFields(GUI = GUI, working = TRUE, plottype = 1, codehistory = NULL)
+            
+            isSurveyObject <<- !is.null(getdesign())
 
             GUI$initializeModuleWindow(.self)
-            mainGrp <<- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
             mainGrp$set_borderwidth(5)
             # character, datasheet, evaluate, history, preview, rlogo, 
             addhistbtn <- iNZight:::gimagebutton(stock.id = "rlogo", tooltip = "Save code for current plot",
@@ -72,6 +77,22 @@ iNZightRegMod <- setRefClass(
                                                   })
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(addhistbtn, showhistbtn))
 
+            ## and set the menubar
+            GUI$menuBarWidget$setMenu(
+                "Model Fitting" = list(
+                    home = 
+                        gaction("Close", 
+                            icon = "close", 
+                            tooltip = "Close model fitting module",
+                            handler = function(h, ...) .self$close()),
+                    exit = 
+                        gaction("Exit iNZight",
+                            icon = "symbol_diamond",
+                            tooltip = "Exit iNZight completely",
+                            handler = function(h, ...) GUI$close())
+                )
+            )
+
             if (!is.null(GUI$moduledata) && !is.null(GUI$moduledata$regression) &&
                 !is.null(GUI$moduledata$regression$fits))
                 fits <<- GUI$moduledata$regression$fits
@@ -83,6 +104,13 @@ iNZightRegMod <- setRefClass(
                                family = "normal",
                                size   = 11)
             add(mainGrp, lbl1, anchor = c(0, 0))
+
+            if (isSurveyObject) {
+                lbl2 <- glabel("Using complex survey design (note: still under development)")
+                font(lbl2) <- list(size = 9)
+                add(mainGrp, lbl2, anchor = c(0, 0))
+            }
+
             addSpace(mainGrp, 5)
 
             
@@ -487,7 +515,6 @@ iNZightRegMod <- setRefClass(
             modelTbl <- glayout(homogeneous = TRUE, container = modelGp)
             ii <- 1
 
-            lbl <- glabel("Select Model :")
             modelList <<- gcombobox(c("(new)", names(fits)), ## if (length(fits) > 0) names(fits) else "(new)",
                                     handler = function(h, ...) {
                                         ## reset response, framework, variables ...
@@ -495,6 +522,8 @@ iNZightRegMod <- setRefClass(
                                             newBtn$invoke_change_handler()
                                             return()
                                         }
+                                        enabled(renameBtn) <- TRUE
+                                        enabled(newBtn) <- TRUE
                                         obj <- fits[[svalue(h$obj, index = TRUE) - 1]]
                                         working <<- TRUE
                                         svalue(responseBox) <<- obj$response
@@ -504,7 +533,7 @@ iNZightRegMod <- setRefClass(
                                         setExplVars()
                                         confounding <<- obj$confounding
                                         setConfVars()
-                                        svalue(modelName) <<- svalue(h$obj)
+                                        modelName <<- svalue(h$obj)
                                         blockHandlers(saveBtn)
                                         svalue(saveBtn) <- "Update"
                                         unblockHandlers(saveBtn)
@@ -515,31 +544,48 @@ iNZightRegMod <- setRefClass(
 
             newBtn <- gbutton("New",
                               handler = function(h, ...) {
-                                  svalue(modelName) <<- paste("Model", length(fits) + 1)
+                                  modelName <<- paste("Model", length(fits) + 1)
                                   blockHandlers(modelList)
                                   svalue(modelList, index = TRUE) <<- 1
                                   unblockHandlers(modelList)
                                   blockHandlers(saveBtn)
                                   svalue(saveBtn) <- "Save Model"
                                   unblockHandlers(saveBtn)
+                                  enabled(renameBtn) <- FALSE
+                                  enabled(newBtn) <- FALSE
                               })
-            modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- modelList
-            modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- newBtn
-            ii <- ii + 1
 
-            lbl <- glabel("Name :")
-            modelName <<- gedit(paste("Model", length(fits) + 1))
+            modelName <<- sprintf("Model %i", length(fits) + 1)
+            renameBtn <- gbutton("Rename", 
+                                 handler = function(h, ...) {
+                                     modelName <<- 
+                                        ginput(
+                                            "Type the new name for the model", 
+                                            title = "Rename Model",
+                                            text = modelName, icon = "question",
+                                            parent = GUI$win
+                                        )
+                                     updateModel(save = TRUE)
+                                 })
             saveBtn <- gbutton("Save Model",
                                handler = function(h, ...) {
                                    updateModel(save = TRUE)
                                    blockHandler(h$obj)
                                    svalue(h$obj) <- "Update"
                                    unblockHandler(h$obj)
+                                   enabled(renameBtn) <- TRUE
+                                   enabled(newBtn) <- TRUE
                                })
-            modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- modelName
-            modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- saveBtn
+
+            enabled(renameBtn) <- FALSE
+            enabled(newBtn) <- FALSE
+
+            modelTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- glabel("Select Model :")
+            modelTbl[ii, 2:3, expand = TRUE, fill = TRUE] <- modelList
+            ii <- ii + 1
+            modelTbl[ii, 1, expand = TRUE, fill = TRUE] <- newBtn
+            modelTbl[ii, 2, expand = TRUE, fill = TRUE] <- saveBtn
+            modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- renameBtn
             ii <- ii + 1
 
             ## ---------------------------------------------------------------------------------------------------------
@@ -599,36 +645,7 @@ iNZightRegMod <- setRefClass(
                                   handler = function(h, ...) {
                                       browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=model_fitting")
                                   })
-            homeButton <- gbutton("Home",
-                                  handler = function(h, ...) {
-                                      ## save fits
-                                      GUI$moduledata$regression <<- list(fits = fits)
-                                      
-                                      ## clean up tabs ...
-                                      if ("Model Plots" %in% names(GUI$plotWidget$plotNb)) {
-                                          showTab("plot")
-                                          GUI$plotWidget$closePlot()
-                                          GUI$plotWidget$addPlot()
-                                      }
-                                      if ("Model Output" %in% names(GUI$plotWidget$plotNb)) {
-                                          showTab("summary")
-                                          GUI$plotWidget$closePlot()
-                                      }
-                                      if ("Instructions" %in% names(GUI$plotWidget$plotNb)) {
-                                          showTab("instructions")
-                                          GUI$plotWidget$closePlot()
-                                      }
-
-                                      GUI$rhistory$add(c("", "## End Model Fitting", "SEP"),
-                                                       tidy = FALSE)
-                                      
-                                      
-                                      ## delete the module window
-                                      delete(GUI$leftMain, GUI$leftMain$children[[2]])
-                                      ## display the default view (data, variable, etc.)
-                                      GUI$plotToolbar$restore()
-                                      visible(GUI$gp1) <<- TRUE
-                                })
+            homeButton <- gbutton("Home", handler = function(h, ...) close())
 
             add(bot, helpButton, expand = TRUE, fill = TRUE)
             add(bot, homeButton, expand = TRUE, fill = TRUE)
@@ -676,8 +693,30 @@ iNZightRegMod <- setRefClass(
             working <<- FALSE
             
             watchData()
+            ## add to code output
+            if (!is.null(getdesign())) {
+                svyname <<- sprintf("%s", GUI$getActiveDoc()$getModel()$dataDesignName)
+                # GUI$rhistory$add(sprintf("%s <- %s", capture.output(getdesign()$call)),
+                #     keep = TRUE, tidy = TRUE)
+            }
         },
-        getdata = function() GUI$getActiveData(),
+        getdata = function() {
+            des <- getdesign()
+            if (!is.null(des)) return(des$variables)
+            GUI$getActiveData()
+        },
+        getdesign = function() {
+            if (is.null(GUI$getActiveDoc()$dataModel$getDesign())) return(NULL)
+            des <- GUI$getActiveDoc()$dataModel$createSurveyObject()
+
+            ## set the name
+            dname <- attr(GUI$getActiveData(), "name", exact = TRUE)
+            if (is.null(dname) || dname == "")
+                dname <- sprintf("data%s", ifelse(GUI$activeDoc == 1, "", GUI$activeDoc))
+            dname <- iNZightTools:::create_varname(dname)
+            des$call$data <- eval(parse(text = sprintf("quote(%s)", dname)))
+            des
+        },
         setAvailVars = function() {
             if (is.null(response) || length(response) == 0) {
                 vars <- "Select response"
@@ -761,7 +800,7 @@ iNZightRegMod <- setRefClass(
             if (working) return()
 
             xexpr <- paste(c(if (length(variables) > 0) variables else "1", confounding), collapse = " + ")
-            dataset <- getdata()
+            dataset <- if (isSurveyObject) getdesign() else getdata()
             resp <- response
             if (length(responseTransform) == 1 && responseTransform != "") {
                 trans <- responseTransform
@@ -774,19 +813,20 @@ iNZightRegMod <- setRefClass(
             }
             mcall <- NULL
             if (new) {
+                svy.design <- getdesign()
                 mcall <- iNZightTools::fitModel(resp, xexpr, data = "dataset",
-                                                family = switch(responseType, "gaussian", "binomial", "poisson"))
+                                                family = switch(responseType, "gaussian", "binomial", "poisson"),
+                                                design = ifelse(isSurveyObject, "survey", "simple"))
                 fit <<- try(eval(parse(text = mcall)), TRUE)
             }
             
-            modelname <- svalue(modelName)
-                
 
             svalue(smryOut) <<- ""
             addOutput(summaryOutput)
             rule()
 
-            addOutput(paste0("# Summary of ", modelname, ": ", resp, " ~ ", xexpr))
+            addOutput(paste0("# Summary of ", modelName, ": ", resp, " ~ ", 
+              if (length(variables)) paste(variables, collapse = " + ") else "1"))
             if (inherits(fit, "try-error")) {
                 addOutput("Unable to fit model.")
                 rule()
@@ -814,15 +854,15 @@ iNZightRegMod <- setRefClass(
                                 variables = variables, confounding = confounding)
                     if (svalue(modelList, index = TRUE) == 1) {
                         ## Creating a new model
-                        fits <<- c(fits, structure(list(obj), .Names = modelname))
+                        fits <<- c(fits, structure(list(obj), .Names = modelName))
                     } else {
                         ## Updating an existing model
                         fits[[svalue(modelList, index = TRUE) - 1]] <<- obj
-                        names(fits)[svalue(modelList, index = TRUE) - 1] <<- modelname
+                        names(fits)[svalue(modelList, index = TRUE) - 1] <<- modelName
                     }
                     blockHandlers(modelList)
                     modelList$set_items(c("(new)", names(fits)))
-                    svalue(modelList) <<- modelname
+                    svalue(modelList) <<- modelName
                     unblockHandlers(modelList)
                     summaryOutput <<- svalue(smryOut)
 
@@ -831,7 +871,7 @@ iNZightRegMod <- setRefClass(
                                                          svalue(modelList, TRUE) - 1))
                         dname <- sprintf("data%s", ifelse(GUI$activeDoc == 1, "", GUI$activeDoc))
                         GUI$rhistory$add(c(sprintf("%s <- %s", fname,
-                                                   gsub("dataset", dname, mcall)),
+                                                   gsub("svy.design", svyname, gsub("dataset", dname, mcall))),
                                            sprintf("iNZightSummary(%s%s)", fname,
                                                    ifelse(length(confounding) == 0, "",
                                                           sprintf(", exclude = c(\"%s\")",
@@ -862,8 +902,19 @@ iNZightRegMod <- setRefClass(
             e <- new.env()
             assign("dataset", getdata(), e)
 
+
             fitn <- sprintf("fit%s",  ifelse(svalue(modelList, TRUE) == 2, "",
                                              svalue(modelList, TRUE) - 1))
+            ## Is the model the one that's saved? Or is it a temporary one ...
+            mcall <- ""
+            if (savecode && (length(fits) == 0 || !identical(fit, fits[[svalue(modelList, TRUE) - 1]]$fit))) {
+                mcall <- gsub("formula = ", "", paste(capture.output(fit$call), collapse = "\n"))
+                dname <- sprintf("data%s", ifelse(GUI$activeDoc == 1, "", GUI$activeDoc))
+                fname <- "tmpfit"
+                mcall <- sprintf("%s <- %s", fname, gsub("dataset", dname, mcall))
+                fitn <- fname
+            }
+            
             fmla <- character()
             
             if (plottype %in% 1:7) {
@@ -935,6 +986,7 @@ iNZightRegMod <- setRefClass(
             }
             
             if (savecode && length(fmla) == 1) {
+                if (mcall != "") fmla <- c(mcall, fmla)
                 GUI$rhistory$add(fmla, keep = TRUE)
                 if (!is.null(codehistory)) {
                     svalue(codehistory) <<- ""
@@ -1026,6 +1078,36 @@ iNZightRegMod <- setRefClass(
                     }
                 }, silent = TRUE)
                 )
+        },
+        close = function() {
+            ## save fits
+            GUI$moduledata$regression <<- list(fits = fits)
+            
+            ## clean up tabs ...
+            if ("Model Plots" %in% names(GUI$plotWidget$plotNb)) {
+                showTab("plot")
+                GUI$plotWidget$closePlot()
+                GUI$plotWidget$addPlot()
+            }
+            if ("Model Output" %in% names(GUI$plotWidget$plotNb)) {
+                showTab("summary")
+                GUI$plotWidget$closePlot()
+            }
+            if ("Instructions" %in% names(GUI$plotWidget$plotNb)) {
+                showTab("instructions")
+                GUI$plotWidget$closePlot()
+            }
+
+            GUI$rhistory$add(c("", "## End Model Fitting", "SEP"),
+                             tidy = FALSE)
+            
+            ## delete the module window
+            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            ## display the default view (data, variable, etc.)
+            GUI$plotToolbar$restore()
+            GUI$menuBarWidget$defaultMenu()
+            GUI$updatePlot()
+            visible(GUI$gp1) <<- TRUE
         }
     )
 )
