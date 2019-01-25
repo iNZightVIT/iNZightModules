@@ -1,7 +1,17 @@
 ## iNZight 2.4.3.9000
 __Release date__: TBA
 
+Model Fitting:
+- [add] use survey design object in regression module
+- [fix] confounding variables not displayed in call, y ~ x
+- [fix] code writing include temporary model for plots-only
+- [update] create & rename models (hopefully) easier to use (buttons [de]activate)
+- [update] menu changes to be context specific to the module (currently not much happening)
+
+Maps:
+- [change] use base iNZight interact button
 - add interactive plot button to location maps
+
 
 
 ## iNZight 2.4.3
