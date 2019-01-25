@@ -10,6 +10,7 @@ Model Fitting:
 
 Maps:
 - [change] use base iNZight interact button
+- add interactive plot button to location maps
 
 
 

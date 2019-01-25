@@ -267,7 +267,7 @@ iNZightMapMod <- setRefClass(
                                   })
             }
             
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
+            GUI$plotToolbar$update("export", refresh = "updatePlot", extra = list(aboutBtn))
             
             ## mainGrp
             mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
@@ -1431,7 +1431,8 @@ iNZightMapMod <- setRefClass(
 
             pl <- do.call(plot, args)
             GUI$plotType <<- map.type #attr(pl, "plottype")
-            return(invisible(pl))
+            enabled(GUI$plotToolbar$exportplotBtn) <<- iNZightPlots::can.interact(pl)
+            invisible(pl)
         }
     )
 

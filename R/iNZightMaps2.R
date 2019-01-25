@@ -1611,14 +1611,6 @@ iNZightMap2Mod <- setRefClass(
                                       visible(GUI$gp1) <<- TRUE
                                   })
             
-            # img.dynamic <- system.file("images/toolbar-interact.png", package = "iNZight")
-
-            # exportButton <- iNZight:::gimagebutton(filename = img.dynamic,
-            #                              tooltip = "Export interactive map", size = "button")
-
-            # addHandlerClicked(exportButton, function(h, ...) {
-            # })
-
             GUI$plotToolbar$update("export", refresh = "updatePlot", 
                                 export = function() {
                                     browseURL(iNZightPlots::exportHTML(x = plotObject,
