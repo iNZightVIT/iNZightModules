@@ -39,10 +39,9 @@ iNZightRegMod <- setRefClass(
             
             isSurveyObject <<- !is.null(getdesign())
 
-            GUI$initializeModuleWindow(.self)
-            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
-            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
-            mainGrp$set_borderwidth(5)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Model Fitting", scroll = TRUE)
+            mainGrp <<- modwin$body
+
             # character, datasheet, evaluate, history, preview, rlogo, 
             addhistbtn <- iNZight:::gimagebutton(stock.id = "rlogo", tooltip = "Save code for current plot",
                                                  handler = function(h, ...) {
@@ -97,21 +96,21 @@ iNZightRegMod <- setRefClass(
                 !is.null(GUI$moduledata$regression$fits))
                 fits <<- GUI$moduledata$regression$fits
 
-            # addSpace(mainGrp, 15)
-
-            lbl1 <- glabel("Model Fitting Module")
-            font(lbl1) <- list(weight = "bold",
-                               family = "normal",
-                               size   = 11)
-            add(mainGrp, lbl1, anchor = c(0, 0))
-
             if (isSurveyObject) {
                 lbl2 <- glabel("Using complex survey design (note: still under development)")
                 font(lbl2) <- list(size = 9)
                 add(mainGrp, lbl2, anchor = c(0, 0))
             }
 
-            addSpace(mainGrp, 5)
+            helpButton <- gbutton("Help",
+                                  handler = function(h, ...) {
+                                      browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=model_fitting")
+                                  })
+            homeButton <- gbutton("Home", handler = function(h, ...) close())
+
+            add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
+            add(modwin$footer, homeButton, expand = TRUE, fill = TRUE)
+
 
             
             ## ---------------------------------------------------------------------------------------------------------
@@ -633,25 +632,6 @@ iNZightRegMod <- setRefClass(
                                    })
             visible(compMatrix) <<- FALSE
             plotTbl[ii, 3:6, expand = TRUE] <- compMatrix
-            
-            
-
-            ## ---------------------------------------------------------------------------------------------------------
-            ## Here lies the bottom piece
-            addSpring(mainGrp)
-            bot <- ggroup(container = mainGrp)
-
-            helpButton <- gbutton("Help",
-                                  handler = function(h, ...) {
-                                      browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=model_fitting")
-                                  })
-            homeButton <- gbutton("Home", handler = function(h, ...) close())
-
-            add(bot, helpButton, expand = TRUE, fill = TRUE)
-            add(bot, homeButton, expand = TRUE, fill = TRUE)
-
-
-            visible(GUI$moduleWindow) <<- TRUE
 
 
             ## Now create new tab for SUMMARY output:

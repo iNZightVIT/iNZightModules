@@ -39,9 +39,8 @@ iNZightTSMod <- setRefClass(
             activeData <<- tsData(dat)
             timeVar <<- getTime(activeData, index = FALSE)
 
-            GUI$initializeModuleWindow(.self)
-            mainGrp <<- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
-            mainGrp$set_borderwidth(5)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Time Series", scroll = TRUE)
+            mainGrp <<- modwin$body
 
             ## playBtn <- iNZight:::gimagebutton(stock.id = "media-play", handler = function(h, ...) updatePlot(animate = TRUE))
             GUI$plotToolbar$update(NULL, refresh = "updatePlot")#, extra = list(playBtn))
@@ -437,7 +436,7 @@ iNZightTSMod <- setRefClass(
             g4_layout[2, 4] <- clearYlab
 
 
-            btmGrp <- ggroup(container = mainGrp)
+            btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
@@ -453,9 +452,6 @@ iNZightTSMod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
-
-            ## Make the module visible
-            visible(GUI$moduleWindow) <<- TRUE
 
             ## IF time series variable is chosen, plot first variable.
             svalue(g3_opt1, index = TRUE) <- 1
