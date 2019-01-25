@@ -12,6 +12,8 @@ Maps:
 - [change] use base iNZight interact button
 - add interactive plot button to location maps
 
+General:
+- update module window API to add scroll window, title, footer to improve cross-module consistency
 
 
 ## iNZight 2.4.3
