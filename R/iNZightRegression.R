@@ -106,7 +106,7 @@ iNZightRegMod <- setRefClass(
             add(mainGrp, lbl1, anchor = c(0, 0))
 
             if (isSurveyObject) {
-                lbl2 <- glabel("Using complex survey design")
+                lbl2 <- glabel("Using complex survey design (note: still under development)")
                 font(lbl2) <- list(size = 9)
                 add(mainGrp, lbl2, anchor = c(0, 0))
             }
