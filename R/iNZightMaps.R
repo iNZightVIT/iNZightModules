@@ -194,7 +194,7 @@ iNZightMapMod <- setRefClass(
         },
         ## initiate the module only when the data has been set
         initiateModule = function(shape = FALSE) {
-            GUI$initializeModuleWindow(.self)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Maps", scroll = TRUE)
 
             ## Reconfigure the Plot Toolbar:
             aboutBtn <- gimage(stock.id = "about", size = "button")
@@ -267,23 +267,10 @@ iNZightMapMod <- setRefClass(
                                   })
             }
             
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
+            GUI$plotToolbar$update("export", refresh = "updatePlot", extra = list(aboutBtn))
             
             ## mainGrp
-            mainGrpOuter <- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
-            mainGrp <<- ggroup(horizontal = FALSE, expand = TRUE, use.scrollwindow = "y", container = mainGrpOuter)
-            mainGrp$set_borderwidth(5)
-
-            addSpace(mainGrp, 10)
-
-            lbl1 <- glabel("iNZight Maps")
-            font(lbl1) <- list(weight = "bold",
-                               family = "normal",
-                               size   = 12)
-            add(mainGrp, lbl1, anchor = c(0, 0))
-            addSpace(mainGrp, 10)
-
-
+            mainGrp <<- modwin$body
             tbl <- glayout(homogeneous = FALSE)
             ii <- 1
             
@@ -1157,7 +1144,7 @@ iNZightMapMod <- setRefClass(
             ## close buton
 
 
-            btmGrp <- ggroup(container = mainGrp)
+            btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
@@ -1174,7 +1161,6 @@ iNZightMapMod <- setRefClass(
                                     visible(GUI$gp1) <<- TRUE
                                 })
 
-            visible(GUI$moduleWindow) <<- TRUE
 
             updatePlot()
         },
@@ -1431,7 +1417,8 @@ iNZightMapMod <- setRefClass(
 
             pl <- do.call(plot, args)
             GUI$plotType <<- map.type #attr(pl, "plottype")
-            return(invisible(pl))
+            enabled(GUI$plotToolbar$exportplotBtn) <<- iNZightPlots::can.interact(pl)
+            invisible(pl)
         }
     )
 

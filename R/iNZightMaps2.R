@@ -205,11 +205,8 @@ iNZightMap2Mod <- setRefClass(
         # },
         importDialog = function() {
           requireNamespace("sf")
-            GUI$initializeModuleWindow(.self)
-            lbl.inzightmaps <- glabel("iNZight Maps")
-            font(lbl.inzightmaps) <- list(weight = "bold",
-                                          family = "normal",
-                                          size   = 12)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Maps", scroll = TRUE)
+
                                         # General variables
 
             ## Variables used later on in the merge variable selection section
@@ -222,21 +219,18 @@ iNZightMap2Mod <- setRefClass(
                                         # Create window, etc.
 
             ## Overall Layout
-            gv.match <- gvbox(container = GUI$moduleWindow, expand = TRUE, fill = TRUE)
-            gv.match$set_borderwidth(15)
-            add(gv.match, lbl.inzightmaps, anchor = c(0, 0))
-            addSpace(gv.match, 10)
+            gv.match <- modwin$body
 
             ## Expandable boxes
             frame.import <- gframe(horizontal = FALSE)
             group.import <- ggroup(spacing = 5)
-            group.import$set_borderwidth(10)
+            # group.import$set_borderwidth(10)
             expand.import <- gexpandgroup(text = "Select Map", horizontal = FALSE)
             font(expand.import)    <- font.header
 
             frame.variables <- gframe(horizontal = FALSE)
             group.variables <- ggroup(spacing = 5)
-            group.variables$set_borderwidth(10)
+            # group.variables$set_borderwidth(10)
             expand.variables <- gexpandgroup(text = "Select Variables", horizontal = FALSE)
             font(expand.variables) <- font.header
 
@@ -703,7 +697,7 @@ iNZightMap2Mod <- setRefClass(
                                         # Bottom group of buttons
 
 
-            btmGrp <- ggroup(container = gv.match)
+            btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
@@ -714,12 +708,21 @@ iNZightMap2Mod <- setRefClass(
                                   cont = btmGrp,
                                   handler = function(h, ...) {
                                       ## delete the module window
-                                      delete(GUI$leftMain)
                                       delete(GUI$leftMain, GUI$leftMain$children[[2]])
                                       ## display the default view (data, variable, etc.)
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
+            # homeButton <- gbutton("Home", expand = TRUE, fill = TRUE,
+            #                       cont = btmGrp,
+            #                       handler = function(h, ...) {
+            #                           ## delete the module window
+            #                           delete(GUI$leftMain)
+            #                           delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            #                           ## display the default view (data, variable, etc.)
+            #                           GUI$plotToolbar$restore()
+            #                           visible(GUI$gp1) <<- TRUE
+            #                       })
             GUI$plotToolbar$update(NULL, refresh = "updatePlot")
         },
         ## Create the map object based on the options given in the importation dialog box
@@ -867,23 +870,12 @@ iNZightMap2Mod <- setRefClass(
             }
 
 
-            GUI$initializeModuleWindow(.self)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Maps", scroll = TRUE)
             GUI$rhistory$add(c(sprintf("## Using the %s map", mapName)), keep = TRUE)
             GUI$rhistory$add(attr(combinedData, "code"), keep = TRUE)
 
-            mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- modwin$body
             visible(mainGrp) <<- FALSE
-
-            mainGrp$set_borderwidth(5)
-
-            addSpace(mainGrp, 10)
-
-            lbl.inzightmaps <- glabel("iNZight Maps")
-            font(lbl.inzightmaps) <- list(weight = "bold",
-                                          family = "normal",
-                                          size   = 12)
-            add(mainGrp, lbl.inzightmaps, anchor = c(0, 0))
-            addSpace(mainGrp, 10)
 
             frame.mapoptions <- gframe(horizontal = FALSE)
             group.mapoptions <- ggroup(spacing = 5)
@@ -1594,7 +1586,7 @@ iNZightMap2Mod <- setRefClass(
                 svalue(combobox.sizeselect) <- h$dropdata
             })
 
-            btmGrp <- ggroup(container = mainGrp)
+            btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
@@ -1611,14 +1603,6 @@ iNZightMap2Mod <- setRefClass(
                                       visible(GUI$gp1) <<- TRUE
                                   })
             
-            # img.dynamic <- system.file("images/toolbar-interact.png", package = "iNZight")
-
-            # exportButton <- iNZight:::gimagebutton(filename = img.dynamic,
-            #                              tooltip = "Export interactive map", size = "button")
-
-            # addHandlerClicked(exportButton, function(h, ...) {
-            # })
-
             GUI$plotToolbar$update("export", refresh = "updatePlot", 
                                 export = function() {
                                     browseURL(iNZightPlots::exportHTML(x = plotObject,
