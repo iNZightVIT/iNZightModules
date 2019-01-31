@@ -1,28 +1,28 @@
-## iNZight 2.4.3.9000
-__Release date__: TBA
+## iNZightModules 2.4.4
+__Release date__: 01 February 2019
 
 Model Fitting:
-- [add] use survey design object in regression module
-- [fix] confounding variables not displayed in call, y ~ x
-- [fix] code writing include temporary model for plots-only
-- [update] create & rename models (hopefully) easier to use (buttons [de]activate)
-- [update] menu changes to be context specific to the module (currently not much happening)
+- use survey design object in regression module
+- confounding variables not displayed in call, y ~ x
+- code writing include temporary model for plots-only
+- create & rename models (hopefully) easier to use (buttons [de]activate)
+- menu changes to be context specific to the module (currently not much happening)
 
 Maps:
-- [change] use base iNZight interact button
+- use base iNZight interact button
 - add interactive plot button to location maps
 
 General:
 - update module window API to add scroll window, title, footer to improve cross-module consistency
 
 
-## iNZight 2.4.3
+## iNZightModules 2.4.3
 __Release date:__ 07 January 2019
 
 - revert to single landing window for both maps submodules
 
 
-## iNZight 2.4.2
+## iNZightModules 2.4.2
 __Release date:__ 21 November 2018
 
 - minor changes to GUI defaults
