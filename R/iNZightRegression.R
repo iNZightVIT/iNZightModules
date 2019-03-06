@@ -14,6 +14,8 @@ iNZightRegMod <- setRefClass(
     "iNZightRegMod",
     fields = list(
         GUI         = "ANY",
+        outputWin = "ANY",
+        plotWin = "ANY",
         mainGrp     = "ANY",
         smryOut     = "ANY",
         regPlots    = "ANY",
@@ -123,7 +125,24 @@ iNZightRegMod <- setRefClass(
                             icon = "symbol_diamond",
                             tooltip = "Exit iNZight completely",
                             handler = function(h, ...) GUI$close())
-                )
+                ),
+                "View" = 
+                    if (GUI$popOut) {
+                        list(
+                            output = 
+                                gaction("Model output",
+                                    icon = "symbol_diamond",
+                                    tooltip = "Show model output",
+                                    handler = function(h, ...) .self$showOutput()
+                                ),
+                            plot =
+                                gaction("Model plots",
+                                    icon = "symbol_diamond",
+                                    tooltip = "Show model plots",
+                                    handler = function(h, ...) .self$showPlot()
+                                )
+                        )
+                    } else list()
             )
 
             if (!is.null(GUI$moduledata) &&
@@ -933,35 +952,9 @@ iNZightRegMod <- setRefClass(
 
             ## Now create new tab for SUMMARY output:
             smryOut <<- gtext()
-            if (GUI$popOut) {
-                twin <- gwindow("iNZight Model Fitting Output",
-                    width = 800,
-                    height = 400,
-                    parent = GUI$win
-                )
-                tg <- ggroup(cont = twin)
-                add(tg, smryOut, expand = TRUE, fill = TRUE)
-
-                addInstructions(gtext(
-                    expand = TRUE,
-                    fill = TRUE,
-                    container = ggroup(
-                        container = gwindow("iNZight Model Fitting Instructions",
-                            width = 800,
-                            height = 200,
-                            parent = GUI$win
-                        )
-                    )
-                ))
-            } else {
-                pb.i <- svalue(GUI$plotWidget$plotNb)
-                add(GUI$plotWidget$plotNb, smryOut,
-                    label = "Model Output",
-                    close.button = FALSE
-                )
-                svalue(GUI$plotWidget$plotNb) <<- pb.i
-                GUI$plotWidget$closePlot()
-            }
+            if (GUI$popOut) addInstructions(smryOut)
+            outputWin <<- NULL
+            .self$showOutput()
 
             regPlots <<- ggraphics(expand = TRUE)
             if (GUI$popOut) {
@@ -1006,6 +999,43 @@ iNZightRegMod <- setRefClass(
 
             invisible(10)
         }, # end initialize()
+        showOutput = function() {
+            if (GUI$popOut) {
+                if (is.null(outputWin)) {
+                    outputWin <<- gwindow("iNZight Model Fitting Output",
+                        width = 800,
+                        height = 400,
+                        parent = GUI$win
+                    )
+                    addHandlerDestroy(outputWin, 
+                        handler = function(h, ...) {
+                            outputWin <<- NULL
+                            # the old one will be destroyed,
+                            # so recreate an empty one so other code
+                            # doesn't wall over
+                            smryOut <<- gtext()
+                            TRUE
+                        }
+                    )
+                    tg <- ggroup(cont = outputWin)
+                    add(tg, smryOut, expand = TRUE, fill = TRUE)
+
+                    # repopulate smryOut value
+                    updateModel()
+                }
+            } else {
+                pb.i <- svalue(GUI$plotWidget$plotNb)
+                add(GUI$plotWidget$plotNb, smryOut,
+                    label = "Model Output",
+                    close.button = FALSE
+                )
+                svalue(GUI$plotWidget$plotNb) <<- pb.i
+                GUI$plotWidget$closePlot()
+            }
+        },
+        showPlot = function() {
+
+        },
         getdata = function() {
             des <- getdesign()
             if (!is.null(des)) return(des$variables)
@@ -1132,6 +1162,8 @@ iNZightRegMod <- setRefClass(
         },
         updateModel = function(new = TRUE, save = FALSE) {
             if (working) return()
+
+            if (length(response) == 0) return()
 
             xexpr <- paste(
                 c(

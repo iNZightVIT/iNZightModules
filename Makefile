@@ -9,6 +9,9 @@ document:
 check:
 	@$(R) -e "devtools::check()"
 
+test:
+	@$(R) -e "devtools::test()"
+
 revcheck:
 	@$(R) -e "devtools::use_revdep()"
 	@$(RCMD) -f "revdep/check.R"
