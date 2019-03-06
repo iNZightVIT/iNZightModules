@@ -2,6 +2,7 @@
 __Release date__: TBA
 
 - initialize testing using testthat (for model fitting module)
+- add travis, appveyor, and covr for continuous integration
 
 
 ## iNZightModules 2.4.4

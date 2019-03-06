@@ -22,6 +22,7 @@ Imports:
     gpairs,
     gWidgets2,
     gWidgets2RGtk2,
+    iNZight,
     iNZightPlots,
     iNZightRegression,
     iNZightTools,
@@ -34,8 +35,6 @@ Suggests:
     sf,
     testthat,
     covr
-Enhances:
-    iNZight
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3 | file LICENSE
 Description: A suite of add-on modules for the iNZight GUI, including model
