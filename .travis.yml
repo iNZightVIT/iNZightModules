@@ -37,6 +37,7 @@ addons:
       - xorg-dev
       - libxml2-dev
       - libnlopt-dev
+      - libudunits2-dev
       - r-cran-rodbc
       - r-cran-rgtk2
       - r-cran-cairodevice
