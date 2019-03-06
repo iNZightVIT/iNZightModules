@@ -31,7 +31,11 @@ Suggests:
     iNZightMaps,
     rgl,
     mgcv,
-    sf
+    sf,
+    testthat,
+    covr
+Enhances:
+    iNZight
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3 | file LICENSE
 Description: A suite of add-on modules for the iNZight GUI, including model

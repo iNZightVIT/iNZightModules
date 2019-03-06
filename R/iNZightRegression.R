@@ -1002,9 +1002,9 @@ iNZightRegMod <- setRefClass(
                 svyname <<- sprintf("%s",
                     GUI$getActiveDoc()$getModel()$dataDesignName
                 )
-                # GUI$rhistory$add(sprintf("%s <- %s", capture.output(getdesign()$call)),
-                #     keep = TRUE, tidy = TRUE)
             }
+
+            invisible(10)
         }, # end initialize()
         getdata = function() {
             des <- getdesign()
@@ -1545,16 +1545,16 @@ iNZightRegMod <- setRefClass(
             GUI$moduledata$regression <<- list(fits = fits)
 
             ## clean up tabs ...
-            if ("Model Plots" %in% names(GUI$plotWidget$plotNb)) {
+            while ("Model Plots" %in% names(GUI$plotWidget$plotNb)) {
                 showTab("plot")
                 GUI$plotWidget$closePlot()
                 GUI$plotWidget$addPlot()
             }
-            if ("Model Output" %in% names(GUI$plotWidget$plotNb)) {
+            while ("Model Output" %in% names(GUI$plotWidget$plotNb)) {
                 showTab("summary")
                 GUI$plotWidget$closePlot()
             }
-            if ("Instructions" %in% names(GUI$plotWidget$plotNb)) {
+            while ("Instructions" %in% names(GUI$plotWidget$plotNb)) {
                 showTab("instructions")
                 GUI$plotWidget$closePlot()
             }
@@ -1569,6 +1569,8 @@ iNZightRegMod <- setRefClass(
             GUI$menuBarWidget$defaultMenu()
             GUI$updatePlot()
             visible(GUI$gp1) <<- TRUE
+
+            invisible(TRUE)
         }
     )
 )

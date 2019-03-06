@@ -1,7 +1,7 @@
 ## iNZightModules 2.4.4.9000
 __Release date__: TBA
 
-
+- initialize testing using testthat (for model fitting module)
 
 
 ## iNZightModules 2.4.4

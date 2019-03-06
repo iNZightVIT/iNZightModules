@@ -1,4 +1,8 @@
 # iNZightModules: Add-on modules for iNZight
+
+[![Travis-CI Build Status](https://travis-ci.org/iNZightVIT/iNZightModules.svg?branch=master)](https://travis-ci.org/iNZightVIT/iNZightModules)
+[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/iNZightVIT/iNZightModules?branch=master&svg=true)](https://ci.appveyor.com/project/iNZightVIT/iNZightModules)
+[![Coverage status](https://codecov.io/gh/iNZightVIT/iNZightModules/branch/master/graph/badge.svg)](https://codecov.io/github/iNZightVIT/iNZightModules?branch=master)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
 This R package contains add-on modules for iNZight, each of which targets some particular application.
