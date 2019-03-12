@@ -126,10 +126,10 @@ iNZightRegMod <- setRefClass(
                             tooltip = "Exit iNZight completely",
                             handler = function(h, ...) GUI$close())
                 ),
-                "View" = 
+                "View" =
                     if (GUI$popOut) {
                         list(
-                            output = 
+                            output =
                                 gaction("Model output",
                                     icon = "symbol_diamond",
                                     tooltip = "Show model output",
@@ -1007,7 +1007,7 @@ iNZightRegMod <- setRefClass(
                         height = 400,
                         parent = GUI$win
                     )
-                    addHandlerDestroy(outputWin, 
+                    addHandlerDestroy(outputWin,
                         handler = function(h, ...) {
                             outputWin <<- NULL
                             # the old one will be destroyed,
@@ -1463,71 +1463,35 @@ iNZightRegMod <- setRefClass(
             )
 
             ## Getting around
-            insert(where,
-                "Getting Around ...\n",
-                font.attr = list(weight = "bold")
-            )
-            if (GUI$popOut) {
-                sapply(
-                    list(
-                        "You can lay out the windows however you like. There should be three plus this one:",
-                        " - The interface: where you chose variables and graphs",
-                        " - Model Output: text/numerical summaries of fitted models are shown in this window",
-                        "        (NOTE: it may be hiding underneath this instructions window)",
-                        " - Model Plots: plots for the chosen model are shown here",
-                        " - And this one: instructions - you can close this window at any time"
-                    ),
-                    insert,
-                    obj = where
-                )
-            } else {
-                sapply(
-                    list(
-                        "Use the tabs above to switch between:",
-                        " - Model Output: text/numerical summaries of fitted models are shown here",
-                        " - Model Plots: plots for the chosen model are shown here",
-                        " - Instructions: you can find this text. You may close this tab at any time by clicking the 'X'"
-                    ),
-                    insert,
-                    obj = where
-                )
-            }
             sapply(
-                list(
-                    "",
-                    "Response Options: here, you can choose a response variable, modeling framework, and other model options", "",
-                    "Explanatory Variables: this is where you construct your variable by choosing variables and applying transformations",
-                    " - On the LEFT side you'll find variables available to use in the model, divided into numeric and categorical",
-                    " - On the RIGHT side is Variables of Interest (i.e., variables in the model), as well as Confounding Variables (variables that are necessary for the model, but for which the coefficients aren't of interest)", "",
-                    "Manage Saved Models: after you've decided on a model, you can save it here so you can quickly come back to it later", "",
-                    "Model/Residual Plots: here you can browse the avaialable residual plots etc"
-                ),
+                list(readLines(
+                    system.file(
+                        file.path("inst", "instructions",
+                            sprintf("model_fitting_%s.txt",
+                                ifelse(GUI$popOut, "popout", "integrated")
+                            )
+                        ),
+                        package = "iNZightModules"
+                    )
+                )),
                 insert,
                 obj = where
             )
 
-            ## Instructions!
-            insert(where,
-                "\n\nTo get started ...\n",
-                font.attr = list(weight = "bold")
-            )
             sapply(
-                list(
-                    "1. Select a response variable from the drop down under Response Options > Variable", "",
-                    "2. Select explanatory variables by adding them from the boxes on the left", "",
-                    "  - Double-click variable in the numeric or categorical variables boxes to add them to Variables of Interest box",
-                    "  - Drag-and-drop variables from the Available Variables box to either Variables of Interest or Confounding Variables",
-                    "  - Use the up/down arrows above the Variables of Interest box to change the order of the selected variable", "",
-                    "3. Apply transformations or interactions to variables",
-                    "  - Right-click variables in the left-hand boxes and select a transformation to ADD that transformation to the model",
-                    "  - Click the properties icon above the Variables of Interest box to MODIFY the transformation for the selected variable", "",
-                    "4. Double-click variables in the Explanatory Variables box to remove them from the model", "",
-                    "5. Explore plots of the model by selecting them in the Residual Plots section",
-                    "",
-                    "Note: to add transformations or interactions to confounding variables, first drag the variable to Variables of Interset, apply the transformation, then drag the transformed variable back to confounding."
-                ),
+                list(readLines(
+                    system.file(file.path("inst", "instructions",
+                        "model_fitting.txt"),
+                        package = "iNZightModules")
+                )),
                 insert,
                 obj = where
+            )
+
+            # Now scroll to top
+            where$widget$scrollToIter(
+                where$buffer$getStartIter()$iter,
+                within.margin = 0
             )
         }, # addInstructions()
         watchData = function() {

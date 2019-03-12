@@ -24,6 +24,15 @@ test_that("Module opens (and closes)", {
     expect_equal(names(ui$plotWidget$plotNb), "plot")
 })
 
+mod <- iNZightRegMod$new(ui)
+test_that("Welcome text loads", {
+    expect_match(
+        svalue(ui$plotWidget$plotNb$children[[3]]),
+        "Welcome to the iNZight Model Fitting Module!"
+    )
+})
+mod$close()
+
 ## popout mode
 ui$preferences$popout <- TRUE
 ui$savePreferences()
@@ -43,3 +52,4 @@ test_that("Reopening output window in popout mode", {
 ui$preferences <- initialPrefs
 ui$savePreferences()
 ui$close()
+
