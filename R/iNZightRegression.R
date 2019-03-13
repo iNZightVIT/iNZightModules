@@ -987,6 +987,43 @@ iNZightRegMod <- setRefClass(
             plotTbl[ii, 3:6, expand = TRUE] <- compMatrix
 
 
+            ## -----------------------------------------------------------------
+            ## Model comparisons
+
+            compGp <- gexpandgroup("Model Comparison",
+                horizontal = FALSE,
+                container = mainGrp
+            )
+            visible(compGp) <- FALSE
+            compGp$set_borderwidth(10)
+            compTbl <- glayout(
+                homogeneous = TRUE,
+                container = compGp,
+                expand = TRUE
+            )
+            ii <- 1
+
+            # comparison criteria
+            compTypes <- gcombobox(
+                c("AIC", "BIC")
+                # handler = function(h, ...) {
+                #     model_comp <<- svalue(h$obj)
+                # }
+            )
+            compBtn <- gbutton("Compare",
+                handler = function(h, ...) {
+                    fts <- lapply(fits, function(x) x$fit)
+                    names(fts) <- NULL
+
+                }
+            )
+            compTbl[ii, 1:2, anchor = c(1, 0)] <- glabel("Criteria:")
+            compTbl[ii, 3:6, expand = TRUE] <- compTypes
+            ii <- ii + 1
+            compTbl[ii, 3:6, expand = TRUE] <- compBtn
+            ii <- ii + 1
+
+
             ## Now create new tab for SUMMARY output:
             smryOut <<- gtext()
             if (GUI$popOut) addInstructions(smryOut)
@@ -1315,9 +1352,6 @@ iNZightRegMod <- setRefClass(
                         dname <- sprintf("data%s",
                             ifelse(GUI$activeDoc == 1, "", GUI$activeDoc)
                         )
-                        print(mcall)
-                        print(dname)
-                        print(fname)
                         GUI$rhistory$add(
                             c(
                                 sprintf("%s <- %s",
