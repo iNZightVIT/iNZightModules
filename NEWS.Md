@@ -4,6 +4,7 @@ __Release date__: TBA
 - initialize testing using testthat (for model fitting module)
 - add travis, appveyor, and covr for continuous integration
 - add View to menubar to allow reopening of closed windows (e.g., model output)
+- add option to switch between logit and probit link function in binary regression
 
 
 ## iNZightModules 2.4.4

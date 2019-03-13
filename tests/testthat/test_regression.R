@@ -31,6 +31,20 @@ test_that("Welcome text loads", {
         "Welcome to the iNZight Model Fitting Module!"
     )
 })
+
+ui <- iNZGUI$new()
+ui$initializeGui(census.at.school.500)
+mod <- iNZightRegMod$new(ui)
+
+test_that("Valid model options are displayed", {
+    # continuous
+    svalue(mod$responseBox) <- "height"
+    expect_equal(mod$responseType, 1)
+    # binary
+    svalue(mod$responseBox) <- "gender"
+    expect_equal(mod$responseType, 2)
+    expect_equal(svalue(mod$responseFamilyBox), "logit")
+})
 mod$close()
 
 ## popout mode
