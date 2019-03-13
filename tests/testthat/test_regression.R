@@ -43,7 +43,7 @@ test_that("Valid model options are displayed", {
     # binary
     svalue(mod$responseBox) <- "gender"
     expect_equal(mod$responseType, 2)
-    expect_equal(svalue(mod$responseFamilyBox), "logit")
+    expect_equal(svalue(mod$responseFamilyBox), "logistic")
 })
 mod$close()
 
