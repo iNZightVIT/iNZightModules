@@ -5,6 +5,7 @@ __Release date__: TBA
 - add travis, appveyor, and covr for continuous integration
 - add View to menubar to allow reopening of closed windows (e.g., model output)
 - add option to switch between logit and probit link function in binary regression
+- add model comparison section (limited to AIC and BIC, for now)
 
 
 ## iNZightModules 2.4.4
