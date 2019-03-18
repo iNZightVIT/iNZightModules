@@ -46,7 +46,7 @@ test_that("Valid model options are displayed", {
     expect_equal(svalue(mod$responseFamilyBox), "Logistic")
 })
 
-# # require(iNZight)
+# require(iNZight)
 # ui <- iNZGUI$new()
 # ui$initializeGui(census.at.school.500)
 # mod <- iNZightRegMod$new(ui)
@@ -58,16 +58,11 @@ test_that("Models can be saved, restored, and compared", {
     expect_equal(svalue(mod$modelList), "Model 1")
     mod$variables <- c("gender", "armspan")
     mod$setExplVars()
+    svalue(mod$modelList, TRUE) <- 1
     mod$updateModel(save = TRUE)
     expect_equal(svalue(mod$modelList), "Model 2")
-    svalue(mod$modelList, TRUE) <- 1
 })
 
-M1 <- lm(height ~ gender, data = census.at.school.500,
-    na.action = na.exclude)
-M2 <- lm(height ~ gender + armspan, data = census.at.school.500,
-    na.action = na.exclude)
-AIC(M1, M2)
 
 mod$close()
 

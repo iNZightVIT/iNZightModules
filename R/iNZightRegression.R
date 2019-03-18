@@ -1013,8 +1013,28 @@ iNZightRegMod <- setRefClass(
             compBtn <- gbutton("Compare",
                 handler = function(h, ...) {
                     fts <- lapply(fits, function(x) x$fit)
-                    names(fts) <- NULL
+                    # construct expression using names of `fts`
+                    expr <- sprintf("with(fts, %s(%s))",
+                        svalue(compTypes),
+                        paste0(
+                            "`",
+                            paste(names(fts), collapse = "`, `"),
+                            "`"
+                        )
+                    )
 
+                    x <- tryCatch(
+                        suppressWarnings(
+                            eval(parse(text = expr))
+                        ),
+                        error = "Unable to compare these models"
+                    )
+                    rownames(x) <- names(fts)
+                    addOutput(capture.output(print(x)))
+                    if (!all(diff(sapply(fts, function(f) length(f$residuals))) == 0))
+                        addOutput("", "Note: models are not all fitted to the same number of observations")
+                    rule()
+                    summaryOutput <<- svalue(smryOut)
                 }
             )
             compTbl[ii, 1:2, anchor = c(1, 0)] <- glabel("Criteria:")
