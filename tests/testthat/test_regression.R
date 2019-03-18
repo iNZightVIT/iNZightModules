@@ -55,6 +55,7 @@ test_that("Models can be saved, restored, and compared", {
     mod$variables <- c("gender")
     mod$setExplVars()
     mod$updateModel(save = TRUE)
+    print(svalue(mod$modelList))
     expect_equal(svalue(mod$modelList), "Model 1")
     mod$variables <- c("gender", "armspan")
     mod$setExplVars()

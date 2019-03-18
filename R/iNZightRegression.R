@@ -1558,6 +1558,7 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             }
+            invisible(NULL)
         }, # updatePlot()
         addInstructions = function(where) {
             insert(where,
