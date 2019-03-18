@@ -1570,7 +1570,7 @@ iNZightRegMod <- setRefClass(
             sapply(
                 list(readLines(
                     system.file(
-                        file.path("inst", "instructions",
+                        file.path("instructions",
                             sprintf("model_fitting_%s.txt",
                                 ifelse(GUI$popOut, "popout", "integrated")
                             )
@@ -1584,7 +1584,7 @@ iNZightRegMod <- setRefClass(
 
             sapply(
                 list(readLines(
-                    system.file(file.path("inst", "instructions",
+                    system.file(file.path("instructions",
                         "model_fitting.txt"),
                         package = "iNZightModules")
                 )),
