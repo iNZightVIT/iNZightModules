@@ -1,5 +1,5 @@
-## iNZightModules 2.4.4.9000
-__Release date__: TBA
+## iNZightModules 2.4.5
+__Release date__: 30 April 2019
 
 - initialize testing using testthat (for model fitting module)
 - add travis, appveyor, and covr for continuous integration
