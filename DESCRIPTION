@@ -1,8 +1,7 @@
 Package: iNZightModules
 Type: Package
 Title: iNZight GUI Modules
-Version: 2.4.4
-Date: 2019-02-01
+Version: 2.4.5
 Authors@R: c(person("Tom", "Elliott", role = c("aut", "cre"),
                     email = "inzight_support@stat.auckland.ac.nz"),
              person("Daniel", "Barnett", role = "aut"),
@@ -22,6 +21,7 @@ Imports:
     gpairs,
     gWidgets2,
     gWidgets2RGtk2,
+    iNZight,
     iNZightPlots,
     iNZightRegression,
     iNZightTools,
@@ -31,7 +31,9 @@ Suggests:
     iNZightMaps,
     rgl,
     mgcv,
-    sf
+    sf,
+    testthat,
+    covr
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3 | file LICENSE
 Description: A suite of add-on modules for the iNZight GUI, including model

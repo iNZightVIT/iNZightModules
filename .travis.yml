@@ -2,30 +2,65 @@
 
 language: R
 sudo: true
-cache: packages
+cache: 
+  - packages
+  - directories:
+    - $HOME/Library/Caches/Homebrew
 latex: false
+pandoc: false
 
-r:
-  - release
-
-before_script:
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 10 # give xvfb some time to start
+matrix:
+  include:
+    - os: linux
+      r: oldrel
+    - os: linux
+      r: release
+    - os: linux
+      r: devel
+    - os: osx
+      r: 3.3
+      brew_packages: libgit2
+  allow_failures:
+    - os: osx
 
 repos:
   docker: https://r.docker.stat.auckland.ac.nz
 
-apt_packages:
-  - libgtk2.0-dev
-  - xorg-dev
-  - libxml2-dev
-  - libnlopt-dev
-  - r-cran-rodbc
-  - r-cran-rgtk2
-  - r-cran-cairodevice
-
 env:
   global:
-  - _R_CHECK_FORCE_SUGGESTS_=false
-  
+    - _R_CHECK_FORCE_SUGGESTS_=false
+    - R_REMOTES_NO_ERRORS_FROM_WARNINGS=true
+    - _R_CHECK_SYSTEM_CLOCK_=FALSE
+
+addons:
+  apt:
+    update: true
+    packages:
+      - libgtk2.0-dev
+      - xorg-dev
+      - libxml2-dev
+      - libnlopt-dev
+      - libudunits2-dev
+      - r-cran-rodbc
+      - r-cran-rgtk2
+      - r-cran-cairodevice
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then 
+      sudo chown -R $(whoami) /usr/local/share;
+      brew uninstall --force cairo --ignore-dependencies;
+      brew cask install xquartz;
+      brew install --with-x11 cairo;
+      brew install --with-gdktarget=x11 --enable-x11-backend gtk+;
+      echo "export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib/pkgconfig/gtk+-2.0.pc:/opt/X11/lib/pkgconfig" >> ~/.bash_profile;
+    else
+      export DISPLAY=:99.0;
+      sh -e /etc/init.d/xvfb start;
+      sleep 10; 
+    fi
+
+after_success:
+  - Rscript -e 'covr::codecov()'
+
+before_cache:
+  - brew cleanup

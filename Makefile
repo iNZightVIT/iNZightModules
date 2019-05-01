@@ -4,13 +4,16 @@ RCMD := $(R) --vanilla --slave
 default: document
 
 document:
-	@$(RCMD) -e "devtools::document()"
+	@$(R) -e "devtools::document()"
 
 check:
-	@$(RCMD) -e "devtools::check()"
+	@$(R) -e "devtools::check()"
+
+test:
+	@$(R) -e "devtools::test()"
 
 revcheck:
-	@$(RCMD) -e "devtools::use_revdep()"
+	@$(R) -e "devtools::use_revdep()"
 	@$(RCMD) -f "revdep/check.R"
 
 crancheck:
