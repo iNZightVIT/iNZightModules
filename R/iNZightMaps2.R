@@ -291,7 +291,16 @@ iNZightMap2Mod <- setRefClass(
             stored.shapefiles <- list.files(shapefileDir,
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
-
+            
+            metadata <- tryCatch(iNZightMaps::read.mapmetadata(shapefileDir),
+                                 error = function(e) {
+                                   gmessage("Could not download metadata file")
+                                   metadata <- c(NA, NA, NA)
+                                   metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
+                                   colnames(metadata) <- c("filepath", "tidy_filename", "description")
+                                   metadata
+                                 })
+            
             if (length(stored.shapefiles) == 0) {
                 shapefileDL <- gconfirm("Download shapefiles?")
 
@@ -306,15 +315,42 @@ iNZightMap2Mod <- setRefClass(
 
                 }
             }
+            
+            retrieve.filelist <- function(dirURL) {
+              curr.links <- XML::getHTMLLinks(rawToChar(curl::curl_fetch_memory(dirURL)$content))
+              curr.dirs <- curr.links[grep("/$", curr.links)]
+              curr.files <- curr.links[grep("\\.(rds|shp)", curr.links)]
+              
+              found.files <- curr.files
+              
+              for (dir in curr.dirs[-1]) {
+                found.files <- c(found.files, retrieve.filelist(paste0(dirURL, dir)))
+              }
+              
+              found.files
+            }
+            
+            tryCatch({
+              ext.files <- retrieve.filelist("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/")
+              int.files <- gsub(".*/(.*\\.rds)$", "\\1", stored.shapefiles)
+              
+              if (length(setdiff(ext.files, int.files)) > 0) {
+                shapefileDL <- gconfirm("New shapefiles found online. Would you like to download these?")
+                
+                if (shapefileDL) {
+                  tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
+                                                            shapefileDir),
+                           error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
+                  )
+                  stored.shapefiles <- list.files(shapefileDir,
+                                                  recursive = TRUE,
+                                                  pattern = ".(shp|rds)$")
+                  
+                }
+              }
+            }, 
+            error = function(e) print("Shapefile retrieval failed"))
 
-            metadata <- tryCatch(iNZightMaps::read.mapmetadata(shapefileDir),
-                                 error = function(e) {
-                                     gmessage("Could not download metadata file")
-                                     metadata <- c(NA, NA, NA)
-                                     metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
-                                     colnames(metadata) <- c("filepath", "tidy_filename", "description")
-                                     metadata
-                                 })
 
             mapdir.contents <- merge(stored.shapefiles, metadata,
                                      by.x = 1, by.y = 1, all.x = TRUE)
