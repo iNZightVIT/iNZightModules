@@ -292,30 +292,17 @@ iNZightMap2Mod <- setRefClass(
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
             
-            metadata <- tryCatch(iNZightMaps::read.mapmetadata(shapefileDir),
-                                 error = function(e) {
-                                   gmessage("Could not download metadata file")
-                                   metadata <- c(NA, NA, NA)
-                                   metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
-                                   colnames(metadata) <- c("filepath", "tidy_filename", "description")
-                                   metadata
-                                 })
-            
-            if (length(stored.shapefiles) == 0) {
-                shapefileDL <- gconfirm("Download shapefiles?")
+            metadata <- tryCatch(
+              iNZightMaps::read.mapmetadata(shapefileDir),
+              error = function(e) {
+                gmessage("Could not download metadata file")
+                metadata <- c(NA, NA, NA)
+                metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
+                colnames(metadata) <- c("filepath", "tidy_filename", "description")
+                metadata
+              }
+            )
 
-                if (shapefileDL) {
-                    tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
-                                                 shapefileDir),
-                             error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
-                             )
-                    stored.shapefiles <- list.files(shapefileDir,
-                                                    recursive = TRUE,
-                                                    pattern = ".(shp|rds)$")
-
-                }
-            }
-            
             retrieve.filelist <- function(dirURL) {
               curr.links <- XML::getHTMLLinks(rawToChar(curl::curl_fetch_memory(dirURL)$content))
               curr.dirs <- curr.links[grep("/$", curr.links)]
@@ -350,7 +337,6 @@ iNZightMap2Mod <- setRefClass(
               }
             }, 
             error = function(e) print("Shapefile retrieval failed"))
-
 
             mapdir.contents <- merge(stored.shapefiles, metadata,
                                      by.x = 1, by.y = 1, all.x = TRUE)
