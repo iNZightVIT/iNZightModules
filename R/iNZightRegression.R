@@ -20,8 +20,11 @@ iNZightRegMod <- setRefClass(
         smryOut     = "ANY",
         regPlots    = "ANY",
         responseBox = "ANY",
+        responseTypeBox = "ANY",
+        responseFamilyBox = "ANY",
         response = "character",
         responseType = "numeric",
+        responseFamily = "numeric",
         responseTransform = "character",
         contVarBox  = "ANY",
         catVarBox = "ANY",
@@ -51,7 +54,8 @@ iNZightRegMod <- setRefClass(
                 GUI = GUI,
                 working = TRUE,
                 plottype = 1,
-                codehistory = NULL
+                codehistory = NULL,
+                svyname = ""
             )
 
             isSurveyObject <<- !is.null(getdesign())
@@ -188,7 +192,7 @@ iNZightRegMod <- setRefClass(
             responseTbl <- glayout(container = responseGp)
             ii <-  1
 
-            lbl <- glabel("Variable")
+            lbl <- glabel("Variable: ")
             yVars <- names(getdata()[, sapply(getdata(),
                 function(x) is.numeric(x) || length(levels(x)) == 2)])
             responseBox <<- gcombobox(yVars,
@@ -199,9 +203,9 @@ iNZightRegMod <- setRefClass(
                     ## detect framework
                     y <- getdata()[[response]]
                     if (is.numeric(y)) {
-                        svalue(responseTypeBox, index = TRUE) <- 1
+                        svalue(responseTypeBox, index = TRUE) <<- 1
                     } else if (length(levels(y)) == 2) {
-                        svalue(responseTypeBox, index = TRUE) <- 2
+                        svalue(responseTypeBox, index = TRUE) <<- 2
                     }
                     ## set explanatory variables
                     setAvailVars()
@@ -213,26 +217,57 @@ iNZightRegMod <- setRefClass(
             responseTbl[ii, 2:3, expand = TRUE] <- responseBox
             ii <- ii + 1
 
-            lbl <- glabel("Framework")
-            responseTypeBox <- gcombobox(
+            flbl <- glabel("Framework: ")
+            responseTypeBox <<- gcombobox(
                 c(
                     "Least Squares",
-                    "Logistic Regression (binary)",
+                    "Binary Regression (logistic, ...)",
                     "Poisson Regression (counts)"
                 ),
                 selected = 0,
                 handler = function(h, ...) {
+                    working <<- TRUE
                     responseType <<- svalue(h$obj, index = TRUE)
+                    responseFamilyBox$set_items(
+                        switch(responseType,
+                            c("Gaussian"),
+                            c("Logistic", "Probit"),
+                            c("Log")
+                        )
+                    )
+                    if (responseType == 2) {
+                        visible(responseFamilyBox) <<- TRUE
+                        svalue(flbl) <- "Framework:\n\nLink function: "
+                    } else {
+                        visible(responseFamilyBox) <<- FALSE
+                        svalue(flbl) <- "Framework: "
+                    }
+                    svalue(responseFamilyBox, index = TRUE) <<- 1
+                    working <<- FALSE
                     updateModel()
                 }
             )
-            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            responseTbl[ii, 2:3, expand = TRUE] <- responseTypeBox
+            responseFamilyBox <<- gcombobox(
+                c("Gaussian"),
+                selected = 1,
+                handler = function(h, ...) {
+                    responseFamily <<- svalue(h$obj, index = TRUE)
+                    updateModel()
+                }
+            )
+            visible(responseFamilyBox) <<- FALSE
+
+            frameworkGp <- gvbox()
+            add(frameworkGp, responseTypeBox)
+            add(frameworkGp, responseFamilyBox)
+
+            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- flbl
+            responseTbl[ii, 2:3, expand = TRUE] <- frameworkGp
             ii <- ii + 1
 
 
             ## Transform response (Y)
-            lbl <- glabel("Transformation")
+            lbl <- glabel("Transformation: ")
             responseTransformBox <- gcombobox(
                 c("", "log", "exp", "square root", "inverse"),
                 editable = TRUE,
@@ -817,8 +852,10 @@ iNZightRegMod <- setRefClass(
                     obj <- fits[[svalue(h$obj, index = TRUE) - 1]]
                     working <<- TRUE
                     svalue(responseBox) <<- obj$response
-                    svalue(responseTypeBox, index = TRUE) <-
+                    svalue(responseTypeBox, index = TRUE) <<-
                         obj$responseType
+                    svalue(responseFamilyBox, index = TRUE) <<-
+                        obj$responseFamily
                     svalue(responseTransformBox, index = FALSE) <-
                         obj$responseTransform
                     variables <<- obj$variables
@@ -948,6 +985,63 @@ iNZightRegMod <- setRefClass(
             )
             visible(compMatrix) <<- FALSE
             plotTbl[ii, 3:6, expand = TRUE] <- compMatrix
+
+
+            ## -----------------------------------------------------------------
+            ## Model comparisons
+
+            compGp <- gexpandgroup("Model Comparison",
+                horizontal = FALSE,
+                container = mainGrp
+            )
+            visible(compGp) <- FALSE
+            compGp$set_borderwidth(10)
+            compTbl <- glayout(
+                homogeneous = TRUE,
+                container = compGp,
+                expand = TRUE
+            )
+            ii <- 1
+
+            # comparison criteria
+            compTypes <- gcombobox(
+                c("AIC", "BIC")
+                # handler = function(h, ...) {
+                #     model_comp <<- svalue(h$obj)
+                # }
+            )
+            compBtn <- gbutton("Compare",
+                handler = function(h, ...) {
+                    fts <- lapply(fits, function(x) x$fit)
+                    # construct expression using names of `fts`
+                    expr <- sprintf("with(fts, %s(%s))",
+                        svalue(compTypes),
+                        paste0(
+                            "`",
+                            paste(names(fts), collapse = "`, `"),
+                            "`"
+                        )
+                    )
+
+                    x <- tryCatch(
+                        suppressWarnings(
+                            eval(parse(text = expr))
+                        ),
+                        error = "Unable to compare these models"
+                    )
+                    rownames(x) <- names(fts)
+                    addOutput(capture.output(print(x)))
+                    if (!all(diff(sapply(fts, function(f) length(f$residuals))) == 0))
+                        addOutput("", "Note: models are not all fitted to the same number of observations")
+                    rule()
+                    summaryOutput <<- svalue(smryOut)
+                }
+            )
+            compTbl[ii, 1:2, anchor = c(1, 0)] <- glabel("Criteria:")
+            compTbl[ii, 3:6, expand = TRUE] <- compTypes
+            ii <- ii + 1
+            compTbl[ii, 3:6, expand = TRUE] <- compBtn
+            ii <- ii + 1
 
 
             ## Now create new tab for SUMMARY output:
@@ -1193,6 +1287,14 @@ iNZightRegMod <- setRefClass(
                         "binomial",
                         "poisson"
                     ),
+                    link = switch(responseType,
+                        NULL,
+                        switch(responseFamily,
+                            "logit",
+                            "probit"
+                        ),
+                        NULL
+                    ),
                     design = ifelse(isSurveyObject, "survey", "simple")
                 )
                 fit <<- try(eval(parse(text = mcall)), TRUE)
@@ -1238,6 +1340,7 @@ iNZightRegMod <- setRefClass(
                         fit = fit,
                         response = response,
                         responseType = responseType,
+                        responseFamily = responseFamily,
                         responseTransform = responseTransform,
                         variables = variables,
                         confounding = confounding
@@ -1455,6 +1558,7 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             }
+            invisible(NULL)
         }, # updatePlot()
         addInstructions = function(where) {
             insert(where,
@@ -1466,7 +1570,7 @@ iNZightRegMod <- setRefClass(
             sapply(
                 list(readLines(
                     system.file(
-                        file.path("inst", "instructions",
+                        file.path("instructions",
                             sprintf("model_fitting_%s.txt",
                                 ifelse(GUI$popOut, "popout", "integrated")
                             )
@@ -1480,7 +1584,7 @@ iNZightRegMod <- setRefClass(
 
             sapply(
                 list(readLines(
-                    system.file(file.path("inst", "instructions",
+                    system.file(file.path("instructions",
                         "model_fitting.txt"),
                         package = "iNZightModules")
                 )),
