@@ -446,11 +446,7 @@ iNZightTSMod <- setRefClass(
             homeButton <- gbutton("Home", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
                                   handler = function(h, ...) {
-                                      ## delete the module window
-                                      delete(GUI$leftMain, GUI$leftMain$children[[2]])
-                                      ## display the default view (data, variable, etc.)
-                                      GUI$plotToolbar$restore()
-                                      visible(GUI$gp1) <<- TRUE
+                                      close()
                                   })
 
             ## IF time series variable is chosen, plot first variable.
@@ -534,6 +530,15 @@ iNZightTSMod <- setRefClass(
 
             enabled(smthSlider) <<- can.smooth
 
+        },
+        close = function() {
+            ## delete the module window
+            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            ## display the default view (data, variable, etc.)
+            GUI$plotToolbar$restore()
+            visible(GUI$gp1) <<- TRUE
+            GUI$updatePlot()
+            TRUE
         }
     )
 )
