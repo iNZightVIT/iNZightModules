@@ -1,7 +1,15 @@
 context("Time Series module")
 
+
 require(iNZight)
+
+# library(devtools)
+# load_all()
+# load_all('../iNZight')
+# test(filter='regression')
+
 data(visitorsQ, package = 'iNZightTS')
+
 
 ui <- iNZGUI$new()
 ui$initializeGui(visitorsQ)
