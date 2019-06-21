@@ -10,7 +10,7 @@ require(iNZight)
 
 data(visitorsQ, package = 'iNZightTS')
 
-
+try(ui$close(), T)
 ui <- iNZGUI$new()
 ui$initializeGui(visitorsQ)
 on.exit(try(ui$close(), silent = TRUE))
@@ -24,5 +24,8 @@ test_that("Module opens and closes nicely", {
 
 test_that("Axis limits sliders show the range of the data", {
     mod <- iNZightTSMod$new(ui)
-    
+    xr <- range(time(mod$tsObj$tsObj))
+    # expect_equal(svalue(xlimLower), xr[1])
+    # expect_equal(svalue(xlimUpper), xr[2])
 })
+

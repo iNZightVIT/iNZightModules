@@ -63,7 +63,7 @@ iNZightTSMod <- setRefClass(
                         container = mainGrp)
             g2 = gframe("Model Settings", pos = 0.5, horizontal = FALSE,
                         container = mainGrp)
-            addSpring(mainGrp)
+            # addSpring(mainGrp)
 
             midGrp <- ggroup(container = mainGrp, fill = TRUE)
             g3 = gframe("Series Variables", pos = 0.5, horizontal = FALSE,
@@ -71,8 +71,16 @@ iNZightTSMod <- setRefClass(
             g5 = gframe("Plot Type Options", pos = 0.5, horizontal = FALSE,
                         container = midGrp, fill = TRUE, expand = TRUE)
 
-            g4 = gframe("Customize Labels", pos = 0.5, horizontal = FALSE,
-                        container = mainGrp)
+            g4 = gexpandgroup("Customize Labels", 
+                # pos = 0.5, 
+                horizontal = FALSE,
+                container = mainGrp
+            )
+
+            g6 = gexpandgroup("Adjust limits",
+                horizontal = FALSE, 
+                container = mainGrp
+            )
 
 
             g1$set_borderwidth(8)
@@ -81,6 +89,7 @@ iNZightTSMod <- setRefClass(
             g4$set_borderwidth(8)
 
             g5$set_borderwidth(8)
+            g6$set_borderwidth(8)
 
             ## bold-faced title for the frames
             frames = getToolkitWidget(mainGrp)$getChildren()
@@ -92,6 +101,10 @@ iNZightTSMod <- setRefClass(
             )
             midGrp$set_rgtk2_font(
                 getToolkitWidget(midGrp)$getChildren()[[2]]$getChildren()[[2]], 
+                frameFont
+            )
+            mainGrp$set_rgtk2_font(
+                frames[[4]]$getChildren()[[2]], 
                 frameFont
             )
             mainGrp$set_rgtk2_font(
@@ -544,6 +557,30 @@ iNZightTSMod <- setRefClass(
             g4_layout[2, 4] <- clearYlab
 
 
+            ############
+            ###  g6  ###
+            ############
+            g6_layout = glayout(container = g6, homogeneous = TRUE)
+            ii <- 1
+
+            ## Control axis limits
+            g6_layout[ii, 1, anchor = c(-1, 0), expand = TRUE] <-
+                glabel("Display data from ... ")
+            g6_layout[ii, 2, anchor = c(-1, 0), expand = TRUE] <-
+                glabel("until ... ")
+            ii <- ii + 1
+
+
+            xlimLower <<- gslider(handler = function(h, ...) updateLimits())
+            xlimUpper <<- gslider(handler = function(h, ...) updateLimits())
+            # visible(xlimLower) <<- FALSE
+            # visible(xlimUpper) <<- FALSE
+            g6_layout[ii, 1, expand = TRUE] <- xlimLower
+            g6_layout[ii, 2, expand = TRUE] <- xlimUpper
+            ii <- ii + 1
+
+            updateLimits()
+
             btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", 
@@ -595,6 +632,39 @@ iNZightTSMod <- setRefClass(
             data[, num_index]
         },
 
+        ## update limit sliders 
+        updateLimits = function(react = TRUE) {
+            if (is.null(tsObj)) {
+                visible(xlimLower) <<- visible(xlimUpper) <<- FALSE
+                return()
+            }
+
+
+            # store old values
+            xr <- range(time(tsObj$tsObj))
+            xby <- 1 / tsObj$freq
+            xx <- seq(xr[1], xr[2], by = xby)
+            xd <- as.character(tsObj$data$Date)
+
+            xlim <- xr
+            if (svalue(xlimLower) > 0) 
+                xlim[1] <- xx[xd == svalue(xlimLower)]
+            if (svalue(xlimUpper) > 0) 
+                xlim[2] <- xx[xd == svalue(xlimUpper)]
+
+            print(xlim)
+            
+            xlimLower$set_items(xd[xx < xlim[2] - 1])
+            xlimLower$set_value(xd[xx == xlim[1]])
+
+            xlimUpper$set_items(xd[xx > xlim[1] + 1])
+            xlimUpper$set_value(xd[xx == xlim[2]])
+
+            visible(xlimLower) <<- visible(xlimUpper) <<- TRUE
+            # don't want to react when being called by updatePlot!
+            if (react) updatePlot()
+        },
+
         ## draw the plot, depending on the settings
         updatePlot = function(animate = FALSE) {
             ## plot the TS object setup by the GUI
@@ -607,6 +677,8 @@ iNZightTSMod <- setRefClass(
 
             can.smooth <- TRUE
             smooth.t <- smoothness
+
+            updateLimits(react = FALSE)
 
             if (is.null(tsObj)) {
                 cat("Nothing to plot ...\n")
