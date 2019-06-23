@@ -571,10 +571,28 @@ iNZightTSMod <- setRefClass(
             ii <- ii + 1
 
 
-            xlimLower <<- gslider(handler = function(h, ...) updateLimits())
-            xlimUpper <<- gslider(handler = function(h, ...) updateLimits())
-            # visible(xlimLower) <<- FALSE
-            # visible(xlimUpper) <<- FALSE
+            xlimLower <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+            xlimUpper <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
             g6_layout[ii, 1, expand = TRUE] <- xlimLower
             g6_layout[ii, 2, expand = TRUE] <- xlimUpper
             ii <- ii + 1
@@ -639,7 +657,6 @@ iNZightTSMod <- setRefClass(
                 return()
             }
 
-
             # store old values
             xr <- range(time(tsObj$tsObj))
             xby <- 1 / tsObj$freq
@@ -652,13 +669,27 @@ iNZightTSMod <- setRefClass(
             if (svalue(xlimUpper) > 0) 
                 xlim[2] <- xx[xd == svalue(xlimUpper)]
 
-            print(xlim)
-            
-            xlimLower$set_items(xd[xx < xlim[2] - 1])
-            xlimLower$set_value(xd[xx == xlim[1]])
+            ## if upper limit gets too low, disable lower slider
+            if (xlim[2] <= min(xx) + 1) {
+                enabled(xlimLower) <<- FALSE
+            } else {
+                enabled(xlimLower) <<- TRUE
+                blockHandlers(xlimLower)
+                xlimLower$set_items(xd[xx <= xlim[2] - 1])
+                xlimLower$set_value(xd[xx == xlim[1]])
+                unblockHandlers(xlimLower)
+            }
 
-            xlimUpper$set_items(xd[xx > xlim[1] + 1])
-            xlimUpper$set_value(xd[xx == xlim[2]])
+            ## if lower limit gets too high, disable upper slider
+            if (xlim[1] >= max(xx) - 1) {
+                enabled(xlimUpper) <<- FALSE
+            } else {
+                enabled(xlimUpper) <<- TRUE
+                blockHandlers(xlimUpper)
+                xlimUpper$set_items(xd[xx >= xlim[1] + 1])
+                xlimUpper$set_value(xd[xx == xlim[2]])
+                unblockHandlers(xlimUpper)
+            }
 
             visible(xlimLower) <<- visible(xlimUpper) <<- TRUE
             # don't want to react when being called by updatePlot!
@@ -679,6 +710,18 @@ iNZightTSMod <- setRefClass(
             smooth.t <- smoothness
 
             updateLimits(react = FALSE)
+
+            xr <- range(time(tsObj$tsObj))
+            xby <- 1 / tsObj$freq
+            xx <- seq(xr[1], xr[2], by = xby)
+            xd <- as.character(tsObj$data$Date)
+
+            xlim <- xr
+            if (svalue(xlimLower) > 0) 
+                xlim[1] <- xx[xd == svalue(xlimLower)]
+            if (svalue(xlimUpper) > 0) 
+                xlim[2] <- xx[xd == svalue(xlimUpper)]
+
 
             if (is.null(tsObj)) {
                 cat("Nothing to plot ...\n")
@@ -709,7 +752,8 @@ iNZightTSMod <- setRefClass(
                             ylab = svalue(yLab), 
                             xlab = svalue(xLab), 
                             animate = animate, 
-                            t = smooth.t
+                            t = smooth.t,
+                            xlim = xlim
                         )
                     }, 
                     {
