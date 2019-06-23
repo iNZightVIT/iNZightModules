@@ -732,14 +732,16 @@ iNZightTSMod <- setRefClass(
                         multiplicative = (patternType == 1),
                         xlab = svalue(xLab), 
                         ylab = svalue(yLab), 
-                        t = smooth.t
+                        t = smooth.t,
+                        xlim = xlim
                     ),
                     plot(tsObj, 
                         multiplicative = (patternType == 1),
                         xlab = svalue(xLab), 
                         ylab = svalue(yLab), 
                         t = smooth.t, 
-                        compare=FALSE
+                        compare=FALSE,
+                        xlim = xlim
                     )
                 )
             } else { ## single var
@@ -762,7 +764,8 @@ iNZightTSMod <- setRefClass(
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab), 
                             ylab = svalue(yLab),
-                            t = smooth.t
+                            t = smooth.t,
+                            xlim = xlim
                         )
                         visible(recomposeBtn) <<- TRUE
                         visible(recomposeResBtn) <<- TRUE
@@ -781,7 +784,8 @@ iNZightTSMod <- setRefClass(
                         forecasts <<- iNZightTS::forecastplot(tsObj,
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab), 
-                            ylab = svalue(yLab)
+                            ylab = svalue(yLab),
+                            xlim = xlim
                         )
                         visible(forecastBtn) <<- TRUE
                         can.smooth <- FALSE

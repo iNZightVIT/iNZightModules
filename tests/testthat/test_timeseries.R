@@ -1,12 +1,12 @@
 context("Time Series module")
 
-
 require(iNZight)
 
 # library(devtools)
 # load_all()
 # load_all('../iNZight')
 # test(filter='regression')
+# devtools::load_all("../iNZightTS"); devtools::load_all("../iNZight")
 
 data(visitorsQ, package = 'iNZightTS')
 
