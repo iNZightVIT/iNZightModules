@@ -99,3 +99,11 @@ test_that("Upper modelling limit is truncated to upper modelling limit", {
     Sys.sleep(0.3)
 })
 
+ui$close()
+
+
+test_that("Other datasets work too", {
+    data(visitorsM2, package = 'iNZightTS')
+    ui$initializeGui(visitorsM2)
+    mod <- iNZightTSMod$new(ui)
+})

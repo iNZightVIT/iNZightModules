@@ -712,7 +712,7 @@ iNZightTSMod <- setRefClass(
             xr <- range(time(tsObj$tsObj))
             xby <- 1 / tsObj$freq
             xx <- seq(xr[1], xr[2], by = xby)
-            xd <- as.character(tsObj$data$Date)
+            xd <- as.character(tsObj$data[[timeVar]])
 
             xlim <- xr
             if (svalue(xlimLower) > 0) 
@@ -763,7 +763,7 @@ iNZightTSMod <- setRefClass(
             xr <- range(time(tsObj$tsObj))
             xby <- 1 / tsObj$freq
             xx <- seq(xr[1], xr[2], by = xby)
-            xd <- as.character(tsObj$data$Date)
+            xd <- as.character(tsObj$data[[timeVar]])
 
             modlim <- xr
             if (svalue(modLimLower) > 0) 
@@ -816,7 +816,7 @@ iNZightTSMod <- setRefClass(
             xr <- range(time(tsObj$tsObj))
             xby <- 1 / tsObj$freq
             xx <- seq(xr[1], xr[2], by = xby)
-            xd <- as.character(tsObj$data$Date)
+            xd <- as.character(tsObj$data[[timeVar]])
 
             xlim <- xr
             if (svalue(xlimLower) > 0) 
