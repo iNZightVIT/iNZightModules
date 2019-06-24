@@ -35,7 +35,7 @@ test_that("Lower limit is truncated to upper limit", {
     Sys.sleep(0.3)
     expect_equal(
         tail(mod$xlimLower$get_items(), 1),
-        "2004Q4"
+        "2003Q4"
     )
     svalue(mod$xlimUpper, index = TRUE) <- 1
     Sys.sleep(0.3)
@@ -49,7 +49,7 @@ test_that("Upper limit is truncated to upper limit", {
     Sys.sleep(0.3)
     expect_equal(
         mod$xlimUpper$get_items()[1],
-        "2006Q1"
+        "2007Q1"
     )
     svalue(mod$xlimLower, index = TRUE) <- length(mod$xlimLower$get_items())
     Sys.sleep(0.3)
@@ -61,5 +61,41 @@ test_that("Upper limit is truncated to upper limit", {
 
 test_that("Model limit is same as view by default", {
     expect_true(svalue(mod$modLimEqual))
-
+    expect_false(visible(mod$modLimLower))
+    expect_false(visible(mod$modLimUpper))
 })
+
+test_that("Model limit can be specified manually", {
+    svalue(mod$modLimEqual) <- FALSE
+    expect_true(visible(mod$modLimLower))
+    expect_true(visible(mod$modLimUpper))
+})
+
+test_that("Lower modelling limit is truncated to upper modelling limit", {
+    svalue(mod$modLimUpper) <- "2005Q4"
+    Sys.sleep(0.3)
+    expect_equal(
+        tail(mod$modLimLower$get_items(), 1),
+        "2003Q4"
+    )
+    svalue(mod$modLimUpper, index = TRUE) <- 1
+    Sys.sleep(0.3)
+    expect_false(enabled(mod$modLimLower))
+    svalue(mod$modLimUpper) <- "2012Q1"
+    Sys.sleep(0.3)
+})
+
+test_that("Upper modelling limit is truncated to upper modelling limit", {
+    svalue(mod$modLimLower) <- "2005Q1"
+    Sys.sleep(0.3)
+    expect_equal(
+        mod$modLimUpper$get_items()[1],
+        "2007Q1"
+    )
+    svalue(mod$modLimLower, index = TRUE) <- length(mod$modLimLower$get_items())
+    Sys.sleep(0.3)
+    expect_false(enabled(mod$modLimUpper))
+    svalue(mod$modLimLower) <- "1998Q4"
+    Sys.sleep(0.3)
+})
+

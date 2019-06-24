@@ -721,23 +721,23 @@ iNZightTSMod <- setRefClass(
                 xlim[2] <- xx[xd == svalue(xlimUpper)]
 
             ## if upper limit gets too low, disable lower slider
-            if (xlim[2] <= min(xx) + 1) {
+            if (xlim[2] <= min(xx) + 2) {
                 enabled(xlimLower) <<- FALSE
             } else {
                 enabled(xlimLower) <<- TRUE
                 blockHandlers(xlimLower)
-                xlimLower$set_items(xd[xx <= xlim[2] - 1])
+                xlimLower$set_items(xd[xx <= xlim[2] - 2])
                 xlimLower$set_value(xd[xx == xlim[1]])
                 unblockHandlers(xlimLower)
             }
 
             ## if lower limit gets too high, disable upper slider
-            if (xlim[1] >= max(xx) - 1) {
+            if (xlim[1] >= max(xx) - 2) {
                 enabled(xlimUpper) <<- FALSE
             } else {
                 enabled(xlimUpper) <<- TRUE
                 blockHandlers(xlimUpper)
-                xlimUpper$set_items(xd[xx >= xlim[1] + 1])
+                xlimUpper$set_items(xd[xx >= xlim[1] + 2])
                 xlimUpper$set_value(xd[xx == xlim[2]])
                 unblockHandlers(xlimUpper)
             }
@@ -772,23 +772,23 @@ iNZightTSMod <- setRefClass(
                 modlim[2] <- xx[xd == svalue(modLimUpper)]
 
             ## if upper limit gets too low, disable lower slider
-            if (modlim[2] <= min(xx) + 1) {
+            if (modlim[2] <= min(xx) + 2) {
                 enabled(modLimLower) <<- FALSE
             } else {
                 enabled(modLimLower) <<- TRUE
                 blockHandlers(modLimLower)
-                modLimLower$set_items(xd[xx <= modlim[2] - 1])
+                modLimLower$set_items(xd[xx <= modlim[2] - 2])
                 modLimLower$set_value(xd[xx == modlim[1]])
                 unblockHandlers(modLimLower)
             }
 
             ## if lower limit gets too high, disable upper slider
-            if (modlim[1] >= max(xx) - 1) {
+            if (modlim[1] >= max(xx) - 2) {
                 enabled(modLimUpper) <<- FALSE
             } else {
                 enabled(modLimUpper) <<- TRUE
                 blockHandlers(modLimUpper)
-                modLimUpper$set_items(xd[xx >= modlim[1] + 1])
+                modLimUpper$set_items(xd[xx >= modlim[1] + 2])
                 modLimUpper$set_value(xd[xx == modlim[2]])
                 unblockHandlers(modLimUpper)
             }
