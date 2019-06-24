@@ -67,22 +67,21 @@ test_that("Models can be saved, restored, and compared", {
 mod$close()
 
 ## popout mode
-ui$preferences$popout <- TRUE
-ui$savePreferences()
-ui$close()
-ui$initializeGui(census.at.school.500)
-on.exit(try(ui$close(), silent = TRUE))
+# ui$preferences$popout <- TRUE
+# ui$savePreferences()
+# ui$close()
+# ui$initializeGui(census.at.school.500)
+# on.exit(try(ui$close(), silent = TRUE))
 
-mod <- iNZightRegMod$new(ui)
-test_that("Reopening output window in popout mode", {
-    expect_is(mod$outputWin, "GWindow")
-    gWidgets2::dispose(mod$outputWin)
-    expect_null(mod$outputWin)
-    mod$showOutput()
-    expect_is(mod$outputWin, "GWindow")
-})
+# mod <- iNZightRegMod$new(ui)
+# test_that("Reopening output window in popout mode", {
+#     expect_is(mod$outputWin, "GWindow")
+#     gWidgets2::dispose(mod$outputWin)
+#     expect_null(mod$outputWin)
+#     mod$showOutput()
+#     expect_is(mod$outputWin, "GWindow")
+# })
 
-ui$preferences <- initialPrefs
-ui$savePreferences()
-ui$close()
-
+# ui$preferences <- initialPrefs
+# ui$savePreferences()
+# ui$close()

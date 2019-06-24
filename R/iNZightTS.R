@@ -22,6 +22,8 @@ iNZightTSMod <- setRefClass(
         smthSlider  = "ANY", smoothness = "numeric",
         tsObj       = "ANY",
         yLab        = "ANY", xLab = "ANY",
+        xlimLower   = "ANY", xlimUpper   = "ANY",
+        modLimEqual = "ANY", modLimLower = "ANY", modLimUpper = "ANY",
         plottype    = "numeric",
         compare     = "numeric",
         animateBtn  = "ANY", pauseBtn = "ANY",
@@ -31,19 +33,23 @@ iNZightTSMod <- setRefClass(
     ),
     methods = list(
         initialize = function(GUI) {
-            initFields(GUI = GUI, patternType = 1, smoothness = 10, tsObj = NULL,
-                       plottype = 1, compare = 1, timeFreq = NA, timeStart = c(1, 1), timePeriod = NULL,
-                       timer = NULL)
+            initFields(GUI = GUI, patternType = 1, smoothness = 10, 
+                tsObj = NULL, plottype = 1, compare = 1, timeFreq = NA, 
+                timeStart = c(1, 1), timePeriod = NULL, timer = NULL
+            )
 
             dat = GUI$getActiveData()
             activeData <<- tsData(dat)
             timeVar <<- getTime(activeData, index = FALSE)
 
-            modwin <- GUI$initializeModuleWindow(.self, title = "Time Series", scroll = TRUE)
+            modwin <- GUI$initializeModuleWindow(.self, 
+                title = "Time Series", scroll = TRUE)
             mainGrp <<- modwin$body
 
-            ## playBtn <- iNZight:::gimagebutton(stock.id = "media-play", handler = function(h, ...) updatePlot(animate = TRUE))
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot")#, extra = list(playBtn))
+            ## playBtn <- iNZight:::gimagebutton(stock.id = "media-play", 
+            #       handler = function(h, ...) updatePlot(animate = TRUE))
+            GUI$plotToolbar$update(NULL, refresh = "updatePlot")
+                #, extra = list(playBtn))
 
             ################
             ###  fields  ###
@@ -57,7 +63,7 @@ iNZightTSMod <- setRefClass(
                         container = mainGrp)
             g2 = gframe("Model Settings", pos = 0.5, horizontal = FALSE,
                         container = mainGrp)
-            addSpring(mainGrp)
+            # addSpring(mainGrp)
 
             midGrp <- ggroup(container = mainGrp, fill = TRUE)
             g3 = gframe("Series Variables", pos = 0.5, horizontal = FALSE,
@@ -65,8 +71,16 @@ iNZightTSMod <- setRefClass(
             g5 = gframe("Plot Type Options", pos = 0.5, horizontal = FALSE,
                         container = midGrp, fill = TRUE, expand = TRUE)
 
-            g4 = gframe("Customize Labels", pos = 0.5, horizontal = FALSE,
-                        container = mainGrp)
+            g4 = gexpandgroup("Customize Labels", 
+                # pos = 0.5, 
+                horizontal = FALSE,
+                container = mainGrp
+            )
+
+            g6 = gexpandgroup("Adjust limits",
+                horizontal = FALSE, 
+                container = mainGrp
+            )
 
 
             g1$set_borderwidth(8)
@@ -75,34 +89,52 @@ iNZightTSMod <- setRefClass(
             g4$set_borderwidth(8)
 
             g5$set_borderwidth(8)
+            g6$set_borderwidth(8)
 
             ## bold-faced title for the frames
             frames = getToolkitWidget(mainGrp)$getChildren()
             mainGrp$set_rgtk2_font(frames[[1]]$getChildren()[[2]], frameFont)
             mainGrp$set_rgtk2_font(frames[[2]]$getChildren()[[2]], frameFont)
-            midGrp$set_rgtk2_font(getToolkitWidget(midGrp)$getChildren()[[1]]$getChildren()[[2]], frameFont)
-            midGrp$set_rgtk2_font(getToolkitWidget(midGrp)$getChildren()[[2]]$getChildren()[[2]], frameFont)
-            mainGrp$set_rgtk2_font(frames[[5]]$getChildren()[[2]], frameFont)
+            midGrp$set_rgtk2_font(
+                getToolkitWidget(midGrp)$getChildren()[[1]]$getChildren()[[2]], 
+                frameFont
+            )
+            midGrp$set_rgtk2_font(
+                getToolkitWidget(midGrp)$getChildren()[[2]]$getChildren()[[2]], 
+                frameFont
+            )
+            mainGrp$set_rgtk2_font(
+                frames[[4]]$getChildren()[[2]], 
+                frameFont
+            )
+            mainGrp$set_rgtk2_font(
+                frames[[5]]$getChildren()[[2]], 
+                frameFont
+            )
 
             ############
             ###  g1  ###
             ############
             ## FOR MAIN LAYOUT
             g1_layout = glayout(container = g1)
-            g1_opt1   = gradio(c("Select time variable", "Provide time manually"),
-                               selected = 1, horizontal = FALSE)
+            g1_opt1   = gradio(
+                c("Select time variable", "Provide time manually"),
+                selected = 1, 
+                horizontal = FALSE
+            )
             g1_layout[1, 1:2, expand = TRUE] = g1_opt1
 
             ## FOR LAYOUT A
             g1a_layout = glayout(container = g1)
             ## g1a options
 
-            g1a_opt1   = gcombobox(names(activeData),
-                                   selected = match(timeVar, names(activeData), nomatch = 0),
-                                   handler = function(h, ...) {
-                                       timeVar <<- svalue(h$obj)
-                                       updatePlot()
-                                   })
+            g1a_opt1 <- gcombobox(names(activeData),
+                selected = match(timeVar, names(activeData), nomatch = 0),
+                handler = function(h, ...) {
+                    timeVar <<- svalue(h$obj)
+                    updatePlot()
+                }
+            )
             ## g1a labels
             g1a_lab1   = glabel("Select time variable:")
             ## g1a layout
@@ -117,53 +149,76 @@ iNZightTSMod <- setRefClass(
             ii <- 1
 
             lbl <- glabel("Period :")
-            timePeriodList <- gcombobox(c("Year", "Week", "Day"), selected = 0,
-                                        handler = function(h, ...) {
-                                            timePeriod <<- svalue(h$obj)
-                                            timeFreqList$set_items(c(names(freqOpts[[svalue(h$obj)]]), "Custom"))
-                                            svalue(startlbl1) <- "Year"
-                                            g3_opt1$invoke_change_handler()
-                                        })
+            timePeriodList <- gcombobox(c("Year", "Week", "Day"), 
+                selected = 0,
+                handler = function(h, ...) {
+                    timePeriod <<- svalue(h$obj)
+                    timeFreqList$set_items(
+                        c(names(freqOpts[[svalue(h$obj)]]), "Custom")
+                    )
+                    svalue(startlbl1) <- "Year"
+                    g3_opt1$invoke_change_handler()
+                }
+            )
             g1b_layout[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
             g1b_layout[ii, 2, expand = TRUE, fill = TRUE] <- timePeriodList
             ii <- ii + 1
 
             lbl <- glabel("Frequency* :")
-            freqOpts <- list("Year" = c("Yearly (1)" = 1, "Quarterly (4)" = 4, "Monthly (12)" = 12,
-                                        "Weekly (52)" = 52, "Daily (365/366)" = 365.25),
-                             "Week" = c("Daily (7)" = 7, "Daily - work week (5)" = 5),
-                             "Day"  = c("Hourly (24)" = 24))
-            timeFreqList <- gcombobox(character(), selected = 0,
-                                      handler = function(h, ...) {
-                                          if (svalue(h$obj) == "Custom") {
-                                              enabled(timeFreqNum) <- TRUE
-                                          } else {
-                                              enabled(timeFreqNum) <- FALSE
-                                              svalue(timeFreqNum) <- freqOpts[[timePeriod]][svalue(h$obj)]
-                                          }
-                                          season.name <- svalue(h$obj)
-                                          if (season.name == "Custom") {
-                                              season.name <- "Season"
-                                          } else {
-                                              season.name <- gsub("ly$", "", strsplit(season.name, " ")[[1]][1])
-                                              if (season.name == "Dai") season.name <- "Day"
-                                          }
-                                          svalue(startlbl2) <- season.name
-                                          g3_opt1$invoke_change_handler()
-                                      })
-            timeFreqNum <- gspinbutton(1, 1000, by = 1, value = 1,
-                                       handler = function(h, ...) {
-                                           timeFreq <<- svalue(h$obj)
-                                           svalue(timeStartSeason) <- min(svalue(timeStartSeason), timeFreq)
-                                           if (svalue(h$obj) == 1) {
-                                               enabled(timeStartSeason) <- FALSE
-                                               visible(startlbl2) <- FALSE
-                                           } else {
-                                               enabled(timeStartSeason) <- TRUE
-                                               visible(startlbl2) <- TRUE
-                                           }
-                                           g3_opt1$invoke_change_handler()
-                                       })
+            freqOpts <- list(
+                "Year" = c(
+                    "Yearly (1)" = 1, 
+                    "Quarterly (4)" = 4, 
+                    "Monthly (12)" = 12,
+                    "Weekly (52)" = 52, 
+                    "Daily (365/366)" = 365.25
+                ),
+                "Week" = c(
+                    "Daily (7)" = 7, 
+                    "Daily - work week (5)" = 5
+                ),
+                "Day"  = c(
+                    "Hourly (24)" = 24
+                )
+            )
+            timeFreqList <- gcombobox(character(), 
+                selected = 0,
+                handler = function(h, ...) {
+                    if (svalue(h$obj) == "Custom") {
+                        enabled(timeFreqNum) <- TRUE
+                    } else {
+                        enabled(timeFreqNum) <- FALSE
+                        svalue(timeFreqNum) <- 
+                            freqOpts[[timePeriod]][svalue(h$obj)]
+                    }
+                    season.name <- svalue(h$obj)
+                    if (season.name == "Custom") {
+                        season.name <- "Season"
+                    } else {
+                        season.name <- gsub("ly$", "", 
+                            strsplit(season.name, " ")[[1]][1])
+                        if (season.name == "Dai") season.name <- "Day"
+                    }
+                    svalue(startlbl2) <- season.name
+                    g3_opt1$invoke_change_handler()
+                }
+            )
+            timeFreqNum <- gspinbutton(1, 1000, by = 1, 
+                value = 1,
+                handler = function(h, ...) {
+                    timeFreq <<- svalue(h$obj)
+                    svalue(timeStartSeason) <- 
+                        min(svalue(timeStartSeason), timeFreq)
+                    if (svalue(h$obj) == 1) {
+                        enabled(timeStartSeason) <- FALSE
+                        visible(startlbl2) <- FALSE
+                    } else {
+                        enabled(timeStartSeason) <- TRUE
+                        visible(startlbl2) <- TRUE
+                    }
+                    g3_opt1$invoke_change_handler()
+                }
+            )
             g1b_layout[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
             g1b_layout[ii, 2, expand = TRUE, fill = TRUE] <- timeFreqList
             g1b_layout[ii, 3, expand = TRUE, fill = TRUE] <- timeFreqNum
@@ -178,16 +233,17 @@ iNZightTSMod <- setRefClass(
 
             lbl <- glabel("Start date : ")
             timeStartPeriod <- gspinbutton(0, 1e5, by = 1, value = 1,
-                                           handler = function(h, ...) {
-                                               timeStart <<- c(svalue(h$obj), svalue(timeStartSeason))
-                                               g3_opt1$invoke_change_handler()
-                                           })
+                handler = function(h, ...) {
+                    timeStart <<- c(svalue(h$obj), svalue(timeStartSeason))
+                    g3_opt1$invoke_change_handler()
+                })
             timeStartSeason <- gspinbutton(0, 1e5, by = 1, value = 1,
-                                           handler = function(h, ...) {
-                                               if (svalue(h$obj) > timeFreq) svalue(h$obj) <- timeFreq
-                                               timeStart <<- c(svalue(timeStartPeriod), svalue(h$obj))
-                                               g3_opt1$invoke_change_handler()
-                                           })
+                handler = function(h, ...) {
+                    if (svalue(h$obj) > timeFreq) 
+                        svalue(h$obj) <- timeFreq
+                    timeStart <<- c(svalue(timeStartPeriod), svalue(h$obj))
+                    g3_opt1$invoke_change_handler()
+                })
             g1b_layout[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
             g1b_layout[ii, 2, expand = TRUE, fill = TRUE] <- timeStartPeriod
             g1b_layout[ii, 3, expand = TRUE, fill = TRUE] <- timeStartSeason
@@ -216,28 +272,36 @@ iNZightTSMod <- setRefClass(
             ###  g2  ###
             ############
             g2_layout = glayout(container = g2, spacing = 5)
-            g2_opt1   = gradio(c("Multiplicative", "Additive"), selected = patternType,
-                               horizontal = TRUE,
-                               handler = function(h, ...) {
-                                   patternType <<- svalue(h$obj, index = TRUE)
-                                   updatePlot()
-                               })
+            g2_opt1   = gradio(c("Multiplicative", "Additive"), 
+                selected = patternType,
+                horizontal = TRUE,
+                handler = function(h, ...) {
+                    patternType <<- svalue(h$obj, index = TRUE)
+                    updatePlot()
+                }
+            )
 
-            g2_layout[1, 1, anchor = c(1, 0), expand = TRUE] <- glabel("Seasonal pattern :")
+            g2_layout[1, 1, anchor = c(1, 0), expand = TRUE] <- 
+                glabel("Seasonal pattern :")
             g2_layout[1, 2, expand = TRUE] = g2_opt1
 
             ## Smoother
-            smthSlider <<- gslider(0, 100, by = 0.1, value = smoothness,
-                                   handler = function(h, ...) {
-                                       smoothness <<- svalue(h$obj)
-                                       if (!is.null(timer))
-                                           if (timer$started) timer$stop_timer()
-                                       timer <<- gtimer(200, function(...) {
-                                           updatePlot()
-                                       }, one.shot = TRUE)
-                                   })
+            smthSlider <<- gslider(0, 100, by = 0.1, 
+                value = smoothness,
+                handler = function(h, ...) {
+                    smoothness <<- svalue(h$obj)
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
 
-            g2_layout[2, 1, anchor = c(1, 0), expand = TRUE] <- glabel("Smoothness :")
+                    timer <<- gtimer(200, function(...) updatePlot(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+
+            g2_layout[2, 1, anchor = c(1, 0), expand = TRUE] <- 
+                glabel("Smoothness :")
             g2_layout[2, 2, fill = TRUE, expand = TRUE] <- smthSlider
 
             ############
@@ -247,10 +311,13 @@ iNZightTSMod <- setRefClass(
             ##   need to change the variable selection widget for when there
             ##   are many variables which will expand the widget.
             g3_layout = glayout(container = g3)
-            g3_opt1 = gtable(names(activeData)[! names(activeData) %in% timeVar],
-                             multiple = TRUE)
+            g3_opt1 = gtable(
+                names(activeData)[! names(activeData) %in% timeVar],
+                multiple = TRUE
+            )
             size(g3_opt1) <- c(floor(size(GUI$leftMain)[1] * 0.5), 200)
-            g3_layout[1, 1, anchor = c(-1, 0), expand = TRUE] <- glabel("Hold CTRL to select many")
+            g3_layout[1, 1, anchor = c(-1, 0), expand = TRUE] <- 
+                glabel("Hold CTRL to select many")
             g3_layout[2, 1, expand = TRUE] = g3_opt1
 
            
@@ -276,18 +343,35 @@ iNZightTSMod <- setRefClass(
                     (svalue(g1_opt1, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
                     tryCatch({
                         if (svalue(g1_opt1, TRUE) == 1) {
-                            tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,
-                                                        time.col = which(colnames(activeData) == timeVar))
+                            tso <- iNZightTS::iNZightTS(
+                                data = activeData, 
+                                var = var_ind,
+                                time.col = 
+                                    which(colnames(activeData) == timeVar)
+                            )
                         } else {
-                            tso <- iNZightTS::iNZightTS(data = activeData, var = var_ind,
-                                                        start = timeStart, freq = timeFreq)
+                            tso <- iNZightTS::iNZightTS(
+                                data = activeData, 
+                                var = var_ind,
+                                start = timeStart, 
+                                freq = timeFreq
+                            )
                         }
                         tsObj <<- tso
                         updatePlot()
-                    }, error = function(e) {
-                        gmessage(paste(sep="\n\n", "Error creating Time Series object", e$message),
-                                 title = "Error creating time series", icon = "error", parent = GUI$win)
-                    }, finally = {})
+                    }, 
+                    error = function(e) {
+                        gmessage(
+                            paste(sep="\n\n", 
+                                "Error creating Time Series object", 
+                                e$message
+                            ),
+                            title = "Error creating time series", 
+                            icon = "error", 
+                            parent = GUI$win
+                        )
+                    }, 
+                    finally = {})
                 } else {
                   cat("No time var...\n")
                 }
@@ -295,7 +379,9 @@ iNZightTSMod <- setRefClass(
             })
 
             addHandlerChanged(g1a_opt1, function(h, ...) {
-                g3_opt1$set_items(names(activeData)[! names(activeData) %in% timeVar])
+                g3_opt1$set_items(
+                    names(activeData)[! names(activeData) %in% timeVar]
+                )
             })
 
 
@@ -305,83 +391,110 @@ iNZightTSMod <- setRefClass(
 
             onevar <- gvbox(container = g5)
             addSpring(onevar)
-            plotType <- gradio(c("Standard", "Decomposition", "Seasonal", "Forecast"), selected = plottype,
-                               container = onevar, expand = TRUE,
-                               handler = function(h, ...) {
-                                   plottype <<- svalue(h$obj, index = TRUE)
-                                   visible(animateBtn) <<- svalue(h$obj, TRUE) == 1
-                                   visible(pauseBtn) <<- svalue(h$obj, TRUE) == 1
-                                   visible(recomposeBtn) <<- FALSE
-                                   visible(recomposeResBtn) <<- FALSE
-                                   visible(forecastBtn) <<- FALSE
-                                   updatePlot()
-                               })
+            plotType <- gradio(
+                c("Standard", "Decomposition", "Seasonal", "Forecast"), 
+                selected = plottype,
+                container = onevar,
+                expand = TRUE,
+                handler = function(h, ...) {
+                    plottype <<- svalue(h$obj, index = TRUE)
+                    visible(animateBtn) <<- svalue(h$obj, TRUE) == 1
+                    visible(pauseBtn) <<- svalue(h$obj, TRUE) == 1
+                    visible(recomposeBtn) <<- FALSE
+                    visible(recomposeResBtn) <<- FALSE
+                    visible(forecastBtn) <<- FALSE
+                    updatePlot()
+                }
+            )
 
             tsenv <- new.env()
             assign("stopAnimation", FALSE, envir = tsenv)
-            runAnimation <- gaction("Animate", icon = "gtk-media-play",
-                                    handler = function(h, ...) {
-                                        assign("stopAnimation", FALSE, envir = tsenv)
-                                        enabled(animateBtn) <<- FALSE
-                                        enabled(pauseBtn) <<- TRUE
-                                        iNZightTS::rawplot(tsObj, multiplicative = (patternType == 1),
-                                                           ylab = svalue(yLab), xlab = svalue(xLab), animate = TRUE, t = smoothness,
-                                                           e = tsenv)
-                                        enabled(pauseBtn) <<- FALSE
-                                        enabled(animateBtn) <<- TRUE
-                                    })
-            pauseAnimation <- gaction("End Animation", icon = "gtk-media-stop",
-                                      handler = function(h, ...) {
-                                          assign("stopAnimation", TRUE, envir = tsenv)
-                                      })
+            runAnimation <- gaction("Animate", 
+                icon = "gtk-media-play",
+                handler = function(h, ...) {
+                    assign("stopAnimation", FALSE, envir = tsenv)
+                    enabled(animateBtn) <<- FALSE
+                    enabled(pauseBtn) <<- TRUE
+                    iNZightTS::rawplot(tsObj, 
+                        multiplicative = (patternType == 1),
+                        ylab = svalue(yLab), 
+                        xlab = svalue(xLab), 
+                        animate = TRUE, 
+                        t = smoothness,
+                        e = tsenv
+                    )
+                    enabled(pauseBtn) <<- FALSE
+                    enabled(animateBtn) <<- TRUE
+                }
+            )
+            pauseAnimation <- gaction("End Animation", 
+                icon = "gtk-media-stop",
+                handler = function(h, ...) {
+                    assign("stopAnimation", TRUE, envir = tsenv)
+                }
+            )
 
             animateBtn <<- gbutton(action = runAnimation, container = onevar)
             pauseBtn <<- gbutton(action = pauseAnimation, container = onevar)
             enabled(pauseBtn) <<- FALSE
 
-            recomposeBtn <<- gbutton("Recompose", container = onevar,
-                                     handler = function(h, ...) {
-                                         assign("stopAnimation", FALSE, envir = tsenv)
-                                         decomp <<- decompositionplot(tsObj, multiplicative = (patternType == 1),
-                                                                          xlab = svalue(xLab), ylab = svalue(yLab), t = smoothness)
-                                         iNZightTS::recompose(decomp, e = tsenv)
-                                     })
+            recomposeBtn <<- gbutton("Recompose", 
+                container = onevar,
+                handler = function(h, ...) {
+                    assign("stopAnimation", FALSE, envir = tsenv)
+                    decomp <<- decompositionplot(tsObj, 
+                        multiplicative = (patternType == 1),
+                        xlab = svalue(xLab), 
+                        ylab = svalue(yLab), 
+                        t = smoothness
+                    )
+                    iNZightTS::recompose(decomp, e = tsenv)
+                }
+            )
             visible(recomposeBtn) <<- FALSE
             recomposeResBtn <<- gbutton("Recompose Result", container = onevar)
-            addHandlerClicked(recomposeResBtn, function(h, ...) {
-                assign("stopAnimation", TRUE, envir = tsenv)
-                blockHandlers(h$obj)
-                if (svalue(h$obj) == "Re-decompose") {
-                    updatePlot()
-                    svalue(recomposeResBtn) <<- "Recompose Result"
-                } else {
-                    iNZightTS::recompose(decomp, animate = FALSE)
-                    svalue(recomposeResBtn) <<- "Re-decompose"
+            addHandlerClicked(recomposeResBtn, 
+                handler = function(h, ...) {
+                    assign("stopAnimation", TRUE, envir = tsenv)
+                    blockHandlers(h$obj)
+                    if (svalue(h$obj) == "Re-decompose") {
+                        updatePlot()
+                        svalue(recomposeResBtn) <<- "Recompose Result"
+                    } else {
+                        iNZightTS::recompose(decomp, animate = FALSE)
+                        svalue(recomposeResBtn) <<- "Re-decompose"
+                    }
+                    unblockHandlers(h$obj)
                 }
-                unblockHandlers(h$obj)
-            })
+            )
             visible(recomposeResBtn) <<- FALSE
 
-            forecastBtn <<- gbutton("Forecasted Values", container = onevar,
-                                    handler = function(h, ...) {
-                                        w <- gwindow("Time Series Forecasts", parent = GUI$win,
-                                                     width = 400, height = 300)
-                                        g <- gvbox(container = w)
-                                        t <- gtext(text = "", container = g, expand = TRUE,
-                                                   wrap = FALSE, font.attr = list(family = "monospace"))
-                                        insert(t, capture.output(print(forecasts)))
-                                    })
+            forecastBtn <<- gbutton("Forecasted Values", 
+                container = onevar,
+                handler = function(h, ...) {
+                    w <- gwindow("Time Series Forecasts", parent = GUI$win,
+                                 width = 400, height = 300)
+                    g <- gvbox(container = w)
+                    t <- gtext(text = "", 
+                        container = g, 
+                        expand = TRUE,
+                        wrap = FALSE, 
+                        font.attr = list(family = "monospace")
+                    )
+                    insert(t, capture.output(print(forecasts)))
+                }
+            )
             visible(forecastBtn) <<- FALSE
 
             multivar <- ggroup(container = g5)
-            compareChk <- gradio(c("Single graph",
-                                   "Separate graphs"),
-                                 checked = compare,
-                                 container = multivar,
-                                 handler = function(h, ...) {
-                                     compare <<- svalue(h$obj, index = TRUE)
-                                     updatePlot()
-                                 })
+            compareChk <- gradio(c("Single graph", "Separate graphs"),
+                checked = compare,
+                container = multivar,
+                handler = function(h, ...) {
+                    compare <<- svalue(h$obj, index = TRUE)
+                    updatePlot()
+                }
+            )
 
             visible(onevar) <- FALSE
             visible(multivar) <- FALSE
@@ -403,20 +516,24 @@ iNZightTSMod <- setRefClass(
             xLab <<- gedit(ifelse(!is.na(timeVar), timeVar, ""))
             yLab <<- gedit("")
 
-            addHandlerKeystroke(xLab, function(h, ...) {
-                if (!is.null(timer))
-                    if (timer$started) timer$stop_timer()
-                timer <<- gtimer(200, function(...) {
-                    updatePlot()
-                }, one.shot = TRUE)
-            })
-            addHandlerKeystroke(yLab, function(h, ...) {
-                if (!is.null(timer))
-                    if (timer$started) timer$stop_timer()
-                timer <<- gtimer(200, function(...) {
-                    updatePlot()
-                }, one.shot = TRUE)
-            })
+            addHandlerKeystroke(xLab, 
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) timer$stop_timer()
+                    timer <<- gtimer(200, function(...) {
+                        updatePlot()
+                    }, one.shot = TRUE)
+                }
+            )
+            addHandlerKeystroke(yLab, 
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) timer$stop_timer()
+                    timer <<- gtimer(200, function(...) {
+                        updatePlot()
+                    }, one.shot = TRUE)
+                }
+            )
 
             #size(xLab) <<- c(150, 21)
             #size(yLab) <<- c(150, 21)
@@ -426,32 +543,133 @@ iNZightTSMod <- setRefClass(
             g4_layout[1, 3, expand = TRUE] = xLab
             g4_layout[2, 3, expand = TRUE] = yLab
 
-            clearXlab <- iNZight:::gimagebutton(stock.id = "reset", handler = function(h, ...) {
-                svalue(xLab) <<- timeVar
-            })
+            clearXlab <- iNZight:::gimagebutton(stock.id = "reset", 
+                handler = function(h, ...) {
+                    svalue(xLab) <<- timeVar
+                }
+            )
             g4_layout[1, 4] <- clearXlab
-            clearYlab <- iNZight:::gimagebutton(stock.id = "reset", handler = function(h, ...) {
-                svalue(yLab) <<- ""
-            })
+            clearYlab <- iNZight:::gimagebutton(stock.id = "reset", 
+                handler = function(h, ...) {
+                    svalue(yLab) <<- ""
+                }
+            )
             g4_layout[2, 4] <- clearYlab
 
 
+            ############
+            ###  g6  ###
+            ############
+            g6_layout = glayout(container = g6, homogeneous = TRUE)
+            ii <- 1
+
+            ## Control axis limits
+            g6_layout[ii, 1, anchor = c(-1, 0), expand = TRUE] <-
+                glabel("Display data from ... ")
+            g6_layout[ii, 2, anchor = c(-1, 0), expand = TRUE] <-
+                glabel("until ... ")
+            ii <- ii + 1
+
+
+            xlimLower <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+            xlimUpper <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+            g6_layout[ii, 1, expand = TRUE] <- xlimLower
+            g6_layout[ii, 2, expand = TRUE] <- xlimUpper
+            ii <- ii + 1
+
+            updateLimits()
+
+            ## Model limits
+            modLimEqual <<- gcheckbox("Use above limits for fitting model",
+                checked = TRUE)
+            g6_layout[ii, 1:2, expand = TRUE] <- modLimEqual
+            ii <- ii + 1
+
+            modLimLower <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateModLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+            modLimUpper <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateModLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+
+            modlbl1 <- glabel("Fit model to data from ... ")
+            modlbl2 <- glabel("until ... ")
+            visible(modlbl1) <- visible(modlbl2) <- FALSE
+
+            g6_layout[ii, 1, anchor = c(-1, 0), expand = TRUE] <- modlbl1    
+            g6_layout[ii, 2, anchor = c(-1, 0), expand = TRUE] <- modlbl2
+            ii <- ii + 1
+
+            g6_layout[ii, 1, expand = TRUE] <- modLimLower
+            g6_layout[ii, 2, expand = TRUE] <- modLimUpper
+            ii <- ii + 1
+
+            updateModLimits()
+            addHandlerChanged(modLimEqual,
+                handler = function(h, ...) {
+                    visible(modlbl1) <- visible(modlbl2) <- !svalue(h$obj)
+                    updatePlot()
+                }
+            )
+
+
+            ## Footer
             btmGrp <- modwin$footer
 
-            helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
-                                  cont = btmGrp,
-                                  handler = function(h, ...) {
-                                      browseURL("https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=time_series")
-                                  })
-            homeButton <- gbutton("Home", expand = TRUE, fill = TRUE,
-                                  cont = btmGrp,
-                                  handler = function(h, ...) {
-                                      ## delete the module window
-                                      delete(GUI$leftMain, GUI$leftMain$children[[2]])
-                                      ## display the default view (data, variable, etc.)
-                                      GUI$plotToolbar$restore()
-                                      visible(GUI$gp1) <<- TRUE
-                                  })
+            helpButton <- gbutton("Help", 
+                expand = TRUE, 
+                fill = TRUE,
+                cont = btmGrp,
+                handler = function(h, ...) {
+                    browseURL(
+                        "https://www.stat.auckland.ac.nz/~wild/iNZight/user_guides/add_ons/?topic=time_series"
+                    )
+                }
+            )
+            homeButton <- gbutton("Home", 
+                expand = TRUE, 
+                fill = TRUE,
+                cont = btmGrp,
+                handler = function(h, ...) {
+                    close()
+                }
+            )
 
             ## IF time series variable is chosen, plot first variable.
             svalue(g3_opt1, index = TRUE) <- 1
@@ -483,6 +701,102 @@ iNZightTSMod <- setRefClass(
             data[, num_index]
         },
 
+        ## update limit sliders 
+        updateLimits = function(react = TRUE) {
+            if (is.null(tsObj)) {
+                visible(xlimLower) <<- visible(xlimUpper) <<- FALSE
+                return()
+            }
+
+            # store old values
+            xr <- range(time(tsObj$tsObj))
+            xby <- 1 / tsObj$freq
+            xx <- seq(xr[1], xr[2], by = xby)
+            xd <- as.character(tsObj$data[[timeVar]])
+
+            xlim <- xr
+            if (svalue(xlimLower) > 0) 
+                xlim[1] <- xx[xd == svalue(xlimLower)]
+            if (svalue(xlimUpper) > 0) 
+                xlim[2] <- xx[xd == svalue(xlimUpper)]
+
+            ## if upper limit gets too low, disable lower slider
+            if (xlim[2] <= min(xx) + 2) {
+                enabled(xlimLower) <<- FALSE
+            } else {
+                enabled(xlimLower) <<- TRUE
+                blockHandlers(xlimLower)
+                xlimLower$set_items(xd[xx <= xlim[2] - 2])
+                xlimLower$set_value(xd[xx == xlim[1]])
+                unblockHandlers(xlimLower)
+            }
+
+            ## if lower limit gets too high, disable upper slider
+            if (xlim[1] >= max(xx) - 2) {
+                enabled(xlimUpper) <<- FALSE
+            } else {
+                enabled(xlimUpper) <<- TRUE
+                blockHandlers(xlimUpper)
+                xlimUpper$set_items(xd[xx >= xlim[1] + 2])
+                xlimUpper$set_value(xd[xx == xlim[2]])
+                unblockHandlers(xlimUpper)
+            }
+
+            visible(xlimLower) <<- visible(xlimUpper) <<- TRUE
+            # don't want to react when being called by updatePlot!
+            if (react) updatePlot()
+        },
+
+        updateModLimits = function(react = TRUE) {
+            if (is.null(tsObj)) {
+                visible(modLimLower) <<- visible(modLimUpper) <<- FALSE
+                return()
+            }
+            if (svalue(modLimEqual)) {
+                svalue(modLimLower) <<- svalue(xlimLower)
+                svalue(modLimUpper) <<- svalue(xlimUpper)
+                visible(modLimLower) <<- visible(modLimUpper) <<- FALSE
+                return()
+            }
+
+            # store old values
+            xr <- range(time(tsObj$tsObj))
+            xby <- 1 / tsObj$freq
+            xx <- seq(xr[1], xr[2], by = xby)
+            xd <- as.character(tsObj$data[[timeVar]])
+
+            modlim <- xr
+            if (svalue(modLimLower) > 0) 
+                modlim[1] <- xx[xd == svalue(modLimLower)]
+            if (svalue(modLimUpper) > 0) 
+                modlim[2] <- xx[xd == svalue(modLimUpper)]
+
+            ## if upper limit gets too low, disable lower slider
+            if (modlim[2] <= min(xx) + 2) {
+                enabled(modLimLower) <<- FALSE
+            } else {
+                enabled(modLimLower) <<- TRUE
+                blockHandlers(modLimLower)
+                modLimLower$set_items(xd[xx <= modlim[2] - 2])
+                modLimLower$set_value(xd[xx == modlim[1]])
+                unblockHandlers(modLimLower)
+            }
+
+            ## if lower limit gets too high, disable upper slider
+            if (modlim[1] >= max(xx) - 2) {
+                enabled(modLimUpper) <<- FALSE
+            } else {
+                enabled(modLimUpper) <<- TRUE
+                blockHandlers(modLimUpper)
+                modLimUpper$set_items(xd[xx >= modlim[1] + 2])
+                modLimUpper$set_value(xd[xx == modlim[2]])
+                unblockHandlers(modLimUpper)
+            }
+
+            visible(modLimLower) <<- visible(modLimUpper) <<- TRUE
+            if (react) updatePlot()
+        },
+
         ## draw the plot, depending on the settings
         updatePlot = function(animate = FALSE) {
             ## plot the TS object setup by the GUI
@@ -496,44 +810,114 @@ iNZightTSMod <- setRefClass(
             can.smooth <- TRUE
             smooth.t <- smoothness
 
+            updateLimits(react = FALSE)
+            updateModLimits(react = FALSE)
+
+            xr <- range(time(tsObj$tsObj))
+            xby <- 1 / tsObj$freq
+            xx <- seq(xr[1], xr[2], by = xby)
+            xd <- as.character(tsObj$data[[timeVar]])
+
+            xlim <- xr
+            if (svalue(xlimLower) > 0) 
+                xlim[1] <- xx[xd == svalue(xlimLower)]
+            if (svalue(xlimUpper) > 0) 
+                xlim[2] <- xx[xd == svalue(xlimUpper)]
+
+            modlim <- xlim
+            if (!svalue(modLimEqual)) {
+                if (svalue(modLimLower) > 0)
+                    modlim[1] <- xx[xd == svalue(modLimLower)]
+                if (svalue(modLimUpper) > 0)
+                    modlim[2] <- xx[xd == svalue(modLimUpper)]
+            }
+
             if (is.null(tsObj)) {
                 cat("Nothing to plot ...\n")
                 plot.new()
             } else if (inherits(tsObj, "iNZightMTS")) { ## multiple vars
                 switch(compare,
-                       plot(tsObj, multiplicative = (patternType == 1),
-                                   xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t),
-                       plot(tsObj, multiplicative = (patternType == 1),
-                                   xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t, compare=FALSE))
+                    plot(tsObj, 
+                        multiplicative = (patternType == 1),
+                        xlab = svalue(xLab), 
+                        ylab = svalue(yLab), 
+                        t = smooth.t,
+                        xlim = xlim,
+                        model.lim = modlim
+                    ),
+                    plot(tsObj, 
+                        multiplicative = (patternType == 1),
+                        xlab = svalue(xLab), 
+                        ylab = svalue(yLab), 
+                        t = smooth.t, 
+                        compare=FALSE,
+                        xlim = xlim,
+                        model.lim = modlim
+                    )
+                )
             } else { ## single var
-                switch(plottype, {
-                    ## 1 >> standard plot
-                    ## patternType = 1 >> 'multiplicative'; 2 >> 'additive'
-                    plot(tsObj, multiplicative = (patternType == 1),
-                                    ylab = svalue(yLab), xlab = svalue(xLab), animate = animate, t = smooth.t)
-                }, {
-                    ## 2 >> decomposed plot
-                    decomp <<- iNZightTS::decompositionplot(tsObj, multiplicative = (patternType == 1),
-                                                            xlab = svalue(xLab), ylab = svalue(yLab),
-                                                            t = smooth.t)
-                    visible(recomposeBtn) <<- TRUE
-                    visible(recomposeResBtn) <<- TRUE
-                }, {
-                    ## 3 >> season plot
-                    iNZightTS::seasonplot(tsObj, multiplicative = (patternType == 1),
-                                          xlab = svalue(xLab), ylab = svalue(yLab), t = smooth.t)
-                }, {
-                    ## 4 >> forecast plot
-                    forecasts <<- iNZightTS::forecastplot(tsObj, multiplicative = (patternType == 1),
-                                                          xlab = svalue(xLab), ylab = svalue(yLab))
-                    visible(forecastBtn) <<- TRUE
-                    can.smooth <- FALSE
-                })
+                switch(plottype, 
+                    {
+                        ## 1 >> standard plot
+                        ## patternType = 1 >> 'multiplicative'; 2 >> 'additive'
+                        plot(tsObj, 
+                            multiplicative = (patternType == 1),
+                            ylab = svalue(yLab), 
+                            xlab = svalue(xLab), 
+                            animate = animate, 
+                            t = smooth.t,
+                            xlim = xlim,
+                            model.lim = modlim
+                        )
+                    }, 
+                    {
+                        ## 2 >> decomposed plot
+                        decomp <<- iNZightTS::decompositionplot(tsObj, 
+                            multiplicative = (patternType == 1),
+                            xlab = svalue(xLab), 
+                            ylab = svalue(yLab),
+                            t = smooth.t,
+                            xlim = xlim,
+                            model.lim = modlim
+                        )
+                        visible(recomposeBtn) <<- TRUE
+                        visible(recomposeResBtn) <<- TRUE
+                    },
+                    {
+                        ## 3 >> season plot
+                        iNZightTS::seasonplot(tsObj, 
+                            multiplicative = (patternType == 1),
+                            xlab = svalue(xLab), 
+                            ylab = svalue(yLab), 
+                            t = smooth.t
+                        )
+                    },
+                    {
+                        ## 4 >> forecast plot
+                        forecasts <<- iNZightTS::forecastplot(tsObj,
+                            multiplicative = (patternType == 1),
+                            xlab = svalue(xLab), 
+                            ylab = svalue(yLab),
+                            xlim = xlim,
+                            model.lim = modlim
+                        )
+                        visible(forecastBtn) <<- TRUE
+                        can.smooth <- FALSE
+                    }
+                )
 
             }
 
             enabled(smthSlider) <<- can.smooth
 
+        },
+        close = function() {
+            ## delete the module window
+            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            ## display the default view (data, variable, etc.)
+            GUI$plotToolbar$restore()
+            visible(GUI$gp1) <<- TRUE
+            GUI$updatePlot()
         }
     )
 )
