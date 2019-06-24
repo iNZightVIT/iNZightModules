@@ -59,3 +59,7 @@ test_that("Upper limit is truncated to upper limit", {
 })
 
 
+test_that("Model limit is same as view by default", {
+    expect_true(svalue(mod$modLimEqual))
+
+})

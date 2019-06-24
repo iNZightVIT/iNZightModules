@@ -22,8 +22,8 @@ iNZightTSMod <- setRefClass(
         smthSlider  = "ANY", smoothness = "numeric",
         tsObj       = "ANY",
         yLab        = "ANY", xLab = "ANY",
-        xlimLower   = "ANY",
-        xlimUpper   = "ANY",
+        xlimLower   = "ANY", xlimUpper   = "ANY",
+        modLimEqual = "ANY", modLimLower = "ANY", modLimUpper = "ANY",
         plottype    = "numeric",
         compare     = "numeric",
         animateBtn  = "ANY", pauseBtn = "ANY",
@@ -599,6 +599,57 @@ iNZightTSMod <- setRefClass(
 
             updateLimits()
 
+            ## Model limits
+            modLimEqual <<- gcheckbox("Use above limits for fitting model",
+                checked = TRUE)
+            g6_layout[ii, 1:2, expand = TRUE] <- modLimEqual
+            ii <- ii + 1
+
+            modLimLower <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateModLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+            modLimUpper <<- gslider(
+                handler = function(h, ...) {
+                    if (!is.null(timer))
+                        if (timer$started) 
+                            timer$stop_timer()
+
+                    timer <<- gtimer(200, function(...) updateModLimits(), 
+                        one.shot = TRUE
+                    )
+                }
+            )
+
+            modlbl1 <- glabel("Fit model to data from ... ")
+            modlbl2 <- glabel("until ... ")
+            visible(modlbl1) <- visible(modlbl2) <- FALSE
+
+            g6_layout[ii, 1, anchor = c(-1, 0), expand = TRUE] <- modlbl1    
+            g6_layout[ii, 2, anchor = c(-1, 0), expand = TRUE] <- modlbl2
+            ii <- ii + 1
+
+            g6_layout[ii, 1, expand = TRUE] <- modLimLower
+            g6_layout[ii, 2, expand = TRUE] <- modLimUpper
+            ii <- ii + 1
+
+            updateModLimits()
+            addHandlerChanged(modLimEqual,
+                handler = function(h, ...) {
+                    visible(modlbl1) <- visible(modlbl2) <- !svalue(h$obj)
+                    updateModLimits()
+                }
+            )
+
+
+            ## Footer
             btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", 
@@ -696,6 +747,56 @@ iNZightTSMod <- setRefClass(
             if (react) updatePlot()
         },
 
+        updateModLimits = function(react = TRUE) {
+            if (is.null(tsObj)) {
+                visible(modLimLower) <<- visible(modLimUpper) <<- FALSE
+                return()
+            }
+            if (svalue(modLimEqual)) {
+                svalue(modLimLower) <<- svalue(xlimLower)
+                svalue(modLimUpper) <<- svalue(xlimUpper)
+                visible(modLimLower) <<- visible(modLimUpper) <<- FALSE
+                return()
+            }
+
+            # store old values
+            xr <- range(time(tsObj$tsObj))
+            xby <- 1 / tsObj$freq
+            xx <- seq(xr[1], xr[2], by = xby)
+            xd <- as.character(tsObj$data$Date)
+
+            modlim <- xr
+            if (svalue(modLimLower) > 0) 
+                modlim[1] <- xx[xd == svalue(modLimLower)]
+            if (svalue(modLimUpper) > 0) 
+                modlim[2] <- xx[xd == svalue(modLimUpper)]
+
+            ## if upper limit gets too low, disable lower slider
+            if (modlim[2] <= min(xx) + 1) {
+                enabled(modLimLower) <<- FALSE
+            } else {
+                enabled(modLimLower) <<- TRUE
+                blockHandlers(modLimLower)
+                modLimLower$set_items(xd[xx <= modlim[2] - 1])
+                modLimLower$set_value(xd[xx == modlim[1]])
+                unblockHandlers(modLimLower)
+            }
+
+            ## if lower limit gets too high, disable upper slider
+            if (modlim[1] >= max(xx) - 1) {
+                enabled(modLimUpper) <<- FALSE
+            } else {
+                enabled(modLimUpper) <<- TRUE
+                blockHandlers(modLimUpper)
+                modLimUpper$set_items(xd[xx >= modlim[1] + 1])
+                modLimUpper$set_value(xd[xx == modlim[2]])
+                unblockHandlers(modLimUpper)
+            }
+
+            visible(modLimLower) <<- visible(modLimUpper) <<- TRUE
+            if (react) updatePlot()
+        },
+
         ## draw the plot, depending on the settings
         updatePlot = function(animate = FALSE) {
             ## plot the TS object setup by the GUI
@@ -710,6 +811,7 @@ iNZightTSMod <- setRefClass(
             smooth.t <- smoothness
 
             updateLimits(react = FALSE)
+            updateModLimits(react = FALSE)
 
             xr <- range(time(tsObj$tsObj))
             xby <- 1 / tsObj$freq
@@ -722,6 +824,13 @@ iNZightTSMod <- setRefClass(
             if (svalue(xlimUpper) > 0) 
                 xlim[2] <- xx[xd == svalue(xlimUpper)]
 
+            modlim <- xlim
+            if (!svalue(modLimEqual)) {
+                if (svalue(modLimLower) > 0)
+                    modlim[1] <- xx[xd == svalue(modLimLower)]
+                if (svalue(modLimUpper) > 0)
+                    modlim[2] <- xx[xd == svalue(modLimUpper)]
+            }
 
             if (is.null(tsObj)) {
                 cat("Nothing to plot ...\n")
@@ -733,7 +842,8 @@ iNZightTSMod <- setRefClass(
                         xlab = svalue(xLab), 
                         ylab = svalue(yLab), 
                         t = smooth.t,
-                        xlim = xlim
+                        xlim = xlim,
+                        model.lim = modlim
                     ),
                     plot(tsObj, 
                         multiplicative = (patternType == 1),
@@ -741,7 +851,8 @@ iNZightTSMod <- setRefClass(
                         ylab = svalue(yLab), 
                         t = smooth.t, 
                         compare=FALSE,
-                        xlim = xlim
+                        xlim = xlim,
+                        model.lim = modlim
                     )
                 )
             } else { ## single var
@@ -755,7 +866,8 @@ iNZightTSMod <- setRefClass(
                             xlab = svalue(xLab), 
                             animate = animate, 
                             t = smooth.t,
-                            xlim = xlim
+                            xlim = xlim,
+                            model.lim = modlim
                         )
                     }, 
                     {
@@ -765,7 +877,8 @@ iNZightTSMod <- setRefClass(
                             xlab = svalue(xLab), 
                             ylab = svalue(yLab),
                             t = smooth.t,
-                            xlim = xlim
+                            xlim = xlim,
+                            model.lim = modlim
                         )
                         visible(recomposeBtn) <<- TRUE
                         visible(recomposeResBtn) <<- TRUE
@@ -785,7 +898,8 @@ iNZightTSMod <- setRefClass(
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab), 
                             ylab = svalue(yLab),
-                            xlim = xlim
+                            xlim = xlim,
+                            model.lim = modlim
                         )
                         visible(forecastBtn) <<- TRUE
                         can.smooth <- FALSE
