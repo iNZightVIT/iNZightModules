@@ -644,7 +644,7 @@ iNZightTSMod <- setRefClass(
             addHandlerChanged(modLimEqual,
                 handler = function(h, ...) {
                     visible(modlbl1) <- visible(modlbl2) <- !svalue(h$obj)
-                    updateModLimits()
+                    updatePlot()
                 }
             )
 
