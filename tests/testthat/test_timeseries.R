@@ -107,3 +107,12 @@ test_that("Other datasets work too", {
     ui$initializeGui(visitorsM2)
     mod <- iNZightTSMod$new(ui)
 })
+
+# load_all("../iNZightTS")
+ui <- iNZGUI$new()
+
+test_that("Forecasting works", {
+    data(visitorsM2, package = 'iNZightTS')
+    ui$initializeGui(visitorsM2)
+    mod <- iNZightTSMod$new(ui)
+})

@@ -894,12 +894,13 @@ iNZightTSMod <- setRefClass(
                     },
                     {
                         ## 4 >> forecast plot
-                        forecasts <<- iNZightTS::forecastplot(tsObj,
+                        forecasts <<- iNZightTS::plot(tsObj,
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab), 
                             ylab = svalue(yLab),
                             xlim = xlim,
-                            model.lim = modlim
+                            model.lim = modlim,
+                            forecast = tsObj$freq * 2
                         )
                         visible(forecastBtn) <<- TRUE
                         can.smooth <- FALSE
