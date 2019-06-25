@@ -114,7 +114,7 @@ ui$close()
 test_that("Plots works", {
     ui$initializeGui(visitorsM2)
     expect_silent(mod <- iNZightTSMod$new(ui))
-    Sys.sleep(0.2)
+    Sys.sleep(1)
     mod$plottype <- 2
     expect_silent(mod$updatePlot())
     mod$plottype <- 3
