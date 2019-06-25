@@ -102,8 +102,29 @@ test_that("Upper modelling limit is truncated to upper modelling limit", {
 ui$close()
 
 
+data(visitorsM2, package = 'iNZightTS')
 test_that("Other datasets work too", {
-    data(visitorsM2, package = 'iNZightTS')
     ui$initializeGui(visitorsM2)
     mod <- iNZightTSMod$new(ui)
+})
+
+ui$close()
+# load_all("../iNZightTS")
+
+test_that("Plots works", {
+    ui$initializeGui(visitorsM2)
+    expect_silent(mod <- iNZightTSMod$new(ui))
+    Sys.sleep(1)
+    mod$plottype <- 2
+    expect_silent(mod$updatePlot())
+    mod$plottype <- 3
+    expect_silent(mod$updatePlot())
+    mod$plottype <- 4
+    expect_silent(mod$updatePlot())
+
+    # change var 
+    tbl <- mod$mainGrp$children[[3]]$children[[1]]$children[[1]]$children[[2]]
+    expect_silent(svalue(tbl, index = TRUE) <- 1:4)
+    rdio <- mod$mainGrp$children[[3]]$children[[2]]$children[[2]]$children[[1]]
+    expect_silent(svalue(rdio, index = TRUE) <- 2)
 })
