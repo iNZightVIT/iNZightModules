@@ -894,7 +894,7 @@ iNZightTSMod <- setRefClass(
                     },
                     {
                         ## 4 >> forecast plot
-                        forecasts <<- iNZightTS::plot(tsObj,
+                        forecasts <<- plot(tsObj,
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab), 
                             ylab = svalue(yLab),
