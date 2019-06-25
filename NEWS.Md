@@ -1,6 +1,7 @@
 ## iNZightModules 2.4.5.9000
 __Release date__: TBA
 
+- time series module allows you to specify sub-series to plot or use in forecast model
 
 
 ## iNZightModules 2.4.5
