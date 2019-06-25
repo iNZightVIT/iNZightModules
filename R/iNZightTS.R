@@ -889,7 +889,8 @@ iNZightTSMod <- setRefClass(
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab), 
                             ylab = svalue(yLab), 
-                            t = smooth.t
+                            t = smooth.t,
+                            model.lim = modlim
                         )
                     },
                     {
