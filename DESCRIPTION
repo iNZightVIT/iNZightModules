@@ -32,6 +32,7 @@ Suggests:
     rgl,
     mgcv,
     sf,
+    survey,
     testthat,
     covr
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
