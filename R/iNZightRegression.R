@@ -38,7 +38,7 @@ iNZightRegMod <- setRefClass(
         fit         = "ANY",
         summaryOutput = "character",
         fits        = "list",
-        working     = "logical",
+        working     = "integer",
         showBoots   = "ANY",
         plottype    = "numeric",
         numVarList = "ANY",
@@ -52,7 +52,7 @@ iNZightRegMod <- setRefClass(
         initialize = function(GUI) {
             initFields(
                 GUI = GUI,
-                working = TRUE,
+                working = 1L,
                 plottype = 1,
                 codehistory = NULL,
                 svyname = ""
@@ -198,7 +198,7 @@ iNZightRegMod <- setRefClass(
             responseBox <<- gcombobox(yVars,
                 selected = 0,
                 handler = function(h, ...) {
-                    working <<- TRUE
+                    working <<- working + 1L
                     response <<- svalue(h$obj)
                     ## detect framework
                     y <- getdata()[[response]]
@@ -209,7 +209,7 @@ iNZightRegMod <- setRefClass(
                     }
                     ## set explanatory variables
                     setAvailVars()
-                    working <<- FALSE
+                    working <<- working - 1L
                     updateModel()
                 }
             )
@@ -226,7 +226,7 @@ iNZightRegMod <- setRefClass(
                 ),
                 selected = 0,
                 handler = function(h, ...) {
-                    working <<- TRUE
+                    working <<- working + 1L
                     responseType <<- svalue(h$obj, index = TRUE)
                     responseFamilyBox$set_items(
                         switch(responseType,
@@ -243,7 +243,7 @@ iNZightRegMod <- setRefClass(
                         svalue(flbl) <- "Framework: "
                     }
                     svalue(responseFamilyBox, index = TRUE) <<- 1
-                    working <<- FALSE
+                    working <<- working - 1L
                     updateModel()
                 }
             )
@@ -755,9 +755,9 @@ iNZightRegMod <- setRefClass(
                 handler = function(h, ...) {
                     varname <- svalue(h$obj)
                     variables <<- variables[variables != varname]
-                    working <<- TRUE
+                    working <<- working + 1L
                     setExplVars()
-                    working <<- FALSE
+                    working <<- working - 1L
                     varname
                 }
             )
@@ -765,9 +765,9 @@ iNZightRegMod <- setRefClass(
                 handler = function(h, ...) {
                     varname <- svalue(h$obj)
                     confounding <<- confounding[confounding != varname]
-                    working <<- TRUE
+                    working <<- working + 1L
                     setConfVars()
-                    working <<- FALSE
+                    working <<- working - 1L
                     varname
                 }
             )
@@ -850,7 +850,7 @@ iNZightRegMod <- setRefClass(
                     enabled(renameBtn) <- TRUE
                     enabled(newBtn) <- TRUE
                     obj <- fits[[svalue(h$obj, index = TRUE) - 1]]
-                    working <<- TRUE
+                    working <<- working + 1L
                     svalue(responseBox) <<- obj$response
                     svalue(responseTypeBox, index = TRUE) <<-
                         obj$responseType
@@ -866,7 +866,7 @@ iNZightRegMod <- setRefClass(
                     blockHandlers(saveBtn)
                     svalue(saveBtn) <- "Update"
                     unblockHandlers(saveBtn)
-                    working <<- FALSE
+                    working <<- working - 1L
                     fit <<- obj$fit
                     updateModel(new = FALSE)
                 }
@@ -1091,7 +1091,7 @@ iNZightRegMod <- setRefClass(
             ## So now, can swith between text and plot tabs ...
             showTab("instructions")
 
-            working <<- FALSE
+            working <<- 0L
 
             watchData()
             ## add to code output
@@ -1265,7 +1265,7 @@ iNZightRegMod <- setRefClass(
             ## ind
         },
         updateModel = function(new = TRUE, save = FALSE) {
-            if (working) return()
+            if (working > 0) return()
 
             if (length(response) == 0) return()
 
