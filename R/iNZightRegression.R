@@ -1014,23 +1014,33 @@ iNZightRegMod <- setRefClass(
                 handler = function(h, ...) {
                     fts <- lapply(fits, function(x) x$fit)
                     # construct expression using names of `fts`
-                    expr <- sprintf("with(fts, %s(%s))",
-                        svalue(compTypes),
-                        paste0(
-                            "`",
-                            paste(names(fts), collapse = "`, `"),
-                            "`"
-                        )
-                    )
+                    # expr <- sprintf("with(fts, %s(%s))",
+                    #     "BIC", #svalue(compTypes),
+                    #     paste0(
+                    #         "`",
+                    #         paste(names(fts), collapse = "`, `"),
+                    #         "`"
+                    #     )
+                    # )
 
-                    x <- tryCatch(
-                        suppressWarnings(
-                            eval(parse(text = expr))
-                        ),
-                        error = "Unable to compare these models"
+                    names(fts) <- NA
+                    names(fts)[1] <- "object"
+
+                    # x <- tryCatch(
+                    #     suppressWarnings(
+                    #         eval(parse(text = expr))
+                    #     ),
+                    #     error = "Unable to compare these models"
+                    # )
+                    svy.design <- mod$getdesign()
+                    x <- do.call(
+                        # eval(parse(text = svalue(compTypes))), 
+                        "AIC",
+                        fts
                     )
-                    rownames(x) <- names(fts)
-                    addOutput(capture.output(print(x)))
+                    rownames(x) <- NULL
+                    x <- data.frame(Model = names(fits), x)
+                    addOutput(capture.output(print(x, row.names = FALSE)))
                     if (!all(diff(sapply(fts, function(f) length(f$residuals))) == 0))
                         addOutput("", "Note: models are not all fitted to the same number of observations")
                     rule()
