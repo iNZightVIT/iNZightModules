@@ -61,6 +61,7 @@ test_that("Post-stratified models work", {
 
 # chis <- iNZightTools::smart_read("tests/testthat/chis.csv")
 ui$close()
+ui <- iNZGUI$new()
 ui$initializeGui(chis)
 
 ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
