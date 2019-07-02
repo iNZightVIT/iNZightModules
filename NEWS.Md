@@ -2,6 +2,7 @@
 __Release date__: TBA
 
 - time series module allows you to specify sub-series to plot or use in forecast model
+- fix calling of AIC and BIC functions in modelling module
 
 
 ## iNZightModules 2.4.5
