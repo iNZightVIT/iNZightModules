@@ -48,7 +48,7 @@ iNZightTSMod <- setRefClass(
 
             ## playBtn <- iNZight:::gimagebutton(stock.id = "media-play",
             #       handler = function(h, ...) updatePlot(animate = TRUE))
-            GUI$plotToolbar$update(NULL, refresh = "updatePlot")
+            GUI$plotToolbar$update("export", refresh = "updatePlot")
                 #, extra = list(playBtn))
 
             ################
@@ -836,7 +836,7 @@ iNZightTSMod <- setRefClass(
                 cat("Nothing to plot ...\n")
                 plot.new()
             } else if (inherits(tsObj, "iNZightMTS")) { ## multiple vars
-                switch(compare,
+                p <- switch(compare,
                     plot(tsObj,
                         multiplicative = (patternType == 1),
                         xlab = svalue(xLab),
@@ -856,11 +856,11 @@ iNZightTSMod <- setRefClass(
                     )
                 )
             } else { ## single var
-                switch(plottype,
+                p <- switch(plottype,
                     {
                         ## 1 >> standard plot
                         ## patternType = 1 >> 'multiplicative'; 2 >> 'additive'
-                        p <- plot(tsObj,
+                        plot(tsObj,
                             multiplicative = (patternType == 1),
                             ylab = svalue(yLab),
                             xlab = svalue(xLab),
@@ -882,6 +882,7 @@ iNZightTSMod <- setRefClass(
                         )
                         visible(recomposeBtn) <<- TRUE
                         visible(recomposeResBtn) <<- TRUE
+                        decomp
                     },
                     {
                         ## 3 >> season plot
@@ -895,23 +896,28 @@ iNZightTSMod <- setRefClass(
                     },
                     {
                         ## 4 >> forecast plot
-                        forecasts <<- iNZightTS::pred(plot(tsObj,
+                        pl <- plot(tsObj,
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab),
                             ylab = svalue(yLab),
                             xlim = xlim,
                             model.lim = modlim,
                             forecast = tsObj$freq * 2
-                        ))
+                        )
+                        forecasts <<- iNZightTS::pred(pl)
                         visible(forecastBtn) <<- TRUE
                         can.smooth <- FALSE
+                        pl
                     }
                 )
 
             }
-
             enabled(smthSlider) <<- can.smooth
 
+            enabled(GUI$plotToolbar$exportplotBtn) <<- 
+                iNZightPlots::can.interact(p)
+                
+            invisible(p)
         },
         close = function() {
             ## delete the module window
