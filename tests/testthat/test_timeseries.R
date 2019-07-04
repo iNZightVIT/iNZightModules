@@ -128,3 +128,26 @@ test_that("Plots works", {
     rdio <- mod$mainGrp$children[[3]]$children[[2]]$children[[2]]$children[[1]]
     expect_silent(svalue(rdio, index = TRUE) <- 2)
 })
+
+ui$close()
+
+# devtools::load_all("../iNZightPlots")
+# devtools::load_all("../iNZight")
+# devtools::load_all()
+ui <- iNZGUI$new()
+ui$initializeGui(visitorsM2)
+mod <- iNZightTSMod$new(ui)
+Sys.sleep(1)
+
+test_that("Interact button activated when plot supported", {
+    expect_true(enabled(ui$plotToolbar$exportplotBtn))
+    mod$plottype <- 2
+    expect_silent(mod$updatePlot())
+    expect_false(enabled(ui$plotToolbar$exportplotBtn))
+    mod$plottype <- 3
+    expect_silent(mod$updatePlot())
+    expect_false(enabled(ui$plotToolbar$exportplotBtn))
+    mod$plottype <- 4
+    expect_silent(mod$updatePlot())
+    expect_true(enabled(ui$plotToolbar$exportplotBtn))
+})
