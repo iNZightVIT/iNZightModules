@@ -1,5 +1,5 @@
-## iNZightModules 2.4.5.9000
-__Release date__: TBA
+## iNZightModules 2.4.6
+__Release date__: 8 July 2019
 
 - time series module allows you to specify sub-series to plot or use in forecast model
 - fix calling of AIC and BIC functions in modelling module
