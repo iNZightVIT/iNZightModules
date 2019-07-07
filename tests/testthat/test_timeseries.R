@@ -122,7 +122,7 @@ test_that("Plots works", {
     mod$plottype <- 4
     expect_silent(mod$updatePlot())
 
-    # change var 
+    # change var
     tbl <- mod$mainGrp$children[[3]]$children[[1]]$children[[1]]$children[[2]]
     expect_silent(svalue(tbl, index = TRUE) <- 1:4)
     rdio <- mod$mainGrp$children[[3]]$children[[2]]$children[[2]]$children[[1]]
