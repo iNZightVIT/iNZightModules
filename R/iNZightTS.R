@@ -29,6 +29,7 @@ iNZightTSMod <- setRefClass(
         animateBtn  = "ANY", pauseBtn = "ANY",
         recomposeBtn = "ANY", recomposeResBtn = "ANY", decomp = "ANY",
         forecastBtn = "ANY", forecasts   = "ANY",
+        forecastError = "ANY",
         timer = "ANY"
     ),
     methods = list(
@@ -485,6 +486,26 @@ iNZightTSMod <- setRefClass(
                 }
             )
             visible(forecastBtn) <<- FALSE
+            forecastError <<- ggroup(container = onevar)
+            glabel("Error fitting model ",
+                container = forecastError)
+            visible(forecastError) <<- FALSE
+            iNZight:::gimagebutton(stock.id = "info",
+                container = forecastError,
+                handler = function(h, ...) {
+                    gmessage(
+                        paste(
+                            "Sometimes the algorithm used (Holt Winters)",
+                            "is unable to converge. This can be sensitive to",
+                            "values in the data set. If you haven't already,",
+                            "try unchecking the 'Use above limits' box under",
+                            "'Adjust Limits', and then move the 'Fit model to data from'",
+                            "sliders, which may help convergence."
+                        ),
+                        parent = GUI$win
+                    )
+                }
+            )
 
             multivar <- ggroup(container = g5)
             compareChk <- gradio(c("Single graph", "Separate graphs"),
@@ -832,6 +853,8 @@ iNZightTSMod <- setRefClass(
                     modlim[2] <- xx[xd == svalue(modLimUpper)]
             }
 
+            visible(forecastError) <<- FALSE
+
             if (is.null(tsObj)) {
                 cat("Nothing to plot ...\n")
                 plot.new()
@@ -896,14 +919,18 @@ iNZightTSMod <- setRefClass(
                     },
                     {
                         ## 4 >> forecast plot
-                        pl <- plot(tsObj,
+                        pl <- try(plot(tsObj,
                             multiplicative = (patternType == 1),
                             xlab = svalue(xLab),
                             ylab = svalue(yLab),
                             xlim = xlim,
                             model.lim = modlim,
                             forecast = tsObj$freq * 2
-                        )
+                        ), silent = TRUE)
+                        if (inherits(pl, "try-error")) {
+                            visible(forecastError) <<- TRUE
+                            return()
+                        }
                         forecasts <<- iNZightTS::pred(pl)
                         visible(forecastBtn) <<- TRUE
                         can.smooth <- FALSE
@@ -914,9 +941,9 @@ iNZightTSMod <- setRefClass(
             }
             enabled(smthSlider) <<- can.smooth
 
-            enabled(GUI$plotToolbar$exportplotBtn) <<- 
+            enabled(GUI$plotToolbar$exportplotBtn) <<-
                 iNZightPlots::can.interact(p)
-                
+
             invisible(p)
         },
         close = function() {
