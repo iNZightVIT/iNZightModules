@@ -20,8 +20,11 @@ iNZightRegMod <- setRefClass(
         smryOut     = "ANY",
         regPlots    = "ANY",
         responseBox = "ANY",
+        responseTypeBox = "ANY",
+        responseFamilyBox = "ANY",
         response = "character",
         responseType = "numeric",
+        responseFamily = "numeric",
         responseTransform = "character",
         contVarBox  = "ANY",
         catVarBox = "ANY",
@@ -35,7 +38,7 @@ iNZightRegMod <- setRefClass(
         fit         = "ANY",
         summaryOutput = "character",
         fits        = "list",
-        working     = "logical",
+        working     = "integer",
         showBoots   = "ANY",
         plottype    = "numeric",
         numVarList = "ANY",
@@ -49,9 +52,10 @@ iNZightRegMod <- setRefClass(
         initialize = function(GUI) {
             initFields(
                 GUI = GUI,
-                working = TRUE,
+                working = 1L,
                 plottype = 1,
-                codehistory = NULL
+                codehistory = NULL,
+                svyname = ""
             )
 
             isSurveyObject <<- !is.null(getdesign())
@@ -188,24 +192,24 @@ iNZightRegMod <- setRefClass(
             responseTbl <- glayout(container = responseGp)
             ii <-  1
 
-            lbl <- glabel("Variable")
+            lbl <- glabel("Variable: ")
             yVars <- names(getdata()[, sapply(getdata(),
                 function(x) is.numeric(x) || length(levels(x)) == 2)])
             responseBox <<- gcombobox(yVars,
                 selected = 0,
                 handler = function(h, ...) {
-                    working <<- TRUE
+                    working <<- working + 1L
                     response <<- svalue(h$obj)
                     ## detect framework
                     y <- getdata()[[response]]
                     if (is.numeric(y)) {
-                        svalue(responseTypeBox, index = TRUE) <- 1
+                        svalue(responseTypeBox, index = TRUE) <<- 1
                     } else if (length(levels(y)) == 2) {
-                        svalue(responseTypeBox, index = TRUE) <- 2
+                        svalue(responseTypeBox, index = TRUE) <<- 2
                     }
                     ## set explanatory variables
                     setAvailVars()
-                    working <<- FALSE
+                    working <<- working - 1L
                     updateModel()
                 }
             )
@@ -213,26 +217,57 @@ iNZightRegMod <- setRefClass(
             responseTbl[ii, 2:3, expand = TRUE] <- responseBox
             ii <- ii + 1
 
-            lbl <- glabel("Framework")
-            responseTypeBox <- gcombobox(
+            flbl <- glabel("Framework: ")
+            responseTypeBox <<- gcombobox(
                 c(
                     "Least Squares",
-                    "Logistic Regression (binary)",
+                    "Binary Regression (logistic, ...)",
                     "Poisson Regression (counts)"
                 ),
                 selected = 0,
                 handler = function(h, ...) {
+                    working <<- working + 1L
                     responseType <<- svalue(h$obj, index = TRUE)
+                    responseFamilyBox$set_items(
+                        switch(responseType,
+                            c("Gaussian"),
+                            c("Logistic", "Probit"),
+                            c("Log")
+                        )
+                    )
+                    if (responseType == 2) {
+                        visible(responseFamilyBox) <<- TRUE
+                        svalue(flbl) <- "Framework:\n\nLink function: "
+                    } else {
+                        visible(responseFamilyBox) <<- FALSE
+                        svalue(flbl) <- "Framework: "
+                    }
+                    svalue(responseFamilyBox, index = TRUE) <<- 1
+                    working <<- working - 1L
                     updateModel()
                 }
             )
-            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            responseTbl[ii, 2:3, expand = TRUE] <- responseTypeBox
+            responseFamilyBox <<- gcombobox(
+                c("Gaussian"),
+                selected = 1,
+                handler = function(h, ...) {
+                    responseFamily <<- svalue(h$obj, index = TRUE)
+                    updateModel()
+                }
+            )
+            visible(responseFamilyBox) <<- FALSE
+
+            frameworkGp <- gvbox()
+            add(frameworkGp, responseTypeBox)
+            add(frameworkGp, responseFamilyBox)
+
+            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- flbl
+            responseTbl[ii, 2:3, expand = TRUE] <- frameworkGp
             ii <- ii + 1
 
 
             ## Transform response (Y)
-            lbl <- glabel("Transformation")
+            lbl <- glabel("Transformation: ")
             responseTransformBox <- gcombobox(
                 c("", "log", "exp", "square root", "inverse"),
                 editable = TRUE,
@@ -720,9 +755,9 @@ iNZightRegMod <- setRefClass(
                 handler = function(h, ...) {
                     varname <- svalue(h$obj)
                     variables <<- variables[variables != varname]
-                    working <<- TRUE
+                    working <<- working + 1L
                     setExplVars()
-                    working <<- FALSE
+                    working <<- working - 1L
                     varname
                 }
             )
@@ -730,9 +765,9 @@ iNZightRegMod <- setRefClass(
                 handler = function(h, ...) {
                     varname <- svalue(h$obj)
                     confounding <<- confounding[confounding != varname]
-                    working <<- TRUE
+                    working <<- working + 1L
                     setConfVars()
-                    working <<- FALSE
+                    working <<- working - 1L
                     varname
                 }
             )
@@ -815,10 +850,12 @@ iNZightRegMod <- setRefClass(
                     enabled(renameBtn) <- TRUE
                     enabled(newBtn) <- TRUE
                     obj <- fits[[svalue(h$obj, index = TRUE) - 1]]
-                    working <<- TRUE
+                    working <<- working + 1L
                     svalue(responseBox) <<- obj$response
-                    svalue(responseTypeBox, index = TRUE) <-
+                    svalue(responseTypeBox, index = TRUE) <<-
                         obj$responseType
+                    svalue(responseFamilyBox, index = TRUE) <<-
+                        obj$responseFamily
                     svalue(responseTransformBox, index = FALSE) <-
                         obj$responseTransform
                     variables <<- obj$variables
@@ -829,7 +866,7 @@ iNZightRegMod <- setRefClass(
                     blockHandlers(saveBtn)
                     svalue(saveBtn) <- "Update"
                     unblockHandlers(saveBtn)
-                    working <<- FALSE
+                    working <<- working - 1L
                     fit <<- obj$fit
                     updateModel(new = FALSE)
                 }
@@ -950,6 +987,73 @@ iNZightRegMod <- setRefClass(
             plotTbl[ii, 3:6, expand = TRUE] <- compMatrix
 
 
+            ## -----------------------------------------------------------------
+            ## Model comparisons
+
+            compGp <- gexpandgroup("Model Comparison",
+                horizontal = FALSE,
+                container = mainGrp
+            )
+            visible(compGp) <- FALSE
+            compGp$set_borderwidth(10)
+            compTbl <- glayout(
+                homogeneous = TRUE,
+                container = compGp,
+                expand = TRUE
+            )
+            ii <- 1
+
+            # comparison criteria
+            compTypes <- gcombobox(
+                c("AIC", "BIC")
+                # handler = function(h, ...) {
+                #     model_comp <<- svalue(h$obj)
+                # }
+            )
+            compBtn <- gbutton("Compare",
+                handler = function(h, ...) {
+                    fts <- lapply(fits, function(x) x$fit)
+                    # construct expression using names of `fts`
+                    # expr <- sprintf("with(fts, %s(%s))",
+                    #     "BIC", #svalue(compTypes),
+                    #     paste0(
+                    #         "`",
+                    #         paste(names(fts), collapse = "`, `"),
+                    #         "`"
+                    #     )
+                    # )
+
+                    names(fts) <- NA
+                    names(fts)[1] <- "object"
+
+                    # x <- tryCatch(
+                    #     suppressWarnings(
+                    #         eval(parse(text = expr))
+                    #     ),
+                    #     error = "Unable to compare these models"
+                    # )
+                    svy.design <- mod$getdesign()
+                    x <- do.call(
+                        # eval(parse(text = svalue(compTypes))), 
+                        "AIC",
+                        fts
+                    )
+                    rownames(x) <- NULL
+                    x <- data.frame(Model = names(fits), x)
+                    addOutput(capture.output(print(x, row.names = FALSE)))
+                    if (!all(diff(sapply(fts, function(f) length(f$residuals))) == 0))
+                        addOutput("", "Note: models are not all fitted to the same number of observations")
+                    rule()
+                    summaryOutput <<- svalue(smryOut)
+                }
+            )
+            compTbl[ii, 1:2, anchor = c(1, 0)] <- glabel("Criteria:")
+            compTbl[ii, 3:6, expand = TRUE] <- compTypes
+            ii <- ii + 1
+            compTbl[ii, 3:6, expand = TRUE] <- compBtn
+            ii <- ii + 1
+
+
             ## Now create new tab for SUMMARY output:
             smryOut <<- gtext()
             if (GUI$popOut) addInstructions(smryOut)
@@ -987,7 +1091,7 @@ iNZightRegMod <- setRefClass(
             ## So now, can swith between text and plot tabs ...
             showTab("instructions")
 
-            working <<- FALSE
+            working <<- 0L
 
             watchData()
             ## add to code output
@@ -1161,7 +1265,7 @@ iNZightRegMod <- setRefClass(
             ## ind
         },
         updateModel = function(new = TRUE, save = FALSE) {
-            if (working) return()
+            if (working > 0) return()
 
             if (length(response) == 0) return()
 
@@ -1192,6 +1296,14 @@ iNZightRegMod <- setRefClass(
                         "gaussian",
                         "binomial",
                         "poisson"
+                    ),
+                    link = switch(responseType,
+                        NULL,
+                        switch(responseFamily,
+                            "logit",
+                            "probit"
+                        ),
+                        NULL
                     ),
                     design = ifelse(isSurveyObject, "survey", "simple")
                 )
@@ -1238,6 +1350,7 @@ iNZightRegMod <- setRefClass(
                         fit = fit,
                         response = response,
                         responseType = responseType,
+                        responseFamily = responseFamily,
                         responseTransform = responseTransform,
                         variables = variables,
                         confounding = confounding
@@ -1455,6 +1568,7 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             }
+            invisible(NULL)
         }, # updatePlot()
         addInstructions = function(where) {
             insert(where,
@@ -1466,7 +1580,7 @@ iNZightRegMod <- setRefClass(
             sapply(
                 list(readLines(
                     system.file(
-                        file.path("inst", "instructions",
+                        file.path("instructions",
                             sprintf("model_fitting_%s.txt",
                                 ifelse(GUI$popOut, "popout", "integrated")
                             )
@@ -1480,7 +1594,7 @@ iNZightRegMod <- setRefClass(
 
             sapply(
                 list(readLines(
-                    system.file(file.path("inst", "instructions",
+                    system.file(file.path("instructions",
                         "model_fitting.txt"),
                         package = "iNZightModules")
                 )),
