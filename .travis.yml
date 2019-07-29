@@ -35,6 +35,7 @@ repos:
 r_github_packages: 
   - jverzani/gWidgets2RGtk2
   - iNZightVIT/iNZightTools@dev
+  - iNZightVIT/iNZightRegression@dev
   - iNZightVIT/iNZightPlots@dev
   - iNZightVIT/iNZightTS@dev
   - iNZightVIT/iNZight@dev

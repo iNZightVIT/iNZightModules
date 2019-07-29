@@ -47,9 +47,9 @@ test_that("Valid model options are displayed", {
 })
 
 # require(iNZight)
-# ui <- iNZGUI$new()
-# ui$initializeGui(census.at.school.500)
-# mod <- iNZightRegMod$new(ui)
+ui <- iNZGUI$new()
+ui$initializeGui(census.at.school.500)
+mod <- iNZightRegMod$new(ui)
 test_that("Models can be saved, restored, and compared", {
     svalue(mod$responseBox) <- "height"
     mod$variables <- c("gender")
@@ -61,6 +61,8 @@ test_that("Models can be saved, restored, and compared", {
     svalue(mod$modelList, TRUE) <- 1
     mod$updateModel(save = TRUE)
     expect_equal(svalue(mod$modelList), "Model 2")
+
+    expect_silent(mod$compBtn$invoke_change_handler())
 })
 
 
