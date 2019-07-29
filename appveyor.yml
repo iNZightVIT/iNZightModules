@@ -21,11 +21,6 @@ environment:
 
 build_script:
   - travis-tool.sh install_deps
-  - travis-tool.sh install_github iNZightVIT/iNZightTools@dev
-  - travis-tool.sh install_github iNZightVIT/iNZightRegression@dev
-  - travis-tool.sh install_github iNZightVIT/iNZightPlots@dev
-  - travis-tool.sh install_github iNZightVIT/iNZightTS@dev
-  - travis-tool.sh install_github iNZightVIT/iNZight@dev
   - appveyor DownloadFile "http://ftp.gnome.org/pub/gnome/binaries/win32/gtk+/2.22/gtk+-bundle_2.22.1-20101227_win32.zip" -FileName gtk32.zip
   - appveyor DownloadFile "http://ftp.gnome.org/pub/gnome/binaries/win64/gtk+/2.22/gtk+-bundle_2.22.1-20101229_win64.zip" -FileName gtk64.zip
   - md gtk
@@ -43,6 +38,11 @@ build_script:
   - mv gtk c:\RLibrary\RGtk2
   - del gtk32.zip
   - del gtk64.zip
+  - travis-tool.sh install_github iNZightVIT/iNZightTools@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightRegression@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightPlots@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightTS@dev
+  - travis-tool.sh install_github iNZightVIT/iNZight@dev
 
 test_script:
   - md C:\Users\appveyor\Documents\iNZightVIT
