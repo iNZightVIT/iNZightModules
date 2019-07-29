@@ -1,6 +1,6 @@
 ## iNZightModules 2.4.6.9000
 
-- fixes AIC and BIC output for comparing regression models
+- fixes AIC and BIC output for comparing regression models (including BIC for [nested] survey models)
 
 
 ## iNZightModules 2.4.6
