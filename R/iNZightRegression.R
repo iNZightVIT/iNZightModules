@@ -932,6 +932,18 @@ iNZightRegMod <- setRefClass(
                     )
                     rm("z")
 
+                    ## if survey, must add design object to e too
+                    cleanup <- FALSE
+                    if (isSurveyObject) {
+                        cleanup <- TRUE
+                        if (!"dataSet" %in% ls(.GlobalEnv))
+                            assign("dataSet", getdata(), envir = .GlobalEnv)
+                        else cleanup <- FALSE
+                        if (!"svy.design" %in% ls(.GlobalEnv))
+                            assign("svy.design", getdesign(), envir = .GlobalEnv)
+                        else cleanup <- FALSE
+                    }
+
                     expr <- sprintf("iNZightRegression::compare_models(%s)",
                         paste(names(fts), collapse = ", ")
                     )
@@ -941,6 +953,12 @@ iNZightRegMod <- setRefClass(
                     addOutput(o)
                     rule()
                     summaryOutput <<- svalue(smryOut)
+
+                    # clean up
+                    if (cleanup) {
+                        rm("dataSet", envir = .GlobalEnv)
+                        rm("svy.design", envir = .GlobalEnv)
+                    }
                 }
             )
             modelTbl[ii, 2:3, expand = TRUE, fill = TRUE] <- compBtn
