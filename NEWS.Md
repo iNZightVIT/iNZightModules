@@ -1,6 +1,7 @@
 ## iNZightModules 2.4.6.9000
 
 - fixes AIC and BIC output for comparing regression models (including BIC for [nested] survey models)
+- factor comparisons returns pairwise comparison matrix (with estimates, CIs, and [adjusted] p-values)
 
 
 ## iNZightModules 2.4.6
