@@ -44,6 +44,7 @@ iNZightRegMod <- setRefClass(
         plottype    = "numeric",
         numVarList = "ANY",
         catVarList = "ANY",
+        plotTypeList = "ANY",
         compMatrix = "ANY",
         svyname     = "character",
         codehistory = "ANY",
@@ -988,7 +989,7 @@ iNZightRegMod <- setRefClass(
             ii <- ii + 1
 
             lbl <- glabel("Residual plots :")
-            plotTypeList <- gcombobox(
+            plotTypeList <<- gcombobox(
                 c(
                     "Residual", "Scale-Location", "Leverage", "Cook's Distance",
                     "Normal Q-Q", "Histogram", "Summary Matrix", "Partial Residual",
@@ -1020,7 +1021,12 @@ iNZightRegMod <- setRefClass(
             compMatrix <<- gbutton("Comparison Matrix",
                 handler = function(h, ...) {
                     out <- capture.output(
-                        iNZightMR::moecalc(fit, svalue(catVarList))
+                        #iNZightMR::moecalc(fit, svalue(catVarList))
+                        print(
+                            iNZightRegression::factorComp(fit, 
+                                svalue(catVarList)
+                            )
+                        )
                     )
                     addOutput(out)
                     rule()
@@ -1584,9 +1590,9 @@ iNZightRegMod <- setRefClass(
                 visible(catVarList) <<- length(catvars) > 1
                 if (svalue(catVarList) != "") {
                     plot(
-                        iNZightMR::moecalc(fit,
+                        suppressWarnings(iNZightMR::moecalc(fit,
                             svalue(catVarList, index = FALSE)
-                        )
+                        ))
                     )
                     fmla <- sprintf(
                         "plot(iNZightMR::moecalc(%s, factorname = %s))",
