@@ -47,9 +47,9 @@ test_that("Valid model options are displayed", {
 })
 
 # require(iNZight)
-ui <- iNZGUI$new()
-ui$initializeGui(census.at.school.500)
-mod <- iNZightRegMod$new(ui)
+# ui <- iNZGUI$new()
+# ui$initializeGui(census.at.school.500)
+# mod <- iNZightRegMod$new(ui)
 test_that("Models can be saved, restored, and compared", {
     svalue(mod$responseBox) <- "height"
     mod$variables <- c("gender")
@@ -65,6 +65,21 @@ test_that("Models can be saved, restored, and compared", {
     expect_silent(mod$compBtn$invoke_change_handler())
 })
 
+
+# require(iNZight)
+# ui$close()
+# ui <- iNZGUI$new()
+# ui$initializeGui(census.at.school.500)
+# mod <- iNZightRegMod$new(ui)
+test_that("Factor comparisons display on button press", {
+    svalue(mod$responseBox) <- "height"
+    mod$variables <- c("gender")
+    mod$setExplVars()
+    mod$updateModel(save = TRUE)
+    
+    svalue(mod$plotTypeList) <- "Factor Comparisons"
+    expect_silent(mod$compMatrix$invoke_change_handler())
+})
 
 mod$close()
 
