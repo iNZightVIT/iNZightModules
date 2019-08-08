@@ -1595,10 +1595,10 @@ iNZightMap2Mod <- setRefClass(
                 }
                     visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
                     visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
 
                 updateOptions()
             })
