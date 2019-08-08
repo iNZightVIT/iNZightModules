@@ -1232,7 +1232,7 @@ iNZightMap2Mod <- setRefClass(
             }
 
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE,
+            radio.maptype <- gradio(c("Regions", "Centroids", "Dot Density"), horizontal = TRUE,
                                     selected = (mapType == "point") + 1)
 
 
@@ -1589,6 +1589,9 @@ iNZightMap2Mod <- setRefClass(
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
                     combinedData$type <<- "point"
                     mapType <<- "point"
+                } else if (svalue(radio.maptype, index = TRUE) == 3) {
+                    combinedData$type <<- "dotdensity"
+                    mapType <<- "dotdensity"
                 }
                     visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
                     visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
