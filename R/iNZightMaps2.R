@@ -1246,8 +1246,13 @@ iNZightMap2Mod <- setRefClass(
             }
 
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(c("Regions", "Centroids", "Dot Density"), horizontal = TRUE,
-                                    selected = (mapType == "point") + 1)
+            radio.maptype <- if (combinedData$multiple.obs) {
+                gradio(c("Regions", "Centroids"), horizontal = TRUE,
+                                        selected = (mapType == "point") + 1)
+            } else {
+                gradio(c("Regions", "Centroids", "Dot Density"), horizontal = TRUE,
+                                        selected = (mapType == "point") + 1)
+            }
 
 
             lbl.sizeselect <- glabel("Size by:")
