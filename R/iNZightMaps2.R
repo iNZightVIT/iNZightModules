@@ -53,6 +53,7 @@ iNZightMap2Mod <- setRefClass(
         plotScaleLimits = "ANY",
         plotAxisScale = "ANY",
         plotLabelScale = "ANY",
+        plotDotPerN = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -129,6 +130,7 @@ iNZightMap2Mod <- setRefClass(
             plotLabelVar <<- NULL
             plotAxisScale <<- 1
             plotLabelScale <<- 4
+            plotDotPerN <<- 1000
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
@@ -793,7 +795,7 @@ iNZightMap2Mod <- setRefClass(
                  sparkline.type = plotSparklinesType,
                  regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
                  scale.limits = axis.limits, label.var = plotLabelVar,
-                 scale.axis = plotAxisScale, scale.label = plotLabelScale)
+                 scale.axis = plotAxisScale, scale.label = plotLabelScale, per.n = plotDotPerN)
 
             GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
 
@@ -827,6 +829,7 @@ iNZightMap2Mod <- setRefClass(
                 plotConstantAlpha <<- 1 - svalue(slider.constalpha)
                 plotAxisScale <<- svalue(slider.scaleaxis)
                 plotLabelScale <<- svalue(slider.scalelabels)
+                plotDotPerN <<- as.integer(svalue(edit.dotN))
 
                 if (combinedData$type == "sparklines") {
                     plotConstantSize <<- svalue(slider.constsizespark)
@@ -1138,11 +1141,18 @@ iNZightMap2Mod <- setRefClass(
             lbl.constalpha     <- glabel("Transparency of map:")
             lbl.constsize      <- glabel("Overall size:")
             lbl.constsizespark <- glabel("Overall size:")
+            
+            edit.dotN <- gedit(1000)
+            lbl.dotN <- glabel("Dot per N obs:")
+            box.dotN <- ggroup()
+            add(box.dotN, edit.dotN)
 
-            visible(slider.constalpha) <- mapType == "point"
-            visible(lbl.constalpha)    <- mapType == "point"
-            visible(slider.constsize)  <- mapType == "point"
-            visible(lbl.constsize)     <- mapType == "point"
+            visible(slider.constalpha) <- mapType %in% c("point", "dotdensity")
+            visible(lbl.constalpha)    <- mapType %in% c("point", "dotdensity")
+            visible(slider.constsize)  <- mapType %in% c("point", "dotdensity")
+            visible(lbl.constsize)     <- mapType %in% c("point", "dotdensity")
+            visible(lbl.dotN) <- mapType %in% c("dotdensity")
+            visible(box.dotN) <- mapType %in% c("dotdensity")
 
             visible(slider.constsizespark) <- FALSE
 
@@ -1162,6 +1172,10 @@ iNZightMap2Mod <- setRefClass(
                 if (!is.null(timer))
                     if (timer$started) timer$stop_timer()
                 timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
+            })
+            
+            addHandlerChanged(edit.dotN, function(h, ...) {
+                updateOptions()
             })
 
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
@@ -1232,8 +1246,13 @@ iNZightMap2Mod <- setRefClass(
             }
 
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE,
-                                    selected = (mapType == "point") + 1)
+            radio.maptype <- if (combinedData$multiple.obs) {
+                gradio(c("Regions", "Centroids"), horizontal = TRUE,
+                                        selected = (mapType == "point") + 1)
+            } else {
+                gradio(c("Regions", "Centroids", "Dot Density"), horizontal = TRUE,
+                                        selected = (mapType == "point") + 1)
+            }
 
 
             lbl.sizeselect <- glabel("Size by:")
@@ -1254,6 +1273,8 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[5, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
                 tbl.main[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constsize
                 tbl.main[4, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
+                tbl.main[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.dotN
+                tbl.main[6, 2, expand = TRUE, anchor = c(-1, 0)] <- box.dotN
             } else {
                 separator.timevariable <- gseparator()
                 lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
@@ -1407,6 +1428,8 @@ iNZightMap2Mod <- setRefClass(
                         visible(combobox.sparkline)  <- FALSE
                         visible(btn.play)            <- FALSE
                         visible(btn.delay)           <- FALSE
+                        visible(box.dotN) <- FALSE
+                        visible(lbl.dotN) <- FALSE
                     }
 
                     if (radio.choice == 1) {
@@ -1589,13 +1612,22 @@ iNZightMap2Mod <- setRefClass(
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
                     combinedData$type <<- "point"
                     mapType <<- "point"
+                    
+                    svalue(lbl.sizeselect) <- "Size by:"
+                } else if (svalue(radio.maptype, index = TRUE) == 3) {
+                    combinedData$type <<- "dotdensity"
+                    mapType <<- "dotdensity"
+                    
+                    svalue(lbl.sizeselect) <- "Allocate dots by:"
                 }
-                    visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(box.dotN) <- svalue(radio.maptype, index = TRUE) %in% c(3)
+                    visible(lbl.dotN) <- svalue(radio.maptype, index = TRUE) %in% c(3)
 
                 updateOptions()
             })
