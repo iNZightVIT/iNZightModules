@@ -1612,9 +1612,13 @@ iNZightMap2Mod <- setRefClass(
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
                     combinedData$type <<- "point"
                     mapType <<- "point"
+                    
+                    svalue(lbl.sizeselect) <- "Size by:"
                 } else if (svalue(radio.maptype, index = TRUE) == 3) {
                     combinedData$type <<- "dotdensity"
                     mapType <<- "dotdensity"
+                    
+                    svalue(lbl.sizeselect) <- "Allocate dots by:"
                 }
                     visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
                     visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
@@ -1624,7 +1628,7 @@ iNZightMap2Mod <- setRefClass(
                     visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
                     visible(box.dotN) <- svalue(radio.maptype, index = TRUE) %in% c(3)
                     visible(lbl.dotN) <- svalue(radio.maptype, index = TRUE) %in% c(3)
-                    
+
                 updateOptions()
             })
 
