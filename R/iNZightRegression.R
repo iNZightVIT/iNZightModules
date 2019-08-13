@@ -35,6 +35,7 @@ iNZightRegMod <- setRefClass(
         btnEditSig  = "ANY",
         modelName   = "ANY",
         modelList = "ANY",
+        compBtn = "ANY",
         fit         = "ANY",
         summaryOutput = "character",
         fits        = "list",
@@ -43,6 +44,7 @@ iNZightRegMod <- setRefClass(
         plottype    = "numeric",
         numVarList = "ANY",
         catVarList = "ANY",
+        plotTypeList = "ANY",
         compMatrix = "ANY",
         svyname     = "character",
         codehistory = "ANY",
@@ -920,6 +922,49 @@ iNZightRegMod <- setRefClass(
             modelTbl[ii, 3, expand = TRUE, fill = TRUE] <- renameBtn
             ii <- ii + 1
 
+            # display model comparison information (AIC, BIC)
+            compBtn <<- gbutton("Compare models by AIC, BIC",
+                handler = function(h, ...) {
+                    fts <- fits
+                    names(fts) <- gsub(" ", "_", names(fts))
+                    e <- new.env()
+                    z <- lapply(names(fts), 
+                        function(fit) assign(fit, fts[[fit]]$fit, envir = e)
+                    )
+                    rm("z")
+
+                    ## if survey, must add design object to e too
+                    cleanup <- FALSE
+                    if (isSurveyObject) {
+                        cleanup <- TRUE
+                        if (!"dataSet" %in% ls(.GlobalEnv))
+                            assign("dataSet", getdata(), envir = .GlobalEnv)
+                        else cleanup <- FALSE
+                        if (!"svy.design" %in% ls(.GlobalEnv))
+                            assign("svy.design", getdesign(), envir = .GlobalEnv)
+                        else cleanup <- FALSE
+                    }
+
+                    expr <- sprintf("iNZightRegression::compare_models(%s)",
+                        paste(names(fts), collapse = ", ")
+                    )
+                    x <- suppressWarnings(eval(parse(text = expr), envir = e))
+                    o <- capture.output(print(x))
+                    o <- gsub("_", " ", o)
+                    addOutput(o)
+                    rule()
+                    summaryOutput <<- svalue(smryOut)
+
+                    # clean up
+                    if (cleanup) {
+                        rm("dataSet", envir = .GlobalEnv)
+                        rm("svy.design", envir = .GlobalEnv)
+                    }
+                }
+            )
+            modelTbl[ii, 2:3, expand = TRUE, fill = TRUE] <- compBtn
+            ii <- ii + 1
+
             ## -----------------------------------------------------------------
             ## Plot options
 
@@ -944,7 +989,7 @@ iNZightRegMod <- setRefClass(
             ii <- ii + 1
 
             lbl <- glabel("Residual plots :")
-            plotTypeList <- gcombobox(
+            plotTypeList <<- gcombobox(
                 c(
                     "Residual", "Scale-Location", "Leverage", "Cook's Distance",
                     "Normal Q-Q", "Histogram", "Summary Matrix", "Partial Residual",
@@ -976,7 +1021,12 @@ iNZightRegMod <- setRefClass(
             compMatrix <<- gbutton("Comparison Matrix",
                 handler = function(h, ...) {
                     out <- capture.output(
-                        iNZightMR::moecalc(fit, svalue(catVarList))
+                        #iNZightMR::moecalc(fit, svalue(catVarList))
+                        print(
+                            iNZightRegression::factorComp(fit, 
+                                svalue(catVarList)
+                            )
+                        )
                     )
                     addOutput(out)
                     rule()
@@ -990,68 +1040,67 @@ iNZightRegMod <- setRefClass(
             ## -----------------------------------------------------------------
             ## Model comparisons
 
-            compGp <- gexpandgroup("Model Comparison",
-                horizontal = FALSE,
-                container = mainGrp
-            )
-            visible(compGp) <- FALSE
-            compGp$set_borderwidth(10)
-            compTbl <- glayout(
-                homogeneous = TRUE,
-                container = compGp,
-                expand = TRUE
-            )
-            ii <- 1
+            # compGp <- gexpandgroup("Model Comparison",
+            #     horizontal = FALSE,
+            #     container = mainGrp
+            # )
+            # visible(compGp) <- FALSE
+            # compGp$set_borderwidth(10)
+            # compTbl <- glayout(
+            #     homogeneous = TRUE,
+            #     container = compGp,
+            #     expand = TRUE
+            # )
+            # ii <- 1
 
             # comparison criteria
-            compTypes <- gcombobox(
-                c("AIC", "BIC")
-                # handler = function(h, ...) {
-                #     model_comp <<- svalue(h$obj)
-                # }
-            )
-            compBtn <- gbutton("Compare",
-                handler = function(h, ...) {
-                    fts <- lapply(fits, function(x) x$fit)
-                    # construct expression using names of `fts`
-                    # expr <- sprintf("with(fts, %s(%s))",
-                    #     "BIC", #svalue(compTypes),
-                    #     paste0(
-                    #         "`",
-                    #         paste(names(fts), collapse = "`, `"),
-                    #         "`"
-                    #     )
-                    # )
+            # compTypes <- gcombobox(
+            #     c("AIC", "BIC")
+            #     # handler = function(h, ...) {
+            #     #     model_comp <<- svalue(h$obj)
+            #     # }
+            # )
+            # compBtn <<- gbutton("Compare",
+            #     handler = function(h, ...) {
+            #         fts <- lapply(fits, function(x) x$fit)
+            #         # construct expression using names of `fts`
+            #         # expr <- sprintf("with(fts, %s(%s))",
+            #         #     "BIC", #svalue(compTypes),
+            #         #     paste0(
+            #         #         "`",
+            #         #         paste(names(fts), collapse = "`, `"),
+            #         #         "`"
+            #         #     )
+            #         # )
 
-                    names(fts) <- NA
-                    names(fts)[1] <- "object"
+            #         
 
-                    # x <- tryCatch(
-                    #     suppressWarnings(
-                    #         eval(parse(text = expr))
-                    #     ),
-                    #     error = "Unable to compare these models"
-                    # )
-                    svy.design <- mod$getdesign()
-                    x <- do.call(
-                        # eval(parse(text = svalue(compTypes))), 
-                        "AIC",
-                        fts
-                    )
-                    rownames(x) <- NULL
-                    x <- data.frame(Model = names(fits), x)
-                    addOutput(capture.output(print(x, row.names = FALSE)))
-                    if (!all(diff(sapply(fts, function(f) length(f$residuals))) == 0))
-                        addOutput("", "Note: models are not all fitted to the same number of observations")
-                    rule()
-                    summaryOutput <<- svalue(smryOut)
-                }
-            )
-            compTbl[ii, 1:2, anchor = c(1, 0)] <- glabel("Criteria:")
-            compTbl[ii, 3:6, expand = TRUE] <- compTypes
-            ii <- ii + 1
-            compTbl[ii, 3:6, expand = TRUE] <- compBtn
-            ii <- ii + 1
+            #         # x <- tryCatch(
+            #         #     suppressWarnings(
+            #         #         eval(parse(text = expr))
+            #         #     ),
+            #         #     error = "Unable to compare these models"
+            #         # )
+            #         svy.design <- mod$getdesign()
+            #         x <- do.call(
+            #             # eval(parse(text = svalue(compTypes))), 
+            #             "AIC",
+            #             fts
+            #         )
+            #         rownames(x) <- NULL
+            #         x <- data.frame(Model = names(fits), x)
+            #         addOutput(capture.output(print(x, row.names = FALSE)))
+            #         if (!all(diff(sapply(fts, function(f) length(f$residuals))) == 0))
+            #             addOutput("", "Note: models are not all fitted to the same number of observations")
+            #         rule()
+            #         summaryOutput <<- svalue(smryOut)
+            #     }
+            # )
+            # compTbl[ii, 1:2, anchor = c(1, 0)] <- glabel("Criteria:")
+            # compTbl[ii, 3:6, expand = TRUE] <- compTypes
+            # ii <- ii + 1
+            # compTbl[ii, 3:6, expand = TRUE] <- compBtn
+            # ii <- ii + 1
 
 
             ## Now create new tab for SUMMARY output:
@@ -1541,9 +1590,9 @@ iNZightRegMod <- setRefClass(
                 visible(catVarList) <<- length(catvars) > 1
                 if (svalue(catVarList) != "") {
                     plot(
-                        iNZightMR::moecalc(fit,
+                        suppressWarnings(iNZightMR::moecalc(fit,
                             svalue(catVarList, index = FALSE)
-                        )
+                        ))
                     )
                     fmla <- sprintf(
                         "plot(iNZightMR::moecalc(%s, factorname = %s))",

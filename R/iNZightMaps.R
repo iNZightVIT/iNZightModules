@@ -403,7 +403,7 @@ iNZightMapMod <- setRefClass(
               ii.colour <- ii.colour + 1
 
               lbl.palette <- glabel("Palette:")
-              combobox.paletteCont <- gcombobox(names(colourPalettes$cont))
+              combobox.paletteCont <- gcombobox(names(colourPalettes$cont), selected = 4)
               combobox.paletteCat <- gcombobox(names(colourPalettes$cat))
               
               tbl.colour[ii.colour, 1:2, anchor = c(1, 0), expand = TRUE] <- lbl.palette

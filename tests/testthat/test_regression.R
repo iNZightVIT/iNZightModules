@@ -61,8 +61,25 @@ test_that("Models can be saved, restored, and compared", {
     svalue(mod$modelList, TRUE) <- 1
     mod$updateModel(save = TRUE)
     expect_equal(svalue(mod$modelList), "Model 2")
+
+    expect_silent(mod$compBtn$invoke_change_handler())
 })
 
+
+# require(iNZight)
+# ui$close()
+# ui <- iNZGUI$new()
+# ui$initializeGui(census.at.school.500)
+# mod <- iNZightRegMod$new(ui)
+test_that("Factor comparisons display on button press", {
+    svalue(mod$responseBox) <- "height"
+    mod$variables <- c("gender")
+    mod$setExplVars()
+    mod$updateModel(save = TRUE)
+    
+    svalue(mod$plotTypeList) <- "Factor Comparisons"
+    expect_silent(mod$compMatrix$invoke_change_handler())
+})
 
 mod$close()
 

@@ -39,6 +39,22 @@ test_that("Basic survey models work", {
     expect_true(mod$close())
 })
 
+test_that("Model comparison works", {
+    mod <- iNZightRegMod$new(ui)
+    svalue(mod$responseBox) <- "api00"
+    mod$variables <- c("api99")
+    mod$setExplVars()
+    mod$updateModel(save = TRUE)
+    expect_equal(svalue(mod$modelList), "Model 1")
+    mod$variables <- c("api99", "enroll")
+    mod$setExplVars()
+    svalue(mod$modelList, TRUE) <- 1
+    mod$updateModel(save = TRUE)
+    expect_equal(svalue(mod$modelList), "Model 2")
+
+    expect_silent(mod$compBtn$invoke_change_handler())
+})
+
 
 ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
     clus1 = "dnum", wt = "pw", fpc = "fpc",
