@@ -53,6 +53,7 @@ iNZightMap2Mod <- setRefClass(
         plotScaleLimits = "ANY",
         plotAxisScale = "ANY",
         plotLabelScale = "ANY",
+        plotDotPerN = "ANY",
 
         multipleObsOption = "ANY",
 
@@ -129,6 +130,7 @@ iNZightMap2Mod <- setRefClass(
             plotLabelVar <<- NULL
             plotAxisScale <<- 1
             plotLabelScale <<- 4
+            plotDotPerN <<- 1000
 
             multipleObsOption <<- NULL
             OS <- if (.Platform$OS == "windows") "windows" else if (Sys.info()["sysname"] == "Darwin") "mac" else "linux"
@@ -205,11 +207,8 @@ iNZightMap2Mod <- setRefClass(
         # },
         importDialog = function() {
           requireNamespace("sf")
-            GUI$initializeModuleWindow(.self)
-            lbl.inzightmaps <- glabel("iNZight Maps")
-            font(lbl.inzightmaps) <- list(weight = "bold",
-                                          family = "normal",
-                                          size   = 12)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Maps", scroll = TRUE)
+
                                         # General variables
 
             ## Variables used later on in the merge variable selection section
@@ -222,21 +221,18 @@ iNZightMap2Mod <- setRefClass(
                                         # Create window, etc.
 
             ## Overall Layout
-            gv.match <- gvbox(container = GUI$moduleWindow, expand = TRUE, fill = TRUE)
-            gv.match$set_borderwidth(15)
-            add(gv.match, lbl.inzightmaps, anchor = c(0, 0))
-            addSpace(gv.match, 10)
+            gv.match <- modwin$body
 
             ## Expandable boxes
             frame.import <- gframe(horizontal = FALSE)
             group.import <- ggroup(spacing = 5)
-            group.import$set_borderwidth(10)
+            # group.import$set_borderwidth(10)
             expand.import <- gexpandgroup(text = "Select Map", horizontal = FALSE)
             font(expand.import)    <- font.header
 
             frame.variables <- gframe(horizontal = FALSE)
             group.variables <- ggroup(spacing = 5)
-            group.variables$set_borderwidth(10)
+            # group.variables$set_borderwidth(10)
             expand.variables <- gexpandgroup(text = "Select Variables", horizontal = FALSE)
             font(expand.variables) <- font.header
 
@@ -297,30 +293,52 @@ iNZightMap2Mod <- setRefClass(
             stored.shapefiles <- list.files(shapefileDir,
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
+            
+            metadata <- tryCatch(
+              iNZightMaps::read.mapmetadata(shapefileDir),
+              error = function(e) {
+                gmessage("Could not download metadata file")
+                metadata <- c(NA, NA, NA)
+                metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
+                colnames(metadata) <- c("filepath", "tidy_filename", "description")
+                metadata
+              }
+            )
 
-            if (length(stored.shapefiles) == 0) {
-                shapefileDL <- gconfirm("Download shapefiles?")
-
-                if (shapefileDL) {
-                    tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
-                                                 shapefileDir),
-                             error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
-                             )
-                    stored.shapefiles <- list.files(shapefileDir,
-                                                    recursive = TRUE,
-                                                    pattern = ".(shp|rds)$")
-
-                }
+            retrieve.filelist <- function(dirURL) {
+              curr.links <- XML::getHTMLLinks(rawToChar(curl::curl_fetch_memory(dirURL)$content))
+              curr.dirs <- curr.links[grep("/$", curr.links)]
+              curr.files <- curr.links[grep("\\.(rds|shp)", curr.links)]
+              
+              found.files <- curr.files
+              
+              for (dir in curr.dirs[-1]) {
+                found.files <- c(found.files, retrieve.filelist(paste0(dirURL, dir)))
+              }
+              
+              found.files
             }
-
-            metadata <- tryCatch(iNZightMaps::read.mapmetadata(shapefileDir),
-                                 error = function(e) {
-                                     gmessage("Could not download metadata file")
-                                     metadata <- c(NA, NA, NA)
-                                     metadata <- matrix(metadata, ncol = 3, byrow = TRUE)
-                                     colnames(metadata) <- c("filepath", "tidy_filename", "description")
-                                     metadata
-                                 })
+            
+            tryCatch({
+              ext.files <- retrieve.filelist("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/")
+              int.files <- gsub(".*/(.*\\.rds)$", "\\1", stored.shapefiles)
+              
+              if (length(setdiff(ext.files, int.files)) > 0) {
+                shapefileDL <- gconfirm("New shapefiles found online. Would you like to download these?")
+                
+                if (shapefileDL) {
+                  tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
+                                                            shapefileDir),
+                           error = function(e) gmessage(paste("Shapefile download failed:", e, sep = "\n"))
+                  )
+                  stored.shapefiles <- list.files(shapefileDir,
+                                                  recursive = TRUE,
+                                                  pattern = ".(shp|rds)$")
+                  
+                }
+              }
+            }, 
+            error = function(e) print("Shapefile retrieval failed"))
 
             mapdir.contents <- merge(stored.shapefiles, metadata,
                                      by.x = 1, by.y = 1, all.x = TRUE)
@@ -703,7 +721,7 @@ iNZightMap2Mod <- setRefClass(
                                         # Bottom group of buttons
 
 
-            btmGrp <- ggroup(container = gv.match)
+            btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
@@ -714,12 +732,21 @@ iNZightMap2Mod <- setRefClass(
                                   cont = btmGrp,
                                   handler = function(h, ...) {
                                       ## delete the module window
-                                      delete(GUI$leftMain)
                                       delete(GUI$leftMain, GUI$leftMain$children[[2]])
                                       ## display the default view (data, variable, etc.)
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
+            # homeButton <- gbutton("Home", expand = TRUE, fill = TRUE,
+            #                       cont = btmGrp,
+            #                       handler = function(h, ...) {
+            #                           ## delete the module window
+            #                           delete(GUI$leftMain)
+            #                           delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            #                           ## display the default view (data, variable, etc.)
+            #                           GUI$plotToolbar$restore()
+            #                           visible(GUI$gp1) <<- TRUE
+            #                       })
             GUI$plotToolbar$update(NULL, refresh = "updatePlot")
         },
         ## Create the map object based on the options given in the importation dialog box
@@ -768,7 +795,7 @@ iNZightMap2Mod <- setRefClass(
                  sparkline.type = plotSparklinesType,
                  regions.to.plot = mapRegionsPlot, keep.other.regions = mapExcludedRegions,
                  scale.limits = axis.limits, label.var = plotLabelVar,
-                 scale.axis = plotAxisScale, scale.label = plotLabelScale)
+                 scale.axis = plotAxisScale, scale.label = plotLabelScale, per.n = plotDotPerN)
 
             GUI$rhistory$add(attr(map.plot, "code"), keep = FALSE)
 
@@ -802,6 +829,7 @@ iNZightMap2Mod <- setRefClass(
                 plotConstantAlpha <<- 1 - svalue(slider.constalpha)
                 plotAxisScale <<- svalue(slider.scaleaxis)
                 plotLabelScale <<- svalue(slider.scalelabels)
+                plotDotPerN <<- as.integer(svalue(edit.dotN))
 
                 if (combinedData$type == "sparklines") {
                     plotConstantSize <<- svalue(slider.constsizespark)
@@ -867,23 +895,12 @@ iNZightMap2Mod <- setRefClass(
             }
 
 
-            GUI$initializeModuleWindow(.self)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Maps", scroll = TRUE)
             GUI$rhistory$add(c(sprintf("## Using the %s map", mapName)), keep = TRUE)
             GUI$rhistory$add(attr(combinedData, "code"), keep = TRUE)
 
-            mainGrp <<- gvbox(spacing = 5, container = GUI$moduleWindow, expand = TRUE)
+            mainGrp <<- modwin$body
             visible(mainGrp) <<- FALSE
-
-            mainGrp$set_borderwidth(5)
-
-            addSpace(mainGrp, 10)
-
-            lbl.inzightmaps <- glabel("iNZight Maps")
-            font(lbl.inzightmaps) <- list(weight = "bold",
-                                          family = "normal",
-                                          size   = 12)
-            add(mainGrp, lbl.inzightmaps, anchor = c(0, 0))
-            addSpace(mainGrp, 10)
 
             frame.mapoptions <- gframe(horizontal = FALSE)
             group.mapoptions <- ggroup(spacing = 5)
@@ -1124,11 +1141,18 @@ iNZightMap2Mod <- setRefClass(
             lbl.constalpha     <- glabel("Transparency of map:")
             lbl.constsize      <- glabel("Overall size:")
             lbl.constsizespark <- glabel("Overall size:")
+            
+            edit.dotN <- gedit(1000)
+            lbl.dotN <- glabel("Dot per N obs:")
+            box.dotN <- ggroup()
+            add(box.dotN, edit.dotN)
 
-            visible(slider.constalpha) <- mapType == "point"
-            visible(lbl.constalpha)    <- mapType == "point"
-            visible(slider.constsize)  <- mapType == "point"
-            visible(lbl.constsize)     <- mapType == "point"
+            visible(slider.constalpha) <- mapType %in% c("point", "dotdensity")
+            visible(lbl.constalpha)    <- mapType %in% c("point", "dotdensity")
+            visible(slider.constsize)  <- mapType %in% c("point", "dotdensity")
+            visible(lbl.constsize)     <- mapType %in% c("point", "dotdensity")
+            visible(lbl.dotN) <- mapType %in% c("dotdensity")
+            visible(box.dotN) <- mapType %in% c("dotdensity")
 
             visible(slider.constsizespark) <- FALSE
 
@@ -1148,6 +1172,10 @@ iNZightMap2Mod <- setRefClass(
                 if (!is.null(timer))
                     if (timer$started) timer$stop_timer()
                 timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
+            })
+            
+            addHandlerChanged(edit.dotN, function(h, ...) {
+                updateOptions()
             })
 
             add(expand.plotoptions, tbl.plotoptions, expand = TRUE, fill = TRUE)
@@ -1218,8 +1246,13 @@ iNZightMap2Mod <- setRefClass(
             }
 
             lbl.maptype <- glabel("Plot as:")
-            radio.maptype <- gradio(c("Regions", "Centroids"), horizontal = TRUE,
-                                    selected = (mapType == "point") + 1)
+            radio.maptype <- if (combinedData$multiple.obs) {
+                gradio(c("Regions", "Centroids"), horizontal = TRUE,
+                                        selected = (mapType == "point") + 1)
+            } else {
+                gradio(c("Regions", "Centroids", "Dot Density"), horizontal = TRUE,
+                                        selected = (mapType == "point") + 1)
+            }
 
 
             lbl.sizeselect <- glabel("Size by:")
@@ -1240,6 +1273,8 @@ iNZightMap2Mod <- setRefClass(
                 tbl.main[5, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constalpha
                 tbl.main[4, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.constsize
                 tbl.main[4, 2, expand = TRUE, anchor = c(-1, 0)] <- slider.constsize
+                tbl.main[6, 1, expand = TRUE, anchor = c(1, 0)] <- lbl.dotN
+                tbl.main[6, 2, expand = TRUE, anchor = c(-1, 0)] <- box.dotN
             } else {
                 separator.timevariable <- gseparator()
                 lbl.timevariable <- glabel("Dataset has multiple observations for regions:")
@@ -1393,6 +1428,8 @@ iNZightMap2Mod <- setRefClass(
                         visible(combobox.sparkline)  <- FALSE
                         visible(btn.play)            <- FALSE
                         visible(btn.delay)           <- FALSE
+                        visible(box.dotN) <- FALSE
+                        visible(lbl.dotN) <- FALSE
                     }
 
                     if (radio.choice == 1) {
@@ -1575,13 +1612,22 @@ iNZightMap2Mod <- setRefClass(
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
                     combinedData$type <<- "point"
                     mapType <<- "point"
+                    
+                    svalue(lbl.sizeselect) <- "Size by:"
+                } else if (svalue(radio.maptype, index = TRUE) == 3) {
+                    combinedData$type <<- "dotdensity"
+                    mapType <<- "dotdensity"
+                    
+                    svalue(lbl.sizeselect) <- "Allocate dots by:"
                 }
-                    visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) == 2
-                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) == 2
+                    visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(combobox.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(lbl.constalpha) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(slider.constalpha) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(lbl.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(slider.constsize) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
+                    visible(box.dotN) <- svalue(radio.maptype, index = TRUE) %in% c(3)
+                    visible(lbl.dotN) <- svalue(radio.maptype, index = TRUE) %in% c(3)
 
                 updateOptions()
             })
@@ -1594,7 +1640,7 @@ iNZightMap2Mod <- setRefClass(
                 svalue(combobox.sizeselect) <- h$dropdata
             })
 
-            btmGrp <- ggroup(container = mainGrp)
+            btmGrp <- modwin$footer
 
             helpButton <- gbutton("Help", expand = TRUE, fill = TRUE,
                                   cont = btmGrp,
@@ -1611,14 +1657,6 @@ iNZightMap2Mod <- setRefClass(
                                       visible(GUI$gp1) <<- TRUE
                                   })
             
-            # img.dynamic <- system.file("images/toolbar-interact.png", package = "iNZight")
-
-            # exportButton <- iNZight:::gimagebutton(filename = img.dynamic,
-            #                              tooltip = "Export interactive map", size = "button")
-
-            # addHandlerClicked(exportButton, function(h, ...) {
-            # })
-
             GUI$plotToolbar$update("export", refresh = "updatePlot", 
                                 export = function() {
                                     browseURL(iNZightPlots::exportHTML(x = plotObject,

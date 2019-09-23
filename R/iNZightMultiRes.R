@@ -50,20 +50,19 @@ iNZightMultiRes <- setRefClass(
             }
 
 
-            GUI$initializeModuleWindow(.self)
-            mainGrp <<- gvbox(spacing = 10, container = GUI$moduleWindow, expand = TRUE)
-            mainGrp$set_borderwidth(5)
+            modwin <- GUI$initializeModuleWindow(.self, title = "Multiple Response", scroll = TRUE)
+            mainGrp <<- modwin$body
 
             ## --- Plot Toolbar
             aboutBtn <- gimage(stock.id = "about", size = "button")
             addHandlerClicked(aboutBtn, function(h, ...) {
 
                                   wAb <- gwindow(parent = GUI$win, width = 400, height = 480,
-                                                 title = "iNZight Maps Module")
+                                                 title = "iNZight Multiple Response Module")
 
                                   gAb <- gvbox(container = wAb, spacing = 10)
                                   addSpace(gAb, 10)
-                                  labAb <- glabel("About the iNZight Maps Module")
+                                  labAb <- glabel("About the iNZight Multiple Response Module")
                                   font(labAb) <- list(weight = "bold", size = 12)
                                   add(gAb, labAb, anchor = c(0, 0))
 
@@ -98,19 +97,8 @@ iNZightMultiRes <- setRefClass(
                               })
             GUI$plotToolbar$update(NULL, refresh = "updatePlot", extra = list(aboutBtn))
 
-            addSpace(mainGrp, 15)
-
-            lbl1 <- glabel("Multiple Response Module")
-            font(lbl1) <- list(weight = "bold",
-                               family = "normal",
-                               size   = 12)
-            add(mainGrp, lbl1, anchor = c(0, 0))
-            addSpace(mainGrp, 20)
-
             top <- gvbox(container = mainGrp)
             mid <<- glayout(container = mainGrp, expand = FALSE)
-            addSpring(mainGrp)
-            bot <- ggroup(container = mainGrp)
 
             lab <- glabel("Select related variables:")
             font(lab) <- list(weight = "bold", size = 11)
@@ -324,11 +312,8 @@ iNZightMultiRes <- setRefClass(
                                     visible(GUI$gp1) <<- TRUE
                                 })
 
-            add(bot, helpButton, expand = TRUE, fill = TRUE)
-            add(bot, homeButton, expand = TRUE, fill = TRUE)
-
-
-            visible(GUI$moduleWindow) <<- TRUE
+            add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
+            add(modwin$footer, homeButton, expand = TRUE, fill = TRUE)
 
         },
 
