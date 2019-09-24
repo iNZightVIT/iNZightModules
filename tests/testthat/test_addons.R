@@ -1,10 +1,12 @@
 context("Addon modules")
 
-load_all("../../../iNZight")
-load_all("../..")
+# load_all("../../../iNZight")
+# load_all("../..")
 
+# library(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
+Sys.sleep(2)
 
 test_that("CustomModule super class works", {
     custmod <- CustomModule$new(ui)
@@ -40,3 +42,5 @@ test_that("Directory of modules are loaded", {
         c("DemoModule", "DemoModule2", "DemoModule3")
     )
 })
+
+ui$close()

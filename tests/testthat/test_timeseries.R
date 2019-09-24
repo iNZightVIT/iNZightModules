@@ -1,7 +1,5 @@
 context("Time Series module")
 
-require(iNZight)
-
 # library(devtools)
 # load_all()
 # load_all('../iNZight')

@@ -2,7 +2,6 @@ context("Survey modelling")
 
 chis <- iNZightTools::smart_read("chis.csv")
 
-require(iNZight)
 data(api, package = 'survey')
 
 

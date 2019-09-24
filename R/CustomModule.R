@@ -39,7 +39,7 @@ CustomModule <- setRefClass(
             # add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
             add(modwin$footer, homeButton, expand = TRUE, fill = TRUE)
 
-            invisible(NULL)
+
         },
         get_data = function() {
             GUI$getActiveData()
@@ -84,6 +84,21 @@ getmodule <- function(f) {
         return(NULL)
     }
     e$name <- obj
+    e$display_name <- e[[obj]]@className[1]
     e$module <- e[[obj]]
     e
 }
+
+InstallModules <- setRefClass(
+    "InstallModules",
+    fields = list(
+        GUI = "ANY"
+    ),
+    methods = list(
+        initialize = function(gui) {
+            initFields(GUI = gui)
+            
+            cat("Add or remove new modules ...\n")
+        }
+    )
+)
