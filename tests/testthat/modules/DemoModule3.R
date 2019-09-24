@@ -5,10 +5,10 @@ DemoModule3 <- setRefClass(
         GUI = "ANY"
     ),
     methods = list(
-        initialize = function(gui) {
+        initialize = function(gui, name) {
             callSuper(gui, 
-                name = "Demo Module 3", # the name to appear in the window
-                embedded = TRUE       # if TRUE, module will be embedded in iNZight, otherwise a separate window
+                name = name, 
+                embedded = TRUE
             )
 
             ## The main code for your module goes here,
@@ -23,5 +23,6 @@ DemoModule3 <- setRefClass(
 
             callSuper()
         }
-    )
+    ),
+    where = e
 )

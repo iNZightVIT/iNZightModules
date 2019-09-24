@@ -23,7 +23,7 @@ test_that("Module loads", {
         modwin <- mod$module$new(ui),
         "Running new module"
     )
-    expect_is(modwin, "DemoModule")
+    expect_is(modwin, "Demo Module")
     expect_is(modwin, "CustomModule")
 
     expect_is(modwin$homeButton, "GButton")

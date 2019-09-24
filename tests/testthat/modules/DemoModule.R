@@ -1,14 +1,14 @@
 DemoModule <- setRefClass(
-    "DemoModule",
+    "Demo Module",
     contains = "CustomModule",
     fields = list(
         GUI = "ANY"
     ),
     methods = list(
-        initialize = function(gui) {
+        initialize = function(gui, name) {
             callSuper(gui, 
-                name = "Demo Module", # the name to appear in the window
-                embedded = TRUE       # if TRUE, module will be embedded in iNZight, otherwise a separate window
+                name = name, 
+                embedded = TRUE
             )
 
             ## The main code for your module goes here,
@@ -23,5 +23,7 @@ DemoModule <- setRefClass(
 
             callSuper()
         }
-    )
+    ),
+    ## This is currently required to get around namespace locking
+    where = e
 )
