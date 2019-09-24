@@ -1,5 +1,7 @@
 context("Addon modules")
 
+mod_dir <- file.path(getwd(), "modules")
+
 # load_all("../../../iNZight")
 # load_all("../..")
 
@@ -15,7 +17,7 @@ test_that("CustomModule super class works", {
 })
 
 test_that("Module loads", {
-    mod <- getmodule("modules/DemoModule.R")
+    mod <- getmodule(file.path(mod_dir, "DemoModule.R"))
     expect_is(mod, "environment")
     expect_equal(mod$name, "DemoModule")
 
@@ -34,7 +36,7 @@ test_that("Module loads", {
 })
 
 test_that("Directory of modules are loaded", {
-    mods <- getModules("modules")
+    mods <- getModules(mod_dir)
     expect_is(mods, "list")
     expect_equal(length(mods), 3)
     expect_equal(
