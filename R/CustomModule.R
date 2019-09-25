@@ -67,9 +67,13 @@ getModules <- function(dir) {
 }
 
 getmodule <- function(f) {
+    ## check if file is a Module
+    t <- paste(collapse = "\n", readLines(f))
+    if (!grepl("^[a-zA-Z]+[a-zA-Z0-9]*\\s*<-\\s*setRefClass", t)) return(NULL)
+
     ## load module into an environment to avoid clashes
     e <- new.env()
-    eval(parse(text = paste(collapse = "\n", readLines(f))), e)
+    eval(parse(text = t), e)
 
     ## fetch the module's name
     objs <- ls(e)
