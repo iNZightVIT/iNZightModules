@@ -5,7 +5,7 @@ mod_dir <- file.path(getwd(), "modules")
 # load_all("../../../iNZight")
 # load_all("../..")
 
-# library(iNZight)
+require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
 Sys.sleep(2)

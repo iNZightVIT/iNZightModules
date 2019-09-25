@@ -8,7 +8,8 @@ context("Time Series module")
 
 data(visitorsQ, package = 'iNZightTS')
 
-try(ui$close(), T)
+require(iNZight)
+# try(ui$close(), T)
 ui <- iNZGUI$new()
 ui$initializeGui(visitorsQ)
 on.exit(try(ui$close(), silent = TRUE))

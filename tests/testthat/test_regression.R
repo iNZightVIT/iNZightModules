@@ -1,5 +1,6 @@
 context("Model Fitting Module")
 
+require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui()
 initialPrefs <- ui$preferences

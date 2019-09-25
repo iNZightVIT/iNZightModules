@@ -11,8 +11,7 @@ Authors@R: c(person("Tom", "Elliott", role = c("aut", "cre"),
              person("Simon", "Potter", role = "aut"),
              person("David", "Banks", role = "aut"))
 Depends:
-    R (>= 3.2),
-    iNZight
+    R (>= 3.2)
 Imports:
     stats,
     graphics,
@@ -22,6 +21,7 @@ Imports:
     gpairs,
     gWidgets2,
     gWidgets2RGtk2,
+    iNZight,
     iNZightPlots,
     iNZightRegression,
     iNZightTools,
