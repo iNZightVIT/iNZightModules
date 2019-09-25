@@ -97,8 +97,6 @@ InstallModules <- setRefClass(
     methods = list(
         initialize = function(gui) {
             initFields(GUI = gui)
-            
-            cat("Add or remove new modules ...\n")
         }
     )
 )
