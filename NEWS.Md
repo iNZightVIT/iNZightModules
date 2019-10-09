@@ -1,3 +1,9 @@
+## iNZightModules 2.4.7.9000
+__Release date__: TBA
+
+- add checkbox to control smoother display
+
+
 ## iNZightModules 2.4.7
 __Release date__: 13 August 2019
 

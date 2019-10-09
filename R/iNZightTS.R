@@ -19,6 +19,7 @@ iNZightTSMod <- setRefClass(
         timeVar     = "ANY",
         timePeriod = "ANY", timeFreq = "ANY", timeStart = "ANY",
         patternType = "numeric",
+        smootherChk = "ANY", show.smoother = "logical",
         smthSlider  = "ANY", smoothness = "numeric",
         tsObj       = "ANY",
         yLab        = "ANY", xLab = "ANY",
@@ -34,9 +35,18 @@ iNZightTSMod <- setRefClass(
     ),
     methods = list(
         initialize = function(GUI) {
-            initFields(GUI = GUI, patternType = 1, smoothness = 10,
-                tsObj = NULL, plottype = 1, compare = 1, timeFreq = NA,
-                timeStart = c(1, 1), timePeriod = NULL, timer = NULL
+            initFields(
+                GUI = GUI, 
+                patternType = 1, 
+                show.smoother = TRUE,
+                smoothness = 10,
+                tsObj = NULL, 
+                plottype = 1, 
+                compare = 1, 
+                timeFreq = NA,
+                timeStart = c(1, 1), 
+                timePeriod = NULL, 
+                timer = NULL
             )
 
             dat = GUI$getActiveData()
@@ -304,6 +314,17 @@ iNZightTSMod <- setRefClass(
             g2_layout[2, 1, anchor = c(1, 0), expand = TRUE] <-
                 glabel("Smoothness :")
             g2_layout[2, 2, fill = TRUE, expand = TRUE] <- smthSlider
+
+            ## Checkbox to hide/show smoother
+            smootherChk <<- gcheckbox("Show smoother", 
+                checked = show.smoother,
+                handler = function(h, ...) {
+                    show.smoother <<- svalue(h$obj)
+                    enabled(smthSlider) <<- show.smoother
+                    updatePlot()
+                }
+            )
+            g2_layout[3, 2, fill = TRUE, expand = TRUE] <- smootherChk
 
             ############
             ###  g3  ###
@@ -865,6 +886,7 @@ iNZightTSMod <- setRefClass(
                         xlab = svalue(xLab),
                         ylab = svalue(yLab),
                         t = smooth.t,
+                        smoother = show.smoother,
                         xlim = xlim,
                         model.lim = modlim
                     ),
@@ -873,6 +895,7 @@ iNZightTSMod <- setRefClass(
                         xlab = svalue(xLab),
                         ylab = svalue(yLab),
                         t = smooth.t,
+                        smoother = show.smoother,
                         compare=FALSE,
                         xlim = xlim,
                         model.lim = modlim
@@ -889,6 +912,7 @@ iNZightTSMod <- setRefClass(
                             xlab = svalue(xLab),
                             animate = animate,
                             t = smooth.t,
+                            smoother = show.smoother,
                             xlim = xlim,
                             model.lim = modlim
                         )
@@ -939,7 +963,7 @@ iNZightTSMod <- setRefClass(
                 )
 
             }
-            enabled(smthSlider) <<- can.smooth
+            enabled(smthSlider) <<- can.smooth && show.smoother
 
             enabled(GUI$plotToolbar$exportplotBtn) <<-
                 iNZightPlots::can.interact(p)
