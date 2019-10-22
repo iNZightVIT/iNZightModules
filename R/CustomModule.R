@@ -44,6 +44,30 @@ CustomModule <- setRefClass(
         get_data = function() {
             GUI$getActiveData()
         },
+        install_dependencies = function(pkgs, optional) {
+            if (!missing(pkgs)) {
+                pkgs <- pkgs[!pkgs %in% rownames(utils::installed.packages())]
+                if (length(pkgs) > 0) {
+                    plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n",
+                        xlab = "", ylab = "")
+                    text(0, 0, "Installing dependencies, please wait ...")
+
+                    utils::install.packages(pkgs, quiet = TRUE)
+                }
+            }
+
+            if (!missing(optional)) {
+                optional <- optional[!optional %in% rownames(utils::installed.packages())]
+                if (length(optional) > 0) {
+                    tryCatch(
+                        utils::install.packages(optional, quiet = TRUE),
+                        finally = {}
+                    )
+                }
+            }
+            plot(0, 0, type = "n", bty = "n", axt = "n", xaxt = "n", yaxt = "n",
+                    xlab = "", ylab = "")
+        },
         close = function() {
             ## run module-specific closure?
 
