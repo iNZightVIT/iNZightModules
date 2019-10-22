@@ -2,6 +2,7 @@
 __Release date__: TBA
 
 - add checkbox to control smoother display
+- addon modules now available (as a developmental feature)
 
 
 ## iNZightModules 2.4.7
