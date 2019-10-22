@@ -98,6 +98,15 @@ test_that("Upper modelling limit is truncated to upper modelling limit", {
     Sys.sleep(0.3)
 })
 
+test_that("Smoother display can be controlled", {
+    expect_silent(svalue(mod$smootherChk) <- FALSE)
+    expect_false(mod$show.smoother)
+    expect_false(enabled(mod$smthSlider))
+    expect_silent(svalue(mod$smootherChk) <- TRUE)
+    expect_true(mod$show.smoother)
+    expect_true(enabled(mod$smthSlider))
+})
+
 ui$close()
 
 
