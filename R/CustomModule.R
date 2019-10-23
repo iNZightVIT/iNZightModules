@@ -17,8 +17,8 @@ CustomModule <- setRefClass(
         homeButton = "ANY"
     ),
     methods = list(
-        initialize = function(gui, 
-            name = "Module", 
+        initialize = function(gui,
+            name = "Module",
             embedded = TRUE
         ) {
             initFields(GUI = gui)
