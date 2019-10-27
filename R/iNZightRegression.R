@@ -1,15 +1,15 @@
-##' iNZight Model Fitting Module
-##'
-##' A GUI add-on for fitting regression models.
-##'
-##' @title iNZight Model Fitting Module
-##'
-##' @author Tom Elliott
-##'
-##' @import iNZightRegression
-##'
-##' @export iNZightRegMod
-##' @exportClass iNZightRegMod
+#' iNZight Model Fitting Module
+#'
+#' A GUI add-on for fitting regression models.
+#'
+#' @title iNZight Model Fitting Module
+#'
+#' @author Tom Elliott
+#'
+#' @import iNZightRegression
+#'
+#' @export iNZightRegMod
+#' @exportClass iNZightRegMod
 iNZightRegMod <- setRefClass(
     "iNZightRegMod",
     fields = list(
@@ -928,7 +928,7 @@ iNZightRegMod <- setRefClass(
                     fts <- fits
                     names(fts) <- gsub(" ", "_", names(fts))
                     e <- new.env()
-                    z <- lapply(names(fts), 
+                    z <- lapply(names(fts),
                         function(fit) assign(fit, fts[[fit]]$fit, envir = e)
                     )
                     rm("z")
@@ -1023,7 +1023,7 @@ iNZightRegMod <- setRefClass(
                     out <- capture.output(
                         #iNZightMR::moecalc(fit, svalue(catVarList))
                         print(
-                            iNZightRegression::factorComp(fit, 
+                            iNZightRegression::factorComp(fit,
                                 svalue(catVarList)
                             )
                         )
@@ -1073,7 +1073,7 @@ iNZightRegMod <- setRefClass(
             #         #     )
             #         # )
 
-            #         
+            #
 
             #         # x <- tryCatch(
             #         #     suppressWarnings(
@@ -1083,7 +1083,7 @@ iNZightRegMod <- setRefClass(
             #         # )
             #         svy.design <- mod$getdesign()
             #         x <- do.call(
-            #             # eval(parse(text = svalue(compTypes))), 
+            #             # eval(parse(text = svalue(compTypes))),
             #             "AIC",
             #             fts
             #         )
