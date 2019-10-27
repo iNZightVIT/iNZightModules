@@ -36,16 +36,16 @@ iNZightTSMod <- setRefClass(
     methods = list(
         initialize = function(GUI) {
             initFields(
-                GUI = GUI, 
-                patternType = 1, 
+                GUI = GUI,
+                patternType = 1,
                 show.smoother = TRUE,
                 smoothness = 10,
-                tsObj = NULL, 
-                plottype = 1, 
-                compare = 1, 
+                tsObj = NULL,
+                plottype = 1,
+                compare = 1,
                 timeFreq = NA,
-                timeStart = c(1, 1), 
-                timePeriod = NULL, 
+                timeStart = c(1, 1),
+                timePeriod = NULL,
                 timer = NULL
             )
 
@@ -316,7 +316,7 @@ iNZightTSMod <- setRefClass(
             g2_layout[2, 2, fill = TRUE, expand = TRUE] <- smthSlider
 
             ## Checkbox to hide/show smoother
-            smootherChk <<- gcheckbox("Show smoother", 
+            smootherChk <<- gcheckbox("Show smoother",
                 checked = show.smoother,
                 handler = function(h, ...) {
                     show.smoother <<- svalue(h$obj)
