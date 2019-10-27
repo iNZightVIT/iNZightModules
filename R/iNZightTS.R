@@ -362,6 +362,9 @@ iNZightTSMod <- setRefClass(
                     visible(onevar) <- FALSE
                     visible(multivar) <- TRUE
                 }
+                can_multiply <- all(sapply(var_ind, function(i) all(activeData[[i]] > 0)))
+                enabled(g2_opt1) <- can_multiply
+                if (!can_multiply) svalue(g2_opt1, index = TRUE) <- 2
 
                 if ((svalue(g1_opt1, TRUE) == 1 && !is.na(timeVar)) ||
                     (svalue(g1_opt1, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
