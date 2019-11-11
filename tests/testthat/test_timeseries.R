@@ -1,7 +1,5 @@
 context("Time Series module")
 
-require(iNZight)
-
 # library(devtools)
 # load_all()
 # load_all('../iNZight')
@@ -10,7 +8,8 @@ require(iNZight)
 
 data(visitorsQ, package = 'iNZightTS')
 
-try(ui$close(), T)
+require(iNZight)
+# try(ui$close(), T)
 ui <- iNZGUI$new()
 ui$initializeGui(visitorsQ)
 on.exit(try(ui$close(), silent = TRUE))
@@ -97,6 +96,15 @@ test_that("Upper modelling limit is truncated to upper modelling limit", {
     expect_false(enabled(mod$modLimUpper))
     svalue(mod$modLimLower) <- "1998Q4"
     Sys.sleep(0.3)
+})
+
+test_that("Smoother display can be controlled", {
+    expect_silent(svalue(mod$smootherChk) <- FALSE)
+    expect_false(mod$show.smoother)
+    expect_false(enabled(mod$smthSlider))
+    expect_silent(svalue(mod$smootherChk) <- TRUE)
+    expect_true(mod$show.smoother)
+    expect_true(enabled(mod$smthSlider))
 })
 
 ui$close()

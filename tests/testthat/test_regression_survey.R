@@ -2,10 +2,9 @@ context("Survey modelling")
 
 chis <- iNZightTools::smart_read("chis.csv")
 
-require(iNZight)
 data(api, package = 'survey')
 
-
+require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(apiclus1)
 on.exit(try(ui$close(), silent = TRUE))

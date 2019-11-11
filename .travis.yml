@@ -3,7 +3,7 @@
 dist: xenial
 language: R
 sudo: true
-cache: 
+cache:
   - packages
   - directories:
     - $HOME/Library/Caches/Homebrew
@@ -15,30 +15,17 @@ services:
 matrix:
   include:
     - os: linux
-      r: oldrel
-    - os: linux
       r: release
     - os: linux
       r: devel
-  #   - os: osx
-  #     r: oldrel
-  #     brew_packages: libgit2
-  #   - os: osx
-  #     r: release
-  #     brew_packages: libgit2
-  # allow_failures:
-  #   - os: osx
 
 repos:
   docker: https://r.docker.stat.auckland.ac.nz
 
-r_github_packages: 
+r_github_packages:
   - jverzani/gWidgets2RGtk2
-  - iNZightVIT/iNZightTools@dev
-  - iNZightVIT/iNZightRegression@dev
-  - iNZightVIT/iNZightPlots@dev
-  - iNZightVIT/iNZightTS@dev
   - iNZightVIT/iNZight@dev
+  - iNZightVIT/iNZightTS@dev
 
 env:
   global:
@@ -60,7 +47,7 @@ addons:
       - r-cran-cairodevice
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then 
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       sudo chown -R $(whoami) /usr/local/share;
       curl -L http://mac.r-project.org/libs/GTK_2.24.17-X11.pkg -o gtk.pkg;
       sudo installer -pkg gtk.pkg -target / -allowUntrusted;

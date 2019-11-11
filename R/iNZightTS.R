@@ -19,6 +19,7 @@ iNZightTSMod <- setRefClass(
         timeVar     = "ANY",
         timePeriod = "ANY", timeFreq = "ANY", timeStart = "ANY",
         patternType = "numeric",
+        smootherChk = "ANY", show.smoother = "logical",
         smthSlider  = "ANY", smoothness = "numeric",
         tsObj       = "ANY",
         yLab        = "ANY", xLab = "ANY",
@@ -28,15 +29,26 @@ iNZightTSMod <- setRefClass(
         compare     = "numeric",
         animateBtn  = "ANY", pauseBtn = "ANY",
         recomposeBtn = "ANY", recomposeResBtn = "ANY", decomp = "ANY",
+        recompProg = "ANY",
         forecastBtn = "ANY", forecasts   = "ANY",
         forecastError = "ANY",
-        timer = "ANY"
+        timer = "ANY", playTimer = "ANY"
     ),
     methods = list(
         initialize = function(GUI) {
-            initFields(GUI = GUI, patternType = 1, smoothness = 10,
-                tsObj = NULL, plottype = 1, compare = 1, timeFreq = NA,
-                timeStart = c(1, 1), timePeriod = NULL, timer = NULL
+            initFields(
+                GUI = GUI,
+                patternType = 1,
+                show.smoother = TRUE,
+                smoothness = 10,
+                tsObj = NULL,
+                plottype = 1,
+                compare = 1,
+                timeFreq = NA,
+                timeStart = c(1, 1),
+                timePeriod = NULL,
+                recompProg = c(0, 0),
+                timer = NULL
             )
 
             dat = GUI$getActiveData()
@@ -305,6 +317,17 @@ iNZightTSMod <- setRefClass(
                 glabel("Smoothness :")
             g2_layout[2, 2, fill = TRUE, expand = TRUE] <- smthSlider
 
+            ## Checkbox to hide/show smoother
+            smootherChk <<- gcheckbox("Show smoother",
+                checked = show.smoother,
+                handler = function(h, ...) {
+                    show.smoother <<- svalue(h$obj)
+                    enabled(smthSlider) <<- show.smoother
+                    updatePlot()
+                }
+            )
+            g2_layout[3, 2, fill = TRUE, expand = TRUE] <- smootherChk
+
             ############
             ###  g3  ###
             ############
@@ -339,6 +362,9 @@ iNZightTSMod <- setRefClass(
                     visible(onevar) <- FALSE
                     visible(multivar) <- TRUE
                 }
+                can_multiply <- all(sapply(var_ind, function(i) all(activeData[[i]] > 0)))
+                enabled(g2_opt1) <- can_multiply
+                if (!can_multiply) svalue(g2_opt1, index = TRUE) <- 2
 
                 if ((svalue(g1_opt1, TRUE) == 1 && !is.na(timeVar)) ||
                     (svalue(g1_opt1, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
@@ -439,17 +465,50 @@ iNZightTSMod <- setRefClass(
             pauseBtn <<- gbutton(action = pauseAnimation, container = onevar)
             enabled(pauseBtn) <<- FALSE
 
+            playTimer <<- NULL
             recomposeBtn <<- gbutton("Recompose",
                 container = onevar,
                 handler = function(h, ...) {
-                    assign("stopAnimation", FALSE, envir = tsenv)
-                    decomp <<- decompositionplot(tsObj,
-                        multiplicative = (patternType == 1),
-                        xlab = svalue(xLab),
-                        ylab = svalue(yLab),
-                        t = smoothness
-                    )
-                    iNZightTS::recompose(decomp, e = tsenv)
+                    ## this button is _ if _
+                    # - Recompose | is.null(playTimer)
+                    # - Pause | !is.null(playTimer)
+                    blockHandlers(recomposeBtn)
+                    blockHandlers(recomposeResBtn)
+                    on.exit(unblockHandlers(recomposeBtn))
+                    on.exit(unblockHandlers(recomposeResBtn), add = TRUE)
+                    if (is.null(playTimer) || !playTimer$started) {
+                        if (all(recompProg == c(1, nrow(activeData)))) {
+                            recompProg <<- c(0, 0)
+                            updatePlot()
+                            svalue(recomposeResBtn) <<- "Recompose result"
+                        }
+                        svalue(recomposeBtn) <<- "Pause"
+                        playTimer <<- gtimer(10,
+                            function(data) {
+                                if (recompProg[2] >= nrow(activeData)) {
+                                    if (recompProg[1] == 0)
+                                        recompProg <<- c(1, 0)
+                                    else {
+                                        playTimer$stop_timer()
+                                        blockHandlers(recomposeBtn)
+                                        blockHandlers(recomposeResBtn)
+                                        on.exit(unblockHandlers(recomposeBtn))
+                                        on.exit(unblockHandlers(recomposeResBtn), add = TRUE)
+                                        svalue(recomposeBtn) <<- "Replay"
+                                        svalue(recomposeResBtn) <<- "Reset"
+                                        return()
+                                    }
+                                } else {
+                                    recompProg[2] <<- recompProg[2] + 1
+                                }
+                                updatePlot()
+                            }
+                        )
+                    } else {
+                        playTimer$stop_timer()
+                        svalue(recomposeBtn) <<- "Recompose"
+                    }
+
                 }
             )
             visible(recomposeBtn) <<- FALSE
@@ -458,14 +517,21 @@ iNZightTSMod <- setRefClass(
                 handler = function(h, ...) {
                     assign("stopAnimation", TRUE, envir = tsenv)
                     blockHandlers(h$obj)
-                    if (svalue(h$obj) == "Re-decompose") {
+                    on.exit(unblockHandlers(h$obj))
+                    if (!is.null(playTimer))
+                        if (playTimer$started) playTimer$stop_timer()
+                    if (svalue(h$obj) == "Reset") {
+                        recompProg <<- c(0, 0)
                         updatePlot()
                         svalue(recomposeResBtn) <<- "Recompose Result"
                     } else {
-                        iNZightTS::recompose(decomp, animate = FALSE)
-                        svalue(recomposeResBtn) <<- "Re-decompose"
+                        recompProg <<- c(1, nrow(activeData))
+                        updatePlot()
+                        svalue(recomposeResBtn) <<- "Reset"
                     }
-                    unblockHandlers(h$obj)
+                    blockHandlers(recomposeBtn)
+                    on.exit(unblockHandlers(recomposeBtn), add = TRUE)
+                    svalue(recomposeBtn) <<- "Recompose"
                 }
             )
             visible(recomposeResBtn) <<- FALSE
@@ -865,6 +931,7 @@ iNZightTSMod <- setRefClass(
                         xlab = svalue(xLab),
                         ylab = svalue(yLab),
                         t = smooth.t,
+                        smoother = show.smoother,
                         xlim = xlim,
                         model.lim = modlim
                     ),
@@ -873,6 +940,7 @@ iNZightTSMod <- setRefClass(
                         xlab = svalue(xLab),
                         ylab = svalue(yLab),
                         t = smooth.t,
+                        smoother = show.smoother,
                         compare=FALSE,
                         xlim = xlim,
                         model.lim = modlim
@@ -889,19 +957,23 @@ iNZightTSMod <- setRefClass(
                             xlab = svalue(xLab),
                             animate = animate,
                             t = smooth.t,
+                            smoother = show.smoother,
                             xlim = xlim,
                             model.lim = modlim
                         )
                     },
                     {
                         ## 2 >> decomposed plot
-                        decomp <<- iNZightTS::decompositionplot(tsObj,
-                            multiplicative = (patternType == 1),
+                        decomp <<- plot(
+                            iNZightTS::decompose(tsObj,
+                                t = smooth.t,
+                                multiplicative = (patternType == 1),
+                                model.lim = modlim
+                            ),
                             xlab = svalue(xLab),
                             ylab = svalue(yLab),
-                            t = smooth.t,
                             xlim = xlim,
-                            model.lim = modlim
+                            recompose.progress = recompProg
                         )
                         visible(recomposeBtn) <<- TRUE
                         visible(recomposeResBtn) <<- TRUE
@@ -939,7 +1011,7 @@ iNZightTSMod <- setRefClass(
                 )
 
             }
-            enabled(smthSlider) <<- can.smooth
+            enabled(smthSlider) <<- can.smooth && show.smoother
 
             enabled(GUI$plotToolbar$exportplotBtn) <<-
                 iNZightPlots::can.interact(p)
