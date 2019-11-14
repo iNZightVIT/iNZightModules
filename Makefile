@@ -1,7 +1,7 @@
 R := R
 RCMD := $(R) --vanilla --slave
 
-default: document
+default: install
 
 document:
 	@$(R) -e "devtools::document()"
