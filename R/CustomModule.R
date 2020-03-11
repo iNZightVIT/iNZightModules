@@ -119,6 +119,14 @@ getmodule <- function(f) {
     e
 }
 
+##' iNZight Module Installation
+##'
+##' A window to allow installation/removal of iNZight addon modules
+##'
+##' @title iNZight Module Installation
+##'
+##' @author Daniel Barnett
+##'
 ##' @export InstallModules
 ##' @exportClass InstallModules
 InstallModules <- setRefClass(
