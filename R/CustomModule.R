@@ -119,14 +119,147 @@ getmodule <- function(f) {
     e
 }
 
+##' @export InstallModules
+##' @exportClass InstallModules
 InstallModules <- setRefClass(
     "InstallModules",
     fields = list(
-        GUI = "ANY"
+        GUI = "ANY",
+        installWin = "ANY",
+        fname = "ANY"
     ),
     methods = list(
         initialize = function(gui) {
             initFields(GUI = gui)
+
+            installWin <<- gwindow("Install custom module",
+                                      parent = GUI$win,
+                                      width = 600,
+                                      visible = TRUE
+            )
+            g <- gvbox(container = installWin, expand = TRUE, fill = TRUE)
+            g$set_borderwidth(10)
+
+            lbl.install <- glabel("Install Module...")
+            font(lbl.install) <- list(weight = "bold")
+            add(g, lbl.install)
+
+            fileGp <- gframe("Select Module File to Install",
+                             pos = 0,
+                             horizontal = FALSE,
+                             container = g
+            )
+            fileGp$set_borderwidth(10)
+            fileTbl <- glayout(container = fileGp)
+            ii <- 1
+
+            lbl <- glabel("File Name :")
+            font(lbl) <- list(weight = "bold")
+            filename <- glabel("")
+            browseBtn <- gbutton("Browse",
+                                  handler = function(h, ...) {
+                                      fname <<- gfile(
+                                          text = "Choose a file",
+                                          initial.dir = file.path("."),
+                                          filter = list("iNZight module file" = list(patterns = c("*.R"))),
+                                          quote = FALSE,
+                                          container = fileGp
+                                      )
+
+                                      svalue(filename) <- fname
+                                  }
+            )
+            fileTbl[ii, 1, anchor = c(1, 0)] <- lbl
+            font(lbl) <- list(weight = "bold")
+            fileTbl[ii, 2:4, expand = TRUE, anchor = c(1, 0)] <- filename
+            fileTbl[ii, 5] <- browseBtn
+            ii <- ii + 1
+
+            installBtn <- gbutton("Install", handler = function(h, ...) {
+                if (installmodule(fname, GUI$addonModuleDir)) {
+                    if (gconfirm("Module installed successfully")) {
+                        GUI$menuBarWidget$defaultMenu()
+                        dispose(installWin)
+                    }
+                }
+            })
+            add(g, installBtn)
+
+            lbl.remove <- glabel("Remove Module...")
+            font(lbl.remove) <- list(weight = "bold")
+            add(g, lbl.remove)
+
+            mod.names <- lapply(getModules(GUI$addonModuleDir), function(mod) {
+                mod$display_name
+            })
+
+            n.modules <- length(mod.names)
+
+            installed.modules <- gtable(
+                ifelse(n.modules == 0, "", unlist(mod.names))
+            )
+
+            module.table <- gvbox()
+
+            module.placeholder <- glabel("No modules installed")
+            remove.button <- gbutton("Remove Module")
+
+            add(module.table, installed.modules, expand = TRUE, fill = TRUE)
+            add(module.table, remove.button)
+
+            add(g, module.table, expand = TRUE, fill = TRUE)
+            add(g, module.placeholder, expand = TRUE, fill = TRUE)
+
+            visible(module.placeholder) <- n.modules == 0
+            visible(module.table) <- n.modules > 0
+
+            remove.handler <- function(h, ...) {
+                mod.to.remove <- Filter(function(mod) mod$display_name %in% svalue(installed.modules), getModules(GUI$addonModuleDir))
+                if (removemodule(mod.to.remove[[1]])) {
+                    GUI$menuBarWidget$defaultMenu()
+                    gmessage("Addon successfully removed.", parent = GUI$win)
+                    installed.modules[,] <- installed.modules[,][installed.modules[,] != mod.to.remove]
+
+                    mod.names <- lapply(getModules(GUI$addonModuleDir), function(mod) {
+                        mod$display_name
+                    })
+
+                    n.modules <- length(mod.names)
+
+                    visible(module.placeholder) <- n.modules == 0
+                    visible(module.table) <- n.modules > 0
+                }
+            }
+
+            addHandlerDoubleclick(installed.modules, remove.handler)
+            addHandlerClicked(remove.button, remove.handler)
         }
     )
 )
+
+installmodule <- function(file, dir) {
+    if (checkfile(file)) {
+        if (file.copy(file, dir)) {
+            TRUE
+        } else {
+            gmessage("Could not install addon", icon = "error")
+            FALSE
+        }
+    } else {
+        gmessage("Selected file is not an iNZight addon module", icon = "error")
+        FALSE
+    }
+}
+
+checkfile <- function(file) {
+    file.contents <- readLines(file)
+    any(grepl("^[a-zA-Z]+[a-zA-Z0-9]*\\s*<-\\s*setRefClass", file.contents))
+}
+
+removemodule <- function(module) {
+    if (gconfirm(sprintf("Are you sure you want to delete module '%s'?", module$display_name))) {
+        file.remove(module$path)
+    } else {
+        FALSE
+    }
+}
