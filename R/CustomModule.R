@@ -115,6 +115,7 @@ getmodule <- function(f) {
     e$name <- obj
     e$display_name <- e[[obj]]@className[1]
     e$module <- e[[obj]]
+    e$path <- f
     e
 }
 
