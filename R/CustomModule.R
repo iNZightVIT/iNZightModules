@@ -245,9 +245,15 @@ InstallModules <- setRefClass(
     )
 )
 
-installmodule <- function(file, dir) {
+installmodule <- function(file, dir, overwrite = FALSE) {
     if (checkfile(file)) {
-        if (file.copy(file, dir)) {
+        if (file.exists(file.path(dir, basename(file)))) {
+            if (gconfirm("Module already exists - do you wish to overwrite it?")) {
+                overwrite <- TRUE
+            }
+        }
+
+        if (file.copy(file, dir, overwrite = overwrite)) {
             TRUE
         } else {
             gmessage("Could not install addon", icon = "error")
