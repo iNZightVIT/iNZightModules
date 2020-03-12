@@ -148,11 +148,11 @@ InstallModules <- setRefClass(
             g <- gvbox(container = installWin, expand = TRUE, fill = TRUE)
             g$set_borderwidth(10)
 
-            lbl.install <- glabel("Install Module...")
-            font(lbl.install) <- list(weight = "bold")
-            add(g, lbl.install)
+            # lbl.install <- glabel("Install Module...")
+            # font(lbl.install) <- list(weight = "bold")
+            # add(g, lbl.install)
 
-            fileGp <- gframe("Select Module File to Install",
+            fileGp <- gframe("Install module",
                              pos = 0,
                              horizontal = FALSE,
                              container = g
@@ -191,11 +191,7 @@ InstallModules <- setRefClass(
                     }
                 }
             })
-            add(g, installBtn)
-
-            lbl.remove <- glabel("Remove Module...")
-            font(lbl.remove) <- list(weight = "bold")
-            add(g, lbl.remove)
+            add(fileGp, installBtn)
 
             mod.names <- lapply(getModules(GUI$addonModuleDir), function(mod) {
                 mod$display_name
@@ -204,8 +200,12 @@ InstallModules <- setRefClass(
             n.modules <- length(mod.names)
 
             installed.modules <- gtable(
-                ifelse(n.modules == 0, "", unlist(mod.names))
+                if (n.modules == 0) "" else unname(unlist(mod.names))
             )
+
+            remGp <- gframe("Remove module", horizontal = FALSE)
+            remGp$set_borderwidth(10)
+            add(g, remGp, expand = TRUE, fill = TRUE)
 
             module.table <- gvbox()
 
@@ -215,8 +215,8 @@ InstallModules <- setRefClass(
             add(module.table, installed.modules, expand = TRUE, fill = TRUE)
             add(module.table, remove.button)
 
-            add(g, module.table, expand = TRUE, fill = TRUE)
-            add(g, module.placeholder, expand = TRUE, fill = TRUE)
+            add(remGp, module.table, expand = TRUE, fill = TRUE)
+            add(remGp, module.placeholder, expand = TRUE, fill = TRUE)
 
             visible(module.placeholder) <- n.modules == 0
             visible(module.table) <- n.modules > 0
@@ -226,13 +226,14 @@ InstallModules <- setRefClass(
                 if (removemodule(mod.to.remove[[1]])) {
                     GUI$menuBarWidget$defaultMenu()
                     gmessage("Addon successfully removed.", parent = GUI$win)
-                    installed.modules[,] <- installed.modules[,][installed.modules[,] != mod.to.remove]
 
                     mod.names <- lapply(getModules(GUI$addonModuleDir), function(mod) {
                         mod$display_name
                     })
 
                     n.modules <- length(mod.names)
+
+                    installed.modules[] <- if (n.modules == 0) "" else unname(unlist(mod.names))
 
                     visible(module.placeholder) <- n.modules == 0
                     visible(module.table) <- n.modules > 0
