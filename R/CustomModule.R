@@ -1,13 +1,13 @@
-##' iNZight Custom Module
-##'
-##' Provides a basic module for extending new ones
-##'
-##' @title iNZight Custom Module
-##'
-##' @author Tom Elliott
-##'
-##' @export CustomModule
-##' @exportClass CustomModule
+#' iNZight Custom Module
+#'
+#' Provides a basic module for extending new ones
+#'
+#' @title iNZight Custom Module
+#'
+#' @author Tom Elliott
+#'
+#' @export CustomModule
+#' @exportClass CustomModule
 CustomModule <- setRefClass(
     "CustomModule",
     fields = list(
@@ -93,7 +93,14 @@ getModules <- function(dir) {
 
 getmodule <- function(f) {
     ## check if file is a Module
-    t <- paste(collapse = "\n", readLines(f))
+    t <- readLines(f)
+    mi <- grep("^#'", t)
+    meta <- NULL
+    if (length(mi)) {
+        meta <- parse_meta(t[mi])
+        t <- t[-mi]
+    }
+    t <- paste(collapse = "\n", t)
     if (!grepl("^[a-zA-Z]+[a-zA-Z0-9]*\\s*<-\\s*setRefClass", t)) return(NULL)
 
     ## load module into an environment to avoid clashes
@@ -114,9 +121,20 @@ getmodule <- function(f) {
     }
     e$name <- obj
     e$display_name <- e[[obj]]@className[1]
+    e$meta <- meta
     e$module <- e[[obj]]
     e$path <- f
     e
+}
+
+parse_meta <- function(x) {
+    # remove comment
+    x <- gsub("^#' ", "", x)
+    m <- regexpr("^@[a-zA-Z]+", x)
+    names <- substr(x, m + 1, attr(m, "match.length"))
+    values <- substr(x, m + attr(m, "match.length") + 1, nchar(x))
+    names(values) <- names
+    as.list(values)
 }
 
 ##' iNZight Module Installation
