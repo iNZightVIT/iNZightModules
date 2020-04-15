@@ -42,6 +42,9 @@ addons:
       - libxml2-dev
       - libnlopt-dev
       - libudunits2-dev
+      - libcgal-dev
+      - libglu1-mesa-dev
+      - libglu1-mesa-dev
       - r-cran-rodbc
       - r-cran-rgtk2
       - r-cran-cairodevice
