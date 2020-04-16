@@ -46,9 +46,9 @@ addons:
       - libudunits2-dev
       - libcgal-dev
       - libglu1-mesa-dev
-      - r-cran-rodbc
-      - r-cran-rgtk2
-      - r-cran-cairodevice
+      # - r-cran-rodbc
+      # - r-cran-rgtk2
+      # - r-cran-cairodevice
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
