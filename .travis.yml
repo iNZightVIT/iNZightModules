@@ -18,6 +18,8 @@ matrix:
       r: release
     - os: linux
       r: devel
+  allow_failures:
+    - r: devel
 
 repos:
   docker: https://r.docker.stat.auckland.ac.nz
@@ -42,6 +44,8 @@ addons:
       - libxml2-dev
       - libnlopt-dev
       - libudunits2-dev
+      - libcgal-dev
+      - libglu1-mesa-dev
       - r-cran-rodbc
       - r-cran-rgtk2
       - r-cran-cairodevice
