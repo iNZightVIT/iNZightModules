@@ -21,14 +21,14 @@ Imports:
     gpairs,
     gWidgets2,
     gWidgets2RGtk2,
-    iNZight,
-    iNZightPlots,
-    iNZightRegression,
-    iNZightTools,
-    iNZightMR,
-    iNZightTS
+    iNZight (>= 3.5.2),
+    iNZightPlots (>= 2.11.1),
+    iNZightRegression (>= 1.2.6),
+    iNZightTools (>= 1.8.4),
+    iNZightMR (>= 2.2.4),
+    iNZightTS (>= 1.5.2)
 Suggests:
-    iNZightMaps,
+    iNZightMaps (>= 2.2),
     rgl,
     mgcv,
     sf,
