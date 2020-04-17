@@ -28,7 +28,7 @@ r_github_packages:
   - iNZightVIT/iNZight@release/3.5.2
   - iNZightVIT/iNZightTS@dev
   - iNZightVIT/iNZightPlots@release/2.11.1
-  - iNZightVIT/iNZightMR@release/2.2.4
+  - iNZightVIT/iNZightTools@release/1.8.4
 
 env:
   global:
