@@ -57,10 +57,11 @@ test_that("Model comparison works", {
 
 ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
     clus1 = "dnum", wt = "pw", fpc = "fpc",
-    poststrat = list(stype = 
+    poststrat = list(stype =
         data.frame(
             stype = c("E", "H", "M"),
-            Freq = c(4421, 755, 1018)
+            Freq = c(4421, 755, 1018),
+            stringsAsFactors = TRUE
         )
     ),
     type = "survey",

@@ -1,3 +1,5 @@
+- specify `stringsAsFactors = TRUE` for upcoming R 4.0.0
+
 ## iNZightModules 2.4.8
 __Release date__: 11 November 2019
 
