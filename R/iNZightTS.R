@@ -40,7 +40,7 @@ iNZightTSMod <- setRefClass(
                 GUI = GUI,
                 patternType = 1,
                 show.smoother = TRUE,
-                smoothness = 10,
+                smoothness = 15,
                 tsObj = NULL,
                 plottype = 1,
                 compare = 1,

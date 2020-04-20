@@ -18,14 +18,18 @@ matrix:
       r: release
     - os: linux
       r: devel
+  allow_failures:
+    - r: devel
 
 repos:
   docker: https://r.docker.stat.auckland.ac.nz
 
 r_github_packages:
-  - jverzani/gWidgets2RGtk2
-  - iNZightVIT/iNZight@dev
+  - iNZightVIT/iNZightTools@release/1.8.4
+  - iNZightVIT/iNZightPlots@release/2.11.1
   - iNZightVIT/iNZightTS@dev
+  - iNZightVIT/iNZight@release/3.5.2
+
 
 env:
   global:
@@ -42,9 +46,11 @@ addons:
       - libxml2-dev
       - libnlopt-dev
       - libudunits2-dev
-      - r-cran-rodbc
-      - r-cran-rgtk2
-      - r-cran-cairodevice
+      - libcgal-dev
+      - libglu1-mesa-dev
+      # - r-cran-rodbc
+      # - r-cran-rgtk2
+      # - r-cran-cairodevice
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
