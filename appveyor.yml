@@ -38,8 +38,10 @@ build_script:
   - mv gtk c:\RLibrary\RGtk2
   - del gtk32.zip
   - del gtk64.zip
-  - travis-tool.sh install_github iNZightVIT/iNZight@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightTools@dev
   - travis-tool.sh install_github iNZightVIT/iNZightTS@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightPlots@dev
+  - travis-tool.sh install_github iNZightVIT/iNZight@dev
 
 test_script:
   - md C:\Users\appveyor\Documents\iNZightVIT
