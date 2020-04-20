@@ -71,7 +71,7 @@ iNZightMap2Mod <- setRefClass(
                                  title = "Install Maps package", icon = "question", parent = GUI$win)
 
                 if (resp) {
-                    utils::install.packages("iNZightMaps", 
+                    utils::install.packages("iNZightMaps",
                                             repos = c("https://r.docker.stat.auckland.ac.nz", "http://cran.stat.auckland.ac.nz"),
                                             dependencies = TRUE)
                     if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
@@ -88,7 +88,7 @@ iNZightMap2Mod <- setRefClass(
                                  title = "Install Maps package", icon = "question", parent = GUI$win)
 
                 if (resp) {
-                    utils::install.packages("iNZightMaps", 
+                    utils::install.packages("iNZightMaps",
                                             repos = c("https://r.docker.stat.auckland.ac.nz","http://cran.stat.auckland.ac.nz"),
                                             dependencies = TRUE)
                     if (!requireNamespace("iNZightMaps", quietly = TRUE)) {
@@ -101,7 +101,10 @@ iNZightMap2Mod <- setRefClass(
             }
 
             ## Configure the data / variables for mapping:
-            activeData <<- as.data.frame(GUI$getActiveData())
+            activeData <<- as.data.frame(
+                GUI$getActiveData(),
+                stringsAsFactors = TRUE
+            )
 
             mapName <<- ""
             mapType <<- NULL
@@ -175,25 +178,25 @@ iNZightMap2Mod <- setRefClass(
         #                  height = 500,
         #                  parent = GUI$win,
         #                  visible = FALSE)
-        # 
+        #
         #     gv <- gvbox(cont = w, expand = TRUE, fill = TRUE)
         #     gv$set_borderwidth(15)
-        # 
+        #
         #     lbl <- glabel("Type of Map Data")
         #     font(lbl) <- list(weight = "bold", size = 12, family = "normal")
         #     radioMapType <- gradio(c("Coordinate (latitude, longitude)",
         #                              "Regions (country, state, county, etc.)"))
         #     add(gv, lbl)
         #     add(gv, radioMapType)
-        # 
+        #
         #     coord.or.region <- any(grepl("(latitude|longitude)", colnames(activeData), TRUE))
         #     svalue(radioMapType, index = TRUE) <- if(coord.or.region) 1 else 2
-        # 
+        #
         #     addSpace(gv, 10)
-        # 
+        #
         #     btnFinish <- gbutton("OK")
         #     add(gv, btnFinish)
-        # 
+        #
         #     addHandlerClicked(btnFinish, function(h, ...) {
         #         if(svalue(radioMapType, index = TRUE) == 1) {
         #             print("Coordinate")
@@ -202,7 +205,7 @@ iNZightMap2Mod <- setRefClass(
         #             importDialog()
         #         }
         #     })
-        # 
+        #
         #     visible(w) <- TRUE
         # },
         importDialog = function() {
@@ -212,7 +215,7 @@ iNZightMap2Mod <- setRefClass(
                                         # General variables
 
             ## Variables used later on in the merge variable selection section
-            nomatch.df <- data.frame(var.name = "")
+            nomatch.df <- data.frame(var.name = "", stringsAsFactors = TRUE)
             staleMap <<- FALSE
 
             ## Section heading font
@@ -286,14 +289,15 @@ iNZightMap2Mod <- setRefClass(
                 unique.ind <- !duplicated(filenames)
 
                 data.frame(filename = filenames[unique.ind],
-                           has.children = has.children[unique.ind])
+                           has.children = has.children[unique.ind],
+                           stringsAsFactors = TRUE)
             }
 
             ## Variable definitions
             stored.shapefiles <- list.files(shapefileDir,
                                             recursive = TRUE,
                                             pattern = ".(shp|rds)$")
-            
+
             metadata <- tryCatch(
               iNZightMaps::read.mapmetadata(shapefileDir),
               error = function(e) {
@@ -309,23 +313,23 @@ iNZightMap2Mod <- setRefClass(
               curr.links <- XML::getHTMLLinks(rawToChar(curl::curl_fetch_memory(dirURL)$content))
               curr.dirs <- curr.links[grep("/$", curr.links)]
               curr.files <- curr.links[grep("\\.(rds|shp)", curr.links)]
-              
+
               found.files <- curr.files
-              
+
               for (dir in curr.dirs[-1]) {
                 found.files <- c(found.files, retrieve.filelist(paste0(dirURL, dir)))
               }
-              
+
               found.files
             }
-            
+
             tryCatch({
               ext.files <- retrieve.filelist("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/")
               int.files <- gsub(".*/(.*\\.rds)$", "\\1", stored.shapefiles)
-              
+
               if (length(setdiff(ext.files, int.files)) > 0) {
                 shapefileDL <- gconfirm("New shapefiles found online. Would you like to download these?")
-                
+
                 if (shapefileDL) {
                   tryCatch(iNZightMaps::download.shapefiles("https://www.stat.auckland.ac.nz/~wild/data/shapefiles/",
                                                             shapefileDir),
@@ -334,10 +338,10 @@ iNZightMap2Mod <- setRefClass(
                   stored.shapefiles <- list.files(shapefileDir,
                                                   recursive = TRUE,
                                                   pattern = ".(shp|rds)$")
-                  
+
                 }
               }
-            }, 
+            },
             error = function(e) print("Shapefile retrieval failed"))
 
             mapdir.contents <- merge(stored.shapefiles, metadata,
@@ -512,7 +516,10 @@ iNZightMap2Mod <- setRefClass(
 
                 ## Import the map - either a shapefile or rds
                 mapData <<- iNZightMaps::retrieveMap(map.filename)
-                map.vars <- as.data.frame(mapData)[, !(colnames(mapData) %in% "geometry"), drop = FALSE]
+                map.vars <- as.data.frame(
+                    mapData,
+                    stringsAsFactors = TRUE
+                )[, !(colnames(mapData) %in% "geometry"), drop = FALSE]
 
                 ## Only take variables in the shapefile that are unique to one
                 ## region in the map file
@@ -553,8 +560,10 @@ iNZightMap2Mod <- setRefClass(
                 data.var <- svalue(combobox.datavars)
                 map.var <- svalue(combobox.mapvars)
 
-                match.list <- iNZightMaps::matchVariables(activeData[, data.var],
-                                                          as.data.frame(mapData)[, map.var])
+                match.list <- iNZightMaps::matchVariables(
+                    activeData[, data.var],
+                    as.data.frame(mapData, stringsAsFactors = TRUE)[, map.var]
+                )
 
                 table.nonmatched[] <- match.list$data.vect
                 visible(table.nonmatched) <- !(match.list$data.matched)
@@ -753,7 +762,7 @@ iNZightMap2Mod <- setRefClass(
         createMapObject = function() {},
 
         updatePlot = function() {
-          
+
           range2 <- function(x, na.rm = TRUE) {
             if (is.character(x) || is.factor(x)) {
               NULL
@@ -761,7 +770,7 @@ iNZightMap2Mod <- setRefClass(
               range(x, na.rm = na.rm)
             }
           }
-          
+
             gdkWindowSetCursor(getToolkitWidget(GUI$win)$getWindow(), gdkCursorNew("GDK_WATCH"))
             if(length(mapVars) > 1) {
                 multiple.vars <- TRUE
@@ -776,7 +785,14 @@ iNZightMap2Mod <- setRefClass(
             }
 
             if (isTRUE(is.null(plotScaleLimits)) && isTRUE(!is.null(mapVars) && all(mapVars != "")) && (plotPlay || isTRUE(combinedData$multiple.obs && multipleObsOption == "singleval"))) {
-              axis.limits <- lapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], range2, na.rm = TRUE)
+                axis.limits <- lapply(
+                    as.data.frame(
+                        combinedData$region.data,
+                        stringsAsFactors = TRUE
+                    )[, mapVars, drop = FALSE],
+                    range2,
+                    na.rm = TRUE
+                )
 
             } else {
               grid::grid.rect(width = 0.25, height = 0.10, y = 0.05,
@@ -1141,7 +1157,7 @@ iNZightMap2Mod <- setRefClass(
             lbl.constalpha     <- glabel("Transparency of map:")
             lbl.constsize      <- glabel("Overall size:")
             lbl.constsizespark <- glabel("Overall size:")
-            
+
             edit.dotN <- gedit(1000)
             lbl.dotN <- glabel("Dot per N obs:")
             box.dotN <- ggroup()
@@ -1173,7 +1189,7 @@ iNZightMap2Mod <- setRefClass(
                     if (timer$started) timer$stop_timer()
                 timer <<- gtimer(1000, function(...) updateOptions(), one.shot = TRUE)
             })
-            
+
             addHandlerChanged(edit.dotN, function(h, ...) {
                 updateOptions()
             })
@@ -1287,7 +1303,12 @@ iNZightMap2Mod <- setRefClass(
                 }
 
                 lbl.singleval <- glabel(sprintf("Value of %s variable:", mapSequenceVar))
-                unique.singlevals <- unique(as.data.frame(combinedData[["region.data"]])[, combinedData$sequence.var])
+                unique.singlevals <- unique(
+                    as.data.frame(
+                        combinedData[["region.data"]],
+                        stringsAsFactors = TRUE
+                    )[, combinedData$sequence.var]
+                )
                 combobox.singleval <- gslider(unique.singlevals[!is.na(unique.singlevals)])
                 svalue(combobox.singleval) <- combobox.singleval$items[length(combobox.singleval$items)]
 
@@ -1345,24 +1366,24 @@ iNZightMap2Mod <- setRefClass(
                       if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
                         plotPlay <<- TRUE
                         btn.play$set_value(img.stopicon)
-                        
+
                         svalue(combobox.singleval, index = TRUE) <- svalue(combobox.singleval, index = TRUE) + 1
                       }
                     }
 
                 })
-                
+
                 addHandlerClicked(btn.delay, function(h, ...) {
                   w <- gwindow(title = "Play Settings", width = 200, height = 80,
                                parent = GUI$win)
                   g <- gvbox(spacing = 10, container = w)
                   g$set_borderwidth(10)
-                  
+
                   g1 <- ggroup(container = g)
                   glabel("Time delay between plots :", container = g1)
                   spin <- gspinbutton(from = 0.1, to = 3, by = 0.1, value = playdelay, container = g1)
                   glabel("(seconds)", container = g1)
-                  
+
                   g2 <- ggroup(container = g)
                   addSpring(g2)
                   gbutton("OK", container = g, handler = function(h, ...) {
@@ -1444,7 +1465,13 @@ iNZightMap2Mod <- setRefClass(
                         combinedData$type <<- "sparklines"
                         plotCurrentSeqVal <<- NULL
                         if (isTRUE(!is.null(mapVars))) {
-                            vars.to.keep <- sapply(as.data.frame(combinedData$region.data)[, mapVars, drop = FALSE], is.numeric)
+                            vars.to.keep <- sapply(
+                                as.data.frame(
+                                    combinedData$region.data,
+                                    stringsAsFactors = TRUE
+                                )[, mapVars, drop = FALSE],
+                                is.numeric
+                            )
                             if (sum(vars.to.keep) > 0) {
                                 svalue(table.vars) <- mapVars[vars.to.keep]
                             } else {
@@ -1488,8 +1515,8 @@ iNZightMap2Mod <- setRefClass(
 
                         if (svalue(combobox.singleval, index = TRUE) < length(combobox.singleval$items)) {
                             playTimer <<- gtimer(
-                              playdelay * 1000, 
-                              function(i) { svalue(combobox.singleval, index = TRUE) <- i + 1 }, 
+                              playdelay * 1000,
+                              function(i) { svalue(combobox.singleval, index = TRUE) <- i + 1 },
                               data = svalue(combobox.singleval, index = TRUE),
                               one.shot = TRUE
                             )
@@ -1519,7 +1546,7 @@ iNZightMap2Mod <- setRefClass(
                   combinedData <<- iNZightMaps::iNZightMapAggregation(combinedData,
                                                                       tolower(svalue(combobox.aggregate)))
                   plotCurrentSeqVal <<- svalue(combobox.aggregate)
-                  
+
                   if (isTRUE(length(svalue(table.vars)) > 1)) {
                     svalue(edit.plottitle) <- ""
                   } else {
@@ -1530,7 +1557,7 @@ iNZightMap2Mod <- setRefClass(
                     }
                   }
                 })
-                
+
                 addHandlerChanged(combobox.sparkline, function(h, ...) {
                   updateOptions()
                 })
@@ -1612,12 +1639,12 @@ iNZightMap2Mod <- setRefClass(
                 } else if (svalue(radio.maptype, index = TRUE) == 2) {
                     combinedData$type <<- "point"
                     mapType <<- "point"
-                    
+
                     svalue(lbl.sizeselect) <- "Size by:"
                 } else if (svalue(radio.maptype, index = TRUE) == 3) {
                     combinedData$type <<- "dotdensity"
                     mapType <<- "dotdensity"
-                    
+
                     svalue(lbl.sizeselect) <- "Allocate dots by:"
                 }
                     visible(lbl.sizeselect) <- svalue(radio.maptype, index = TRUE) %in% c(2, 3)
@@ -1656,8 +1683,8 @@ iNZightMap2Mod <- setRefClass(
                                       GUI$plotToolbar$restore()
                                       visible(GUI$gp1) <<- TRUE
                                   })
-            
-            GUI$plotToolbar$update("export", refresh = "updatePlot", 
+
+            GUI$plotToolbar$update("export", refresh = "updatePlot",
                                 export = function() {
                                     browseURL(iNZightPlots::exportHTML(x = plotObject,
                                         mapObj = combinedData,

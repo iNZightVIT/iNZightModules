@@ -254,7 +254,7 @@ scatter3d <- function(x, y, z,
                         if (fill) rgl::rgl.surface(vals, vals, yhat, color=surface.col[j], alpha=0.5, lit=FALSE)
                         if (grid) rgl::rgl.surface(vals, vals, yhat, color=if (fill) grid.col
                                                                       else surface.col[j], alpha=0.5, lit=FALSE, front="lines", back="lines")
-                        rgl::rgl.texts(1, predict(mod, newdata=data.frame(x=1, z=1, groups=group)), 1,
+                        rgl::rgl.texts(1, predict(mod, newdata=data.frame(x=1, z=1, groups=group, stringsAsFactors = TRUE)), 1,
                                   paste(group, " "), adj=1, color=surface.col[j])
                         if (residuals){
                             yy <- y[select.obs]
@@ -293,7 +293,7 @@ scatter3d <- function(x, y, z,
                         if (fill) rgl::rgl.surface(vals, vals, yhat, color=surface.col[j], alpha=0.5, lit=FALSE)
                         if (grid) rgl::rgl.surface(vals, vals, yhat, color=if (fill) grid.col
                                                                       else surface.col[j], alpha=0.5, lit=FALSE, front="lines", back="lines")
-                        rgl::rgl.texts(1, predict(mod, newdata=data.frame(x=1, z=1, groups=group)), 1,
+                        rgl::rgl.texts(1, predict(mod, newdata=data.frame(x=1, z=1, groups=group, stringsAsFactors = TRUE)), 1,
                                   paste(group, " "), adj=1, color=surface.col[j])
                         if (residuals){
                             yy <- y[select.obs]
