@@ -29,6 +29,7 @@ Imports:
     iNZightTS (>= 1.5.2)
 Suggests:
     iNZightMaps (>= 2.2),
+    car,
     rgl,
     mgcv,
     sf,
@@ -39,5 +40,5 @@ Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3 | file LICENSE
 Description: A suite of add-on modules for the iNZight GUI, including model
     fitting module, multiple response, time series, and some advanced plotting.
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 Encoding: UTF-8

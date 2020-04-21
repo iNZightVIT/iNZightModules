@@ -11,6 +11,13 @@
 ##' @export
 plot3D = function(e){
 
+  if (!requireNamespace("car", quietly = TRUE)) {
+    stop("Please install the 'car' package.")
+  }
+  if (!requireNamespace("rgl", quietly = TRUE)) {
+    stop("Please install the 'rgl' package.")
+  }
+
   currentDevice = dev.cur()
   defaultText =  "Drop name here"
 
