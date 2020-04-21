@@ -133,8 +133,19 @@ plot3D = function(e){
 
       }
       e$deviceNumber = dev.cur()
-      scatter3d(xData, yData, zData, xlab = X, ylab = Y, zlab = Z, bg.col = "black", fit = fit, sphere.size = 1, surface = svalue(plotSurface), groups = gData, parallel = svalue(multipleSurfaceParallel), grid = svalue(gridLines), residuals = svalue(surfaceResiduals))
-
+      car::scatter3d(xData, yData, zData,
+          xlab = X,
+          ylab = Y,
+          zlab = Z,
+          bg.col = "black",
+          fit = fit,
+          sphere.size = 1,
+          surface = svalue(plotSurface),
+          groups = gData,
+          parallel = svalue(multipleSurfaceParallel),
+          grid = svalue(gridLines),
+          residuals = svalue(surfaceResiduals)
+      )
 
       #        scatter3d(eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop1), collapse = ""))), eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(responseDrop), collapse = ""))), eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop2), collapse = ""))),
       #                  xlab = svalue(covariateDrop1), ylab = svalue(responseDrop), zlab = svalue(covariateDrop2),bg.col = "black", fit = fit, grid = svalue(gridLines), residuals = svalue(surfaceResiduals))
@@ -148,12 +159,13 @@ plot3D = function(e){
   identifyButton = gbutton("Identify Points", handler = function(h,...){
 
     #if(e$deviceNumber != dev.cur())  e$canIdentify = FALSE
-
-    if(e$canIdentify)
-      identify3d(eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop1), collapse = ""))),
+    #if(e$canIdentify)
+    try({
+      car::Identify3d(eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop1), collapse = ""))),
                  eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(responseDrop), collapse = ""))),
                  eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop2), collapse = ""))),
                  col = "white")
+    }, silent = TRUE)
     #identify3d(x, y, z, axis.scales=TRUE, groups=NULL, labels=1:length(x),
     #                      col=c("blue", "green", "orange", "magenta", "cyan", "red", "yellow", "gray"),
     #                      offset = ((100/length(x))^(1/3)) * 0.02)
@@ -197,4 +209,5 @@ plot3D = function(e){
 
   add(scatterPlot3DWindow, scatterPlot3DGp)
 
+  invisible(scatterPlot3DWindow)
 }

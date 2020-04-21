@@ -1,5 +1,5 @@
 - specify `stringsAsFactors = TRUE` for upcoming R 4.0.0
-
+- fix 3d plot's "locate" functionality
 
 ## iNZightModules 2.4.9
 - change default value of the time series smoother to 15 (was 10)
