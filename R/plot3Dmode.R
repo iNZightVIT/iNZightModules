@@ -133,19 +133,21 @@ plot3D = function(e){
 
       }
       e$deviceNumber = dev.cur()
-      car::scatter3d(xData, yData, zData,
-          xlab = X,
-          ylab = Y,
-          zlab = Z,
-          bg.col = "black",
-          fit = fit,
-          sphere.size = 1,
-          surface = svalue(plotSurface),
-          groups = gData,
-          parallel = svalue(multipleSurfaceParallel),
-          grid = svalue(gridLines),
-          residuals = svalue(surfaceResiduals)
-      )
+      suppressPackageStartupMessages({
+          car::scatter3d(xData, yData, zData,
+              xlab = X,
+              ylab = Y,
+              zlab = Z,
+              bg.col = "black",
+              fit = fit,
+              sphere.size = 1,
+              surface = svalue(plotSurface),
+              groups = gData,
+              parallel = svalue(multipleSurfaceParallel),
+              grid = svalue(gridLines),
+              residuals = svalue(surfaceResiduals)
+          )
+      })
 
       #        scatter3d(eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop1), collapse = ""))), eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(responseDrop), collapse = ""))), eval(parse(text = paste("tag(e$obj, \"dataSet\")", "$", svalue(covariateDrop2), collapse = ""))),
       #                  xlab = svalue(covariateDrop1), ylab = svalue(responseDrop), zlab = svalue(covariateDrop2),bg.col = "black", fit = fit, grid = svalue(gridLines), residuals = svalue(surfaceResiduals))
