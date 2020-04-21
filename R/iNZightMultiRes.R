@@ -22,6 +22,7 @@ iNZightMultiRes <- setRefClass(
         binaryVar  = "numeric",
         mid        = "ANY",
         gtab       = "ANY",
+        sumButton = "ANY", comButton = "ANY",
         mrObject   = "ANY",
         byMRObject = "ANY",
         plotSet    = "ANY",
@@ -119,15 +120,15 @@ iNZightMultiRes <- setRefClass(
                     if (length(svalue(gtab)) >= 2) {
                         visible(G1clearbtn) <- visible(G1box) <- enabled(G1box) <- TRUE
                         visible(G2clearbtn) <- visible(G2box) <- enabled(G2box) <- svalue(G1box, index = TRUE) != 1
-                        enabled(sumButton) = TRUE
-                        enabled(comButton) = TRUE
+                        enabled(sumButton) <<- TRUE
+                        enabled(comButton) <<- TRUE
 
                         setMRobj()
                     } else {
                         visible(G1clearbtn) <- visible(G1box) <- enabled(G1box) <- FALSE
                         visible(G2clearbtn) <- visible(G2box) <- enabled(G2box) <- FALSE
-                        enabled(sumButton) = FALSE
-                        enabled(comButton) = FALSE
+                        enabled(sumButton) <<- FALSE
+                        enabled(comButton) <<- FALSE
 
                         setMRobj()
                     }
@@ -136,7 +137,7 @@ iNZightMultiRes <- setRefClass(
 
 
             ## summary button
-            sumButton = gbutton("Summary", handler = function(h,...) {
+            sumButton <<- gbutton("Summary", handler = function(h,...) {
                 s1 = svalue(G1box, index = TRUE)
                 s2 = svalue(G2box, index = TRUE)
                 if (s1 == 1) {
@@ -147,14 +148,15 @@ iNZightMultiRes <- setRefClass(
                     txt = capture.output(summary(byMRObject, "within"))
                     summaryWindow(txt, mode = 2)
                 } else if (s1 != 1 & s2 != 1) {
-                    txt = capture.output(summary(byMRObject, "between"))
-                    summaryWindow(txt, mode = 3)
+                    # txt = capture.output(summary(byMRObject, "between"))
+                    # summaryWindow(txt, mode = 3)
+                    gmessage("Not yet supported")
                 }
             })
-            enabled(sumButton) = FALSE
+            enabled(sumButton) <<- FALSE
 
             ## combinations
-            comButton = gbutton("Combinations", handler = function(h,...) {
+            comButton <<- gbutton("Combinations", handler = function(h,...) {
                 s1 = svalue(G1box, index = TRUE)
                 s2 = svalue(G2box, index = TRUE)
                 if (s1 == 1) {
@@ -165,7 +167,7 @@ iNZightMultiRes <- setRefClass(
                     gmessage("Not yet supported")
                 }
             })
-            enabled(comButton) = FALSE
+            enabled(comButton) <<- FALSE
 
             btnGrp <- ggroup(container = top)
             add(btnGrp, sumButton, expand = TRUE, fill = TRUE)
@@ -247,11 +249,11 @@ iNZightMultiRes <- setRefClass(
                         visible(G2clearbtn) <-visible(G2box) <- enabled(G2box) <- FALSE
                         visible(sideChk) <- enabled(sideChk) <- FALSE
                         svalue(G2box, index = TRUE) <- 1
-                        enabled(comButton) <- TRUE
+                        enabled(comButton) <<- TRUE
                     } else {
                         visible(G2clearbtn) <- visible(G2box) <- enabled(G2box) <- TRUE
                         visible(sideChk) <- enabled(sideChk) <- svalue(G2box, index = TRUE) > 1
-                        enabled(comButton) <- FALSE
+                        enabled(comButton) <<- FALSE
                     }
 
                 })
@@ -287,10 +289,12 @@ iNZightMultiRes <- setRefClass(
                     s2 <- svalue(G2box, index = TRUE) - 1
                     if (s2 == 0) {
                         visible(sideChk) <- enabled(sideChk) <- FALSE
-                        enabled(comButton) <- svalue(G1box, index = TRUE) == 1
+                        enabled(sumButton) <<- TRUE
+                        enabled(comButton) <<- svalue(G1box, index = TRUE) == 1
                     } else {
                         visible(sideChk) <- enabled(sideChk) <- svalue(G1box, index = TRUE) > 1
-                        enabled(comButton) <- FALSE
+                        enabled(sumButton) <<- FALSE
+                        enabled(comButton) <<- FALSE
                     }
                 })
 
@@ -314,7 +318,6 @@ iNZightMultiRes <- setRefClass(
 
             add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
             add(modwin$footer, homeButton, expand = TRUE, fill = TRUE)
-
         },
 
         ## isBinary() checks for a single vector.
