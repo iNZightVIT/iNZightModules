@@ -3,7 +3,6 @@
 \docType{package}
 \name{iNZightModules}
 \alias{iNZightModules}
-\alias{iNZightModules-package}
 \title{iNZightModules: Add-on modules for iNZight}
 \description{
 Each file in this package is a self-contained module that integrates into iNZight.
