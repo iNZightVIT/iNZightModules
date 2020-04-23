@@ -20,7 +20,9 @@ InstallModules <- setRefClass(
         g_repo = "ANY",
         g_url = "ANY",
         g_file = "ANY",
-        fname = "ANY"
+        filename = "ANY",
+        fname = "ANY",
+        installBtn = "ANY"
     ),
     methods = list(
         initialize = function(mngr) {
@@ -64,6 +66,8 @@ InstallModules <- setRefClass(
             add(ctrl_g, g_repo)
             add(ctrl_g, g_url)
             add(ctrl_g, g_file)
+
+            svalue(from) <<- "Local file"
 
             # mod.names <- lapply(getModules(manager$m_dir), function(mod) {
             #     mod$display_name
@@ -152,7 +156,7 @@ InstallModules <- setRefClass(
             font(lbl) <- list(weight = "bold")
             add(g_choose, lbl)
 
-            filename <- gedit("Select a file ...",
+            filename <<- gedit("Select a file ...",
                 container = g_choose,
                 expand = TRUE
             )
@@ -160,14 +164,23 @@ InstallModules <- setRefClass(
             btn_choose <- gbutton("Browse ...",
                 container = g_choose,
                 handler = function(h, ...) {
-                    fname <<- gfile(
+                    svalue(filename) <<- gfile(
                         text = "Choose a file",
                         initial.dir = file.path("."),
                         filter = list("R file" = list(patterns = c("*.R"))),
                         quote = FALSE,
                         container = g_choose
                     )
-                    svalue(filename) <- fname
+                }
+            )
+            addHandlerChanged(filename,
+                handler = function(h, ...) {
+                    fname <<- svalue(h$obj)
+                }
+            )
+            addHandlerKeystroke(filename,
+                handler = function(h, ...) {
+                    fname <<- svalue(h$obj)
                 }
             )
 
@@ -195,13 +208,13 @@ InstallModules <- setRefClass(
             size(cancelBtn) <- c(100, -1)
 
             # Install button
-            installBtn <- gbutton("Install",
+            installBtn <<- gbutton("Install",
                 container = btn_grp,
                 handler = function(h, ...) {
                     if (installmodule(fname, manager$m_dir)) close()
                 }
             )
-            size(installBtn) <- c(100, -1)
+            size(installBtn) <<- c(100, -1)
 
         },
         close = function() {

@@ -1,3 +1,7 @@
+#' @name Demo module
+#' @version 0.0.1
+#' @desc Just for demonstration and testing
+#' @author Tom Elliott
 DemoModule <- setRefClass(
     "Demo Module",
     contains = "CustomModule",
@@ -6,8 +10,8 @@ DemoModule <- setRefClass(
     ),
     methods = list(
         initialize = function(gui, name) {
-            callSuper(gui, 
-                name = name, 
+            callSuper(gui,
+                name = name,
                 embedded = TRUE
             )
 

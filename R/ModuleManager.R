@@ -37,28 +37,40 @@ ModuleManager <- setRefClass(
                 container = g,
                 expand = TRUE
             )
+            m_tbl$remove_popup_menu()
             if (!is.null(modules$Select))
                 m_tbl$cmd_coerce_column(1, as.logical)
             m_tbl$hide_row_names(TRUE)
 
+            addHandlerChanged(m_tbl,
+                handler = function(h, ...) {
+                    modules <<- h$obj$get_frame()
+                    set_buttons()
+                }
+            )
+
             # Buttons
             btn_grp <- ggroup(container = g)
+            btn_width <- 150
             add_btn <<- gbutton("Install modules ...",
                 container = btn_grp,
                 handler = function(h, ...) {
                     InstallModules$new(.self)
                 }
             )
+            size(add_btn) <<- c(btn_width, -1)
 
             upd_btn <<- gbutton("Update all",
                 container = btn_grp
             )
+            size(upd_btn) <<- c(btn_width, -1)
             enabled(upd_btn) <<- length(mods) > 0
 
             rmv_btn <<- gbutton("Remove selected",
                 container = btn_grp
             )
-            enabled(rmv_btn) <<- length(mods) > 0
+            size(rmv_btn) <<- c(btn_width, -1)
+            enabled(rmv_btn) <<- length(mods) > 0 && sum(modules$Select) > 0
 
             addSpring(btn_grp)
             ok_btn <- gbutton("Close",
@@ -67,6 +79,7 @@ ModuleManager <- setRefClass(
                     dispose(win)
                 }
             )
+            size(ok_btn) <- c(btn_width, -1)
 
             addSpace(g, 20)
             tbl <- glayout(container = g)
@@ -112,10 +125,14 @@ ModuleManager <- setRefClass(
             if (length(mods)) {
                 modules <<- do.call(rbind, mods)
                 rownames(modules) <<- NULL
+                svalue(upd_btn) <<- ifelse(sum(modules$Select) > 0,
+                    "Update selected", "Update all")
+                enabled(upd_btn) <<- TRUE
             } else {
                 modules <<- data.frame(
                     Name = "Modules will appear here once installed"
                 )
+                enabled(upd_btn) <<- FALSE
             }
         },
         update_tbl = function() {
@@ -124,6 +141,24 @@ ModuleManager <- setRefClass(
             if (!is.null(modules$Select))
                 m_tbl$cmd_coerce_column(1, as.logical)
             m_tbl$hide_row_names(TRUE)
+            set_buttons()
+        },
+        set_buttons = function() {
+            if (length(mods)) {
+                if (sum(modules$Select) > 0) {
+                    svalue(upd_btn) <<- "Update selected"
+                    enabled(upd_btn) <<- TRUE
+                    enabled(rmv_btn) <<- TRUE
+                } else {
+                    enabled(upd_btn) <<- TRUE
+                    enabled(rmv_btn) <<- FALSE
+                    svalue(upd_btn) <<- "Update all"
+                }
+            } else {
+                enabled(upd_btn) <<- FALSE
+                enabled(rmv_btn) <<- FALSE
+                svalue(upd_btn) <<- "Update all"
+            }
         },
         install_module = function() {
             # Open window

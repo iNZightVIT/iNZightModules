@@ -6,6 +6,9 @@ mod_dir <- file.path(td, "modules")
 dir.create(mod_dir)
 on.exit(unlink(mod_dir, TRUE))
 
+# testing mod dir
+test_mods <- file.path(getwd(), "modules")
+
 # load_all("../../../iNZight")
 # load_all("../..")
 
@@ -43,10 +46,23 @@ test_that("Addon manager opens", {
 
 test_that("Modules can be installed from a file", {
     # load_all(); try(dispose(inst$win))
-    expect_silent(inst <- ModuleManager$new(ui))
+    inst <- ModuleManager$new(ui)
     on.exit(dispose(inst$win))
+    Sys.sleep(1)
 
     expect_silent(add_win <- InstallModules$new(inst))
     expect_is(add_win, "InstallModules")
+
+    expect_silent(svalue(add_win$from) <- "Local file")
+    expect_silent(
+        svalue(add_win$filename) <- file.path(test_mods, "DemoModule.R")
+    )
+    expect_silent(add_win$installBtn$invoke_change_handler())
+
+    expect_equal(inst$modules$Name, "Demo module")
+    expect_true(enabled(inst$upd_btn))
+})
+
+test_that("Modules can be removed", {
 
 })
