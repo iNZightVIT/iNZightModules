@@ -4,7 +4,7 @@ skip_if_offline()
 td <- tempdir()
 mod_dir <- file.path(td, "modules")
 dir.create(mod_dir)
-on.exit(unlink(td, TRUE))
+on.exit(unlink(mod_dir, TRUE))
 
 # load_all("../../../iNZight")
 # load_all("../..")
@@ -12,6 +12,7 @@ on.exit(unlink(td, TRUE))
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
+on.exit(try(ui$close(), silent = TRUE), add = TRUE)
 Sys.sleep(2)
 
 test_that("Module list is empty", {

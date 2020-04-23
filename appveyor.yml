@@ -39,6 +39,7 @@ build_script:
   - del gtk32.zip
   - del gtk64.zip
   - travis-tool.sh install_github iNZightVIT/iNZightTools@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightMR@release/2.2.5
   - travis-tool.sh install_github iNZightVIT/iNZightTS@dev
   - travis-tool.sh install_github iNZightVIT/iNZightPlots@dev
   - travis-tool.sh install_github iNZightVIT/iNZight@dev

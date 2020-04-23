@@ -451,7 +451,7 @@ iNZightMultiRes <- setRefClass(
 
             frm <- as.formula(paste(objName, "~", paste(vars[responseVars], collapse = " + ")))
 
-            mrObject <<- iNZightMR::iNZightMR(frm, data = activeData, Labels = substrsplit)
+            mrObject <<- iNZightMR::iNZightMR(frm, data = activeData, Labels = iNZightMR::substrsplit)
             if (mrObject$Labels$Commonstr != objName && guessName) {
                 if (!(objName == "response" && mrObject$Labels$Commonstr == "")) {
                     objName <<- ifelse(mrObject$Labels$Commonstr == "", "response", mrObject$Labels$Commonstr)
