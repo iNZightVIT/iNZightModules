@@ -57,12 +57,104 @@ test_that("Modules can be installed from a file", {
     expect_silent(
         svalue(add_win$filename) <- file.path(test_mods, "DemoModule.R")
     )
-    expect_silent(add_win$installBtn$invoke_change_handler())
+    expect_silent(add_win$inst_file_btn$invoke_change_handler())
 
     expect_equal(inst$modules$Name, "Demo module")
     expect_true(enabled(inst$upd_btn))
 })
 
 test_that("Modules can be removed", {
+    # load_all(); try(dispose(inst$win))
+    inst <- ModuleManager$new(ui, FALSE)
+    on.exit(dispose(inst$win))
+    Sys.sleep(1)
 
+    expect_false(enabled(inst$rmv_btn))
+    expect_silent(inst$m_tbl$set_cell(1, 1, TRUE))
+    expect_true(enabled(inst$rmv_btn))
+    expect_equal(svalue(inst$upd_btn), "Update selected")
+
+    expect_silent(inst$rmv_btn$invoke_change_handler())
+    expect_equal(
+        inst$modules,
+        data.frame(Name = "Modules will appear here once installed")
+    )
+    expect_equal(svalue(inst$upd_btn), "Update all")
+    expect_false(enabled(inst$upd_btn))
+    expect_false(enabled(inst$rmv_btn))
+})
+
+the_url <- "https://raw.githubusercontent.com/iNZightVIT/addons/dev/plot3DModule.R"
+test_that("Modules can be installed from a URL", {
+    # load_all(); try(dispose(inst$win))
+    inst <- ModuleManager$new(ui, FALSE)
+    on.exit(dispose(inst$win))
+    Sys.sleep(1)
+
+    expect_silent(add_win <- InstallModules$new(inst))
+    expect_is(add_win, "InstallModules")
+
+    expect_silent(svalue(add_win$from) <- "URL")
+    expect_silent(svalue(add_win$url) <- the_url)
+    expect_silent(add_win$inst_url_btn$invoke_change_handler())
+
+    expect_equal(inst$modules$Name, "3D Plotting")
+    expect_equal(basename(inst$modules$path), "plot3DModule.R")
+    expect_true(enabled(inst$upd_btn))
+    expect_equal(svalue(inst$upd_btn), "Update all")
+    expect_false(enabled(inst$rmv_btn))
+
+    expect_silent(inst$m_tbl$set_cell(1, 1, TRUE))
+    expect_true(enabled(inst$rmv_btn))
+    expect_equal(svalue(inst$upd_btn), "Update selected")
+
+    expect_silent(inst$rmv_btn$invoke_change_handler())
+    expect_equal(
+        inst$modules,
+        data.frame(Name = "Modules will appear here once installed")
+    )
+    expect_equal(svalue(inst$upd_btn), "Update all")
+    expect_false(enabled(inst$upd_btn))
+    expect_false(enabled(inst$rmv_btn))
+})
+
+test_that("Modules can be installed from addon repo", {
+    # load_all(); try(dispose(add_win$installWin)); try(dispose(inst$win))
+    inst <- ModuleManager$new(ui, FALSE)
+    on.exit(dispose(inst$win))
+    Sys.sleep(1)
+
+    expect_silent(svalue(inst$repo, index = TRUE) <- 2L)
+    expect_silent(add_win <- InstallModules$new(inst))
+    expect_is(add_win, "InstallModules")
+    expect_silent(svalue(add_win$from) <- "Addon repository")
+
+    expect_false(enabled(add_win$inst_repo_btn))
+    w <- which(add_win$add_tbl$get_frame()$Name == "Demo Module")
+    expect_silent(add_win$add_tbl$set_cell(w, 1, TRUE))
+    expect_true(enabled(add_win$inst_repo_btn))
+
+    w <- which(add_win$add_tbl$get_frame()$Name == "3D Plotting")
+    expect_silent(add_win$add_tbl$set_cell(w, 1, TRUE))
+
+    expect_silent(add_win$inst_repo_btn$invoke_change_handler())
+    expect_true(all(c("Demo Module", "3D Plotting") %in% inst$modules$Name))
+
+    expect_true(enabled(inst$upd_btn))
+    expect_equal(svalue(inst$upd_btn), "Update all")
+    expect_false(enabled(inst$rmv_btn))
+
+    expect_silent(inst$m_tbl$set_cell(1, 1, TRUE))
+    expect_silent(inst$m_tbl$set_cell(2, 1, TRUE))
+    expect_true(enabled(inst$rmv_btn))
+    expect_equal(svalue(inst$upd_btn), "Update selected")
+
+    expect_silent(inst$rmv_btn$invoke_change_handler())
+    expect_equal(
+        inst$modules,
+        data.frame(Name = "Modules will appear here once installed")
+    )
+    expect_equal(svalue(inst$upd_btn), "Update all")
+    expect_false(enabled(inst$upd_btn))
+    expect_false(enabled(inst$rmv_btn))
 })

@@ -8,13 +8,15 @@ ModuleManager <- setRefClass(
         modules = "ANY",
         m_tbl = "ANY",
         add_btn = "ANY", upd_btn = "ANY", rmv_btn = "ANY",
-        repo = "ANY"
+        repo = "ANY", repo_url = "character",
+        .confirm = "logical"
     ),
     methods = list(
-        initialize = function(gui) {
+        initialize = function(gui, confirm = TRUE) {
             initFields(
                 GUI = gui,
-                m_dir = gui$addonModuleDir
+                m_dir = gui$addonModuleDir,
+                .confirm = confirm
             )
 
             # Main window & container:
@@ -38,8 +40,10 @@ ModuleManager <- setRefClass(
                 expand = TRUE
             )
             m_tbl$remove_popup_menu()
-            if (!is.null(modules$Select))
+            if (!is.null(modules$Select)) {
                 m_tbl$cmd_coerce_column(1, as.logical)
+                m_tbl$hide_column(6, TRUE)
+            }
             m_tbl$hide_row_names(TRUE)
 
             addHandlerChanged(m_tbl,
@@ -67,7 +71,22 @@ ModuleManager <- setRefClass(
             enabled(upd_btn) <<- length(mods) > 0
 
             rmv_btn <<- gbutton("Remove selected",
-                container = btn_grp
+                container = btn_grp,
+                handler = function(h, ...) {
+                    w <- which(modules$Select)
+                    if (length(w) == 0) return()
+                    del <- modules$path[w]
+                    msg <- sprintf(
+                        "The following modules will be removed:\n\n%s",
+                        paste(" -", modules$Name[w], collapse = "\n")
+                    )
+                    if (.confirm) {
+                        if (!gconfirm(msg, "Remove modules",
+                            icon = "question", parent = m_tbl)) return()
+                    }
+                    sapply(del, file.remove)
+                    update_tbl()
+                }
             )
             size(rmv_btn) <<- c(btn_width, -1)
             enabled(rmv_btn) <<- length(mods) > 0 && sum(modules$Select) > 0
@@ -92,14 +111,29 @@ ModuleManager <- setRefClass(
             lbl <- glabel("Addon repository: ")
             font(lbl) <- list(weight = "bold")
             tbl[2, 1, anchor = c(1, 0), expand = TRUE] <- lbl
-            repo <<- gcombobox(c("Stable (recommended)", "Development"))
+            repo <<- gcombobox(
+                c("Stable (recommended)", "Development"),
+                selected = 0
+            )
             tbl[2, 2:4, expand = TRUE] <- repo
+
+            addHandlerChanged(repo,
+                handler = function(h, ...) {
+                    branch <- switch(svalue(repo, index = TRUE), "master", "dev")
+                    repo_url <<- sprintf(
+                        "https://raw.githubusercontent.com/iNZightVIT/addons/%s",
+                        branch
+                    )
+                }
+            )
+            # This can be memorised in preferences:
+            svalue(repo, index = TRUE) <<- 1L
 
             visible(win) <<- TRUE
         },
         get_mods = function() {
             mods <<- lapply(
-                getModules(m_dir),
+                suppressWarnings(getModules(m_dir)),
                 function(mod) {
                     as.data.frame(
                         list(
@@ -113,7 +147,8 @@ ModuleManager <- setRefClass(
                                 collapse = "\n"
                             ),
                             Author = mod$meta$author %||% "",
-                            Version = mod$meta$version %||% ""
+                            Version = mod$meta$version %||% "",
+                            path = mod$path
                         ),
                         stringsAsFactors = FALSE
                     )
@@ -136,12 +171,16 @@ ModuleManager <- setRefClass(
             }
         },
         update_tbl = function() {
+            blockHandlers(m_tbl)
             update_modules()
             m_tbl$set_frame(modules)
-            if (!is.null(modules$Select))
+            if (!is.null(modules$Select)) {
                 m_tbl$cmd_coerce_column(1, as.logical)
+                m_tbl$hide_column(6, TRUE)
+            }
             m_tbl$hide_row_names(TRUE)
             set_buttons()
+            unblockHandlers(m_tbl)
         },
         set_buttons = function() {
             if (length(mods)) {

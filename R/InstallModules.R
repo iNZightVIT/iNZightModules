@@ -22,7 +22,12 @@ InstallModules <- setRefClass(
         g_file = "ANY",
         filename = "ANY",
         fname = "ANY",
-        installBtn = "ANY"
+        url = "ANY",
+        add_tbl = "ANY",
+        addons_available = "logical",
+        inst_repo_btn = "ANY",
+        inst_url_btn = "ANY",
+        inst_file_btn = "ANY"
     ),
     methods = list(
         initialize = function(mngr) {
@@ -30,8 +35,8 @@ InstallModules <- setRefClass(
 
             installWin <<- gwindow("Install custom module",
                 parent = manager$GUI$win,
-                width = 600,
-                height = 400,
+                width = size(manager$win)[1],
+                height = size(manager$win)[2],
                 visible = FALSE
             )
             g <- gvbox(container = installWin, expand = TRUE, fill = TRUE)
@@ -49,6 +54,9 @@ InstallModules <- setRefClass(
                 container = from_grp,
                 expand = TRUE,
                 handler = function(h, ...) {
+                    visible(g_repo) <<- FALSE
+                    visible(g_url) <<- FALSE
+                    visible(g_file) <<- FALSE
                     j <- svalue(from, index = TRUE)
                     visible(g_repo) <<- j == 1
                     visible(g_url) <<- j == 2
@@ -57,68 +65,22 @@ InstallModules <- setRefClass(
             )
 
             # A box for the controls
-            ctrl_g <- gvbox(container = g)
+            ctrl_g <- gvbox(container = g, expand = TRUE)
             addSpace(ctrl_g, 10)
             init_repo()
             init_url()
             init_file()
 
-            add(ctrl_g, g_repo)
+            add(ctrl_g, g_repo, expand = TRUE, fill = TRUE)
             add(ctrl_g, g_url)
             add(ctrl_g, g_file)
 
-            svalue(from) <<- "Local file"
-
-            # mod.names <- lapply(getModules(manager$m_dir), function(mod) {
-            #     mod$display_name
-            # })
-
-            # n.modules <- length(mod.names)
-
-            # installed.modules <- gtable(
-            #     if (n.modules == 0) "" else unname(unlist(mod.names))
-            # )
-
-            # remGp <- gframe("Remove module", horizontal = FALSE)
-            # remGp$set_borderwidth(10)
-            # add(g, remGp, expand = TRUE, fill = TRUE)
-
-            # module.table <- gvbox()
-
-            # module.placeholder <- glabel("No modules installed")
-            # remove.button <- gbutton("Remove Module")
-
-            # add(module.table, installed.modules, expand = TRUE, fill = TRUE)
-            # add(module.table, remove.button)
-
-            # add(remGp, module.table, expand = TRUE, fill = TRUE)
-            # add(remGp, module.placeholder, expand = TRUE, fill = TRUE)
-
-            # visible(module.placeholder) <- n.modules == 0
-            # visible(module.table) <- n.modules > 0
-
-            # remove.handler <- function(h, ...) {
-            #     mod.to.remove <- Filter(function(mod) mod$display_name %in% svalue(installed.modules), getModules(manager$m_dir))
-            #     if (removemodule(mod.to.remove[[1]])) {
-            #         # GUI$menuBarWidget$defaultMenu()
-            #         manager$update_menu()
-            #         gmessage("Addon successfully removed.", parent = installWin)
-
-            #         mod.names <- lapply(getModules(manager$m_dir), function(mod) {
-            #             mod$display_name
-            #         })
-
-            #         n.modules <- length(mod.names)
-
-            #         installed.modules[] <- if (n.modules == 0) "" else unname(unlist(mod.names))
-
-            #         visible(module.placeholder) <- n.modules == 0
-            #         visible(module.table) <- n.modules > 0
-            #     }
-            # }
-
-            # addHandlerDoubleclick(installed.modules, remove.handler)
-            # addHandlerClicked(remove.button, remove.handler)
+            if (addons_available) {
+                svalue(from) <<- "Addon repository"
+            } else {
+                from$set_items(c("URL", "Local file"))
+                svalue(from) <<- "Local file"
+            }
 
             # When the window is closed ...
             addHandlerUnrealize(installWin,
@@ -136,10 +98,104 @@ InstallModules <- setRefClass(
         init_repo = function() {
             g_repo <<- gvbox()
             visible(g_repo) <<- FALSE
+
+            ## Fetch list
+            addon_file <- file.path(manager$repo_url, "addons.txt")
+            addon_list <- tempfile(fileext = ".txt")
+            download.file(addon_file, addon_list, quiet = TRUE)
+            addons <- read.dcf(addon_list)
+            addons_available <<- nrow(addons) > 0
+            if (!addons_available)
+                return()
+
+            addons <- data.frame(Install = logical(nrow(addons)), addons)
+            ## Display list
+            add_tbl <<- gdf(addons,
+                container = g_repo,
+                expand = TRUE
+            )
+            add_tbl$remove_popup_menu()
+            add_tbl$hide_row_names(TRUE)
+            add_tbl$cmd_coerce_column(1, as.logical)
+            addHandlerChanged(add_tbl,
+                handler = function(h, ...) {
+                    enabled(inst_repo_btn) <<-
+                        sum(h$obj$get_frame()$Install) > 0
+                }
+            )
+
+            ## Buttons (Cancel + Install)
+            btn_grp <- ggroup(container = g_repo)
+            addSpring(btn_grp)
+
+            # Cancel button:
+            cancelBtn <- gbutton("Cancel",
+                container = btn_grp,
+                handler = function(h, ...) close()
+            )
+            size(cancelBtn) <- c(100, -1)
+
+            # Install button
+            inst_repo_btn <<- gbutton("Install selected",
+                container = btn_grp,
+                handler = function(h, ...) {
+                    w <- which(add_tbl$get_frame()$Install)
+                    urls <- file.path(
+                        manager$repo_url,
+                        add_tbl$get_frame()$filename[w]
+                    )
+                    ok <- sapply(urls,
+                        function(url) {
+                            f <- file.path(tempdir(), basename(url))
+                            on.exit(unlink(f))
+                            download.file(url, f, quiet = TRUE)
+                            installmodule(f, manager$m_dir)
+                        }
+                    )
+
+                    if (all(ok)) close()
+                }
+            )
+            size(inst_repo_btn) <<- c(150, -1)
+            enabled(inst_repo_btn) <<- FALSE
         },
         init_url = function() {
             g_url <<- gvbox()
             visible(g_url) <<- FALSE
+
+            g_choose <- ggroup(container = g_url)
+
+            lbl <- glabel("URL :")
+            font(lbl) <- list(weight = "bold")
+            add(g_choose, lbl)
+
+            url <<- gedit("", container = g_choose, expand = TRUE)
+
+            addSpring(g_url)
+
+            # Buttons!!
+            btn_grp <- ggroup(container = g_url)
+            addSpring(btn_grp)
+
+            # Cancel button:
+            cancelBtn <- gbutton("Cancel",
+                container = btn_grp,
+                handler = function(h, ...) close()
+            )
+            size(cancelBtn) <- c(100, -1)
+
+            # Install button
+            inst_url_btn <<- gbutton("Install",
+                container = btn_grp,
+                handler = function(h, ...) {
+                    f <- file.path(tempdir(), basename(svalue(url)))
+                    on.exit(unlink(f))
+                    download.file(svalue(url), f, quiet = TRUE)
+                    if (installmodule(f, manager$m_dir)) close()
+                }
+            )
+            size(inst_url_btn) <<- c(100, -1)
+
         },
         init_file = function(g) {
             g_file <<- gvbox()
@@ -208,13 +264,13 @@ InstallModules <- setRefClass(
             size(cancelBtn) <- c(100, -1)
 
             # Install button
-            installBtn <<- gbutton("Install",
+            inst_file_btn <<- gbutton("Install",
                 container = btn_grp,
                 handler = function(h, ...) {
                     if (installmodule(fname, manager$m_dir)) close()
                 }
             )
-            size(installBtn) <<- c(100, -1)
+            size(inst_file_btn) <<- c(100, -1)
 
         },
         close = function() {
@@ -228,7 +284,7 @@ InstallModules <- setRefClass(
 
 installmodule <- function(file, dir, overwrite = FALSE) {
     if (checkfile(file)) {
-        if (file.exists(file.path(dir, basename(file)))) {
+        if (!overwrite && file.exists(file.path(dir, basename(file)))) {
             if (gconfirm("Module already exists - do you wish to overwrite it?")) {
                 overwrite <- TRUE
             }
@@ -252,7 +308,10 @@ checkfile <- function(file) {
 }
 
 removemodule <- function(module) {
-    if (gconfirm(sprintf("Are you sure you want to delete module '%s'?", module$display_name))) {
+    msg <- sprintf("Are you sure you want to delete module '%s'?",
+        module$display_name
+    )
+    if (gconfirm(msg)) {
         file.remove(module$path)
     } else {
         FALSE
