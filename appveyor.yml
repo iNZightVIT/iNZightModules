@@ -40,11 +40,9 @@ build_script:
   - del gtk64.zip
   - travis-tool.sh install_github iNZightVIT/gWidgets2RGtk2
   - travis-tool.sh install_github iNZightVIT/iNZightTools@dev
-  - travis-tool.sh install_github iNZightVIT/iNZightRegression@master
   - travis-tool.sh install_github iNZightVIT/iNZightMR@release/2.2.5
   - travis-tool.sh install_github iNZightVIT/iNZightTS@dev
   - travis-tool.sh install_github iNZightVIT/iNZightPlots@dev
-  - travis-tool.sh install_github iNZightVIT/iNZightMaps@master
   - travis-tool.sh install_github iNZightVIT/iNZight@dev
 
 test_script:
