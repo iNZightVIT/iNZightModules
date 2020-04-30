@@ -1,6 +1,7 @@
 - specify `stringsAsFactors = TRUE` for upcoming R 4.0.0
 - fix 3d plot's "locate" functionality
 - disabled Summary button in Multiple Response when two subsetting variables selected (this is not available)
+- [model fitting] enable users to remove intercept from the model
 
 ## iNZightModules 2.4.9
 - change default value of the time series smoother to 15 (was 10)

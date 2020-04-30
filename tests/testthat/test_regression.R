@@ -66,19 +66,32 @@ test_that("Models can be saved, restored, and compared", {
 
 
 # require(iNZight)
-# ui$close()
-# ui <- iNZGUI$new()
-# ui$initializeGui(census.at.school.500)
-# mod <- iNZightRegMod$new(ui)
+ui$close(); load_all()
+ui <- iNZGUI$new()
+ui$initializeGui(census.at.school.500)
+mod <- iNZightRegMod$new(ui)
 test_that("Factor comparisons display on button press", {
     svalue(mod$responseBox) <- "height"
     mod$variables <- c("gender")
     mod$setExplVars()
     mod$updateModel(save = TRUE)
-    
+
     svalue(mod$plotTypeList) <- "Factor Comparisons"
     expect_silent(mod$compMatrix$invoke_change_handler())
 })
+
+
+test_that("Model can be fit without intercept", {
+    svalue(mod$responseBox) <- "height"
+    mod$variables <- c("armspan")
+    mod$setExplVars()
+    expect_silent(svalue(mod$intercept) <- FALSE)
+    expect_equal(
+        capture.output(mod$fit$call),
+        "lm(formula = height ~ armspan - 1, data = dataset)"
+    )
+})
+
 
 mod$close()
 
