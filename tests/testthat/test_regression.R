@@ -66,10 +66,10 @@ test_that("Models can be saved, restored, and compared", {
 
 
 # require(iNZight)
-ui$close(); load_all()
-ui <- iNZGUI$new()
-ui$initializeGui(census.at.school.500)
-mod <- iNZightRegMod$new(ui)
+# ui$close(); load_all()
+# ui <- iNZGUI$new()
+# ui$initializeGui(census.at.school.500)
+# mod <- iNZightRegMod$new(ui)
 test_that("Factor comparisons display on button press", {
     svalue(mod$responseBox) <- "height"
     mod$variables <- c("gender")
