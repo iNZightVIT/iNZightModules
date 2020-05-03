@@ -25,7 +25,7 @@ test_that("Module list is empty", {
     # should be ... Maps | Install | ...
     expect_equal(
         which(names(adv) == "maps"),
-        which(names(adv) == "install") - 2
+        which(names(adv) == "manage") - 2
     )
 })
 
@@ -143,6 +143,35 @@ test_that("Modules can be installed from addon repo", {
     expect_true(enabled(inst$upd_btn))
     expect_equal(svalue(inst$upd_btn), "Update all")
     expect_false(enabled(inst$rmv_btn))
+})
+
+test_that("Modules can be updated from the addon repo", {
+    ## Manually decrease version of 3d addon
+    f3d <- readLines(file.path(mod_dir, "plot3DModule.R"))
+    f3d[grep("@version", f3d, fixed = TRUE)] <- "#' @version 0"
+    writeLines(f3d, file.path(mod_dir, "plot3DModule.R"))
+
+    inst <- ModuleManager$new(ui, FALSE)
+    on.exit(dispose(inst$win))
+    Sys.sleep(1)
+    expect_silent(svalue(inst$repo, index = TRUE) <- 2L)
+    expect_equal(inst$m_tbl[2,5], "0")
+    w <- which(inst$repo_addons[, "Name"] == "3D Plotting")
+    expect_equivalent(inst$m_tbl[2,7], inst$repo_addons[w, "Version"])
+
+    expect_silent(inst$m_tbl$set_cell(2, 1, TRUE))
+    expect_true(enabled(inst$rmv_btn))
+    expect_equal(svalue(inst$upd_btn), "Update selected")
+
+    expect_silent(inst$upd_btn$invoke_change_handler())
+    expect_equal(inst$m_tbl[2,5], inst$m_tbl[2,7])
+})
+
+test_that("Modules can be removed (from addon repo)", {
+    # load_all(); try(dispose(add_win$installWin)); try(dispose(inst$win))
+    inst <- ModuleManager$new(ui, FALSE)
+    on.exit(dispose(inst$win))
+    Sys.sleep(1)
 
     expect_silent(inst$m_tbl$set_cell(1, 1, TRUE))
     expect_silent(inst$m_tbl$set_cell(2, 1, TRUE))

@@ -8,7 +8,7 @@ ModuleManager <- setRefClass(
         modules = "ANY",
         m_tbl = "ANY",
         add_btn = "ANY", upd_btn = "ANY", rmv_btn = "ANY",
-        repo = "ANY", repo_url = "character",
+        repo = "ANY", repo_url = "character", repo_addons = "ANY",
         .confirm = "logical"
     ),
     methods = list(
@@ -16,6 +16,7 @@ ModuleManager <- setRefClass(
             initFields(
                 GUI = gui,
                 m_dir = gui$addonModuleDir,
+                repo_addons = NULL,
                 .confirm = confirm
             )
 
@@ -65,7 +66,27 @@ ModuleManager <- setRefClass(
             size(add_btn) <<- c(btn_width, -1)
 
             upd_btn <<- gbutton("Update all",
-                container = btn_grp
+                container = btn_grp,
+                handler = function(h, ...) {
+                    # update and overwrite
+                    w <- which(modules$Select)
+                    if (length(w) == 0) w <- seq_along(modules$Select)
+                    ok <- sapply(basename(modules$path[w]),
+                        function(mod) {
+                            f <- file.path(tempdir(), basename(mod))
+                            on.exit(unlink(f))
+                            download.file(file.path(repo_url, mod), f,
+                                quiet = TRUE
+                            )
+                            installmodule(f, m_dir, overwrite = TRUE)
+                        }
+                    )
+                    if (!all(ok)) {
+                        gmessage("Some modules couldn't be updated.",
+                            parent = win)
+                    }
+                    update_tbl()
+                }
             )
             size(upd_btn) <<- c(btn_width, -1)
             enabled(upd_btn) <<- length(mods) > 0
@@ -124,6 +145,16 @@ ModuleManager <- setRefClass(
                         "https://raw.githubusercontent.com/iNZightVIT/addons/%s",
                         branch
                     )
+
+                    ## Fetch latest repository addons
+                    con <- url(file.path(repo_url, "addons.txt"))
+                    on.exit(close(con))
+                    repo_addons <<- try({
+                        read.dcf(con)
+                    }, silent = TRUE)
+                    if (inherits(repo_addons, "try-error"))
+                        repo_addons <<- NULL
+                    update_tbl()
                 }
             )
             # This can be memorised in preferences:
@@ -135,6 +166,16 @@ ModuleManager <- setRefClass(
             mods <<- lapply(
                 suppressWarnings(getModules(m_dir)),
                 function(mod) {
+                    # available version/update?
+                    avail <- ""
+                    if (!is.null(repo_addons) &&
+                        "Name" %in% colnames(repo_addons) &&
+                        !is.null(mod$meta$name)) {
+                        mw <- which(repo_addons[, "Name"] == mod$meta$name)
+                        if (length(mw)) {
+                            avail <- repo_addons[mw, "Version"]
+                        }
+                    }
                     as.data.frame(
                         list(
                             Select = FALSE,
@@ -148,7 +189,8 @@ ModuleManager <- setRefClass(
                             ),
                             Author = mod$meta$author %||% "",
                             Version = mod$meta$version %||% "",
-                            path = mod$path
+                            path = mod$path,
+                            Available = avail
                         ),
                         stringsAsFactors = FALSE
                     )
@@ -160,9 +202,13 @@ ModuleManager <- setRefClass(
             if (length(mods)) {
                 modules <<- do.call(rbind, mods)
                 rownames(modules) <<- NULL
-                svalue(upd_btn) <<- ifelse(sum(modules$Select) > 0,
-                    "Update selected", "Update all")
-                enabled(upd_btn) <<- TRUE
+                if (class(upd_btn) == "GButton") {
+                    blockHandlers(upd_btn)
+                    on.exit(unblockHandlers(upd_btn))
+                    svalue(upd_btn) <<- ifelse(sum(modules$Select) > 0,
+                        "Update selected", "Update all")
+                    enabled(upd_btn) <<- TRUE
+                }
             } else {
                 modules <<- data.frame(
                     Name = "Modules will appear here once installed"
@@ -183,6 +229,8 @@ ModuleManager <- setRefClass(
             unblockHandlers(m_tbl)
         },
         set_buttons = function() {
+            blockHandlers(upd_btn)
+            on.exit(unblockHandlers(upd_btn))
             if (length(mods)) {
                 if (sum(modules$Select) > 0) {
                     svalue(upd_btn) <<- "Update selected"

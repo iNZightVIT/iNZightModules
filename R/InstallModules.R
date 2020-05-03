@@ -57,10 +57,10 @@ InstallModules <- setRefClass(
                     visible(g_repo) <<- FALSE
                     visible(g_url) <<- FALSE
                     visible(g_file) <<- FALSE
-                    j <- svalue(from, index = TRUE)
-                    visible(g_repo) <<- j == 1
-                    visible(g_url) <<- j == 2
-                    visible(g_file) <<- j == 3
+                    j <- svalue(from)
+                    visible(g_repo) <<- j == "Addon repository"
+                    visible(g_url) <<- j == "URL"
+                    visible(g_file) <<- j == "Local file"
                 }
             )
 
@@ -100,13 +100,15 @@ InstallModules <- setRefClass(
             visible(g_repo) <<- FALSE
 
             ## Fetch list
-            addon_file <- file.path(manager$repo_url, "addons.txt")
-            addon_list <- tempfile(fileext = ".txt")
-            download.file(addon_file, addon_list, quiet = TRUE)
-            addons <- read.dcf(addon_list)
+            #addon_file <- file.path(manager$repo_url, "addons.txt")
+            #addon_list <- tempfile(fileext = ".txt")
+            #download.file(addon_file, addon_list, quiet = TRUE)
+            addons <- manager$repo_addons
             addons_available <<- nrow(addons) > 0
-            if (!addons_available)
+            if (!addons_available) {
+                glabel("No addons available.", container = g_repo)
                 return()
+            }
 
             addons <- data.frame(Install = logical(nrow(addons)), addons)
             ## Display list
