@@ -29,6 +29,7 @@ iNZightRegMod <- setRefClass(
         contVarBox  = "ANY",
         catVarBox = "ANY",
         variables   = "character",
+        intercept = "ANY",
         explanatoryList = "ANY",
         confounding = "character",
         confounderList = "ANY",
@@ -300,9 +301,12 @@ iNZightRegMod <- setRefClass(
             size(contVarBox) <<- c(-1, 150)
             size(catVarBox) <<- c(-1, 150)
 
+            intercept <<- gcheckbox("Include intercept", checked = TRUE)
+            variableTbl[2, 2, expand = TRUE, anchor = c(-1, 0)] <- intercept
+
             explanatoryList <<- gtable("")
             setExplVars()
-            variableTbl[2:8, 2, expand = TRUE] <- explanatoryList
+            variableTbl[3:8, 2, expand = TRUE] <- explanatoryList
 
             confounderList <<- gtable("")
             setConfVars()
@@ -657,6 +661,12 @@ iNZightRegMod <- setRefClass(
                     list(gseparator()),
                     interactList(catVarBox)
                 )
+            )
+
+            addHandlerChanged(intercept,
+                handler = function(h, ...) {
+                    updateModel()
+                }
             )
 
             enabled(btnUp) <- enabled(btnEdit) <- enabled(btnDown) <- FALSE
@@ -1325,6 +1335,8 @@ iNZightRegMod <- setRefClass(
                 ),
                 collapse = " + "
             )
+            if (!svalue(intercept)) xexpr <- paste(xexpr, "- 1")
+
             dataset <- if (isSurveyObject) getdesign() else getdata()
             resp <- response
             if (length(responseTransform) == 1 && responseTransform != "") {
