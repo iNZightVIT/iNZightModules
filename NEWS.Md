@@ -1,3 +1,10 @@
+### New features
+
+- iNZight Module Manager to add, update, and remove addons from
+  our repository, a URL, or a local file
+
+### Other changes
+
 - specify `stringsAsFactors = TRUE` for upcoming R 4.0.0
 - fix 3d plot's "locate" functionality
 - disabled Summary button in Multiple Response when two subsetting variables selected (this is not available)

@@ -10,8 +10,8 @@ init:
 install:
   ps: Bootstrap
 
-# cache:
-#   - C:\RLibrary
+cache:
+  - C:\RLibrary
 
 # Adapt as necessary starting from here
 
@@ -38,17 +38,19 @@ build_script:
   - mv gtk c:\RLibrary\4.0\RGtk2
   - del gtk32.zip
   - del gtk64.zip
+  - travis-tool.sh install_github iNZightVIT/gWidgets2RGtk2
   - travis-tool.sh install_github iNZightVIT/iNZightTools@dev
+  - travis-tool.sh install_github iNZightVIT/iNZightMR@release/2.2.5
   - travis-tool.sh install_github iNZightVIT/iNZightTS@dev
   - travis-tool.sh install_github iNZightVIT/iNZightPlots@dev
-  - travis-tool.sh install_github iNZightVIT/iNZight@dev
+  - travis-tool.sh install_github iNZightVIT/iNZight@feature/module-manager
 
 test_script:
   - md C:\Users\appveyor\Documents\iNZightVIT
-  # - travis-tool.sh run_tests
+  - travis-tool.sh run_tests
 
 on_success:
-  # - Rscript -e "covr::codecov()"
+  - Rscript -e "covr::codecov()"
 
 on_failure:
   - 7z a failure.zip *.Rcheck\*
