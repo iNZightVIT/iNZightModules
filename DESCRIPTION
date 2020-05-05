@@ -22,7 +22,7 @@ Imports:
     gpairs,
     gWidgets2,
     gWidgets2RGtk2,
-    iNZight (>= 3.5.2),
+    iNZight (>= 3.5.2.9000),
     iNZightPlots (>= 2.11.1),
     iNZightRegression (>= 1.2.6),
     iNZightTools (>= 1.8.4),
