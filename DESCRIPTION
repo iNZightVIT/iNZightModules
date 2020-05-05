@@ -1,15 +1,16 @@
 Package: iNZightModules
 Type: Package
 Title: iNZight GUI Modules
-Version: 2.4.9.9000
-Authors@R: c(person("Tom", "Elliott", role = c("aut", "cre"),
-                    email = "inzight_support@stat.auckland.ac.nz"),
-             person("Daniel", "Barnett", role = "aut"),
-             person("Eric", "Lim", role = "aut"),
-             person("Junjie", "Zeng", role = c('aut')),
-             person("Dineika", "Chandrananda", role = "aut"),
-             person("Simon", "Potter", role = "aut"),
-             person("David", "Banks", role = "aut"))
+Version: 2.5
+Authors@R: c(
+    person("Tom", "Elliott", role = c("aut", "cre"), email = "tom.elliott@auckland.ac.nz", comment = c(ORCID = "0000-0002-7815-6318")),
+    person("Daniel", "Barnett", role = "aut"),
+    person("Eric", "Lim", role = "aut"),
+    person("Junjie", "Zeng", role = c('aut')),
+    person("Dineika", "Chandrananda", role = "aut"),
+    person("Simon", "Potter", role = "aut"),
+    person("David", "Banks", role = "aut")
+    )
 Depends:
     R (>= 3.2)
 Imports:
@@ -37,8 +38,9 @@ Suggests:
     testthat,
     covr
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
-License: GPL-3 | file LICENSE
+License: GPL-3
 Description: A suite of add-on modules for the iNZight GUI, including model
     fitting module, multiple response, time series, and some advanced plotting.
 RoxygenNote: 7.1.0
 Encoding: UTF-8
+Language: en-GB

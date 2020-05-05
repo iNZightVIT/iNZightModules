@@ -1,3 +1,5 @@
+# iNZightModules 2.5
+
 ### New features
 
 - iNZight Module Manager to add, update, and remove addons from
