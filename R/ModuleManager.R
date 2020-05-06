@@ -7,8 +7,8 @@
 #'
 #' @author Tom Elliott, Daniel Barnett
 #'
-#' @export InstallModules
-#' @exportClass InstallModules
+#' @export ModuleManager
+#' @exportClass ModuleManager
 ModuleManager <- setRefClass(
     "ModuleManager",
     fields = list(
