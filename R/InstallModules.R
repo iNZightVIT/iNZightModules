@@ -1,16 +1,3 @@
-
-#' iNZight Module Installation
-#'
-#' A window to allow installation of modules from various locations.
-#'
-#' Add-on repo -> URL -> local file
-#'
-#' @title iNZight Module Installation
-#'
-#' @author Daniel Barnett
-#'
-#' @export InstallModules
-#' @exportClass InstallModules
 InstallModules <- setRefClass(
     "InstallModules",
     fields = list(

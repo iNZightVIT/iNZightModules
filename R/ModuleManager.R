@@ -1,3 +1,14 @@
+#' iNZight Module Installation
+#'
+#' A window to allow installation of modules from various locations.
+#'
+#'
+#' @title iNZight Module Installation
+#'
+#' @author Tom Elliott, Daniel Barnett
+#'
+#' @export InstallModules
+#' @exportClass InstallModules
 ModuleManager <- setRefClass(
     "ModuleManager",
     fields = list(
