@@ -32,7 +32,6 @@ r_github_packages:
   - iNZightVIT/iNZightTS@dev
   - iNZightVIT/iNZight@dev
 
-
 env:
   global:
     - _R_CHECK_FORCE_SUGGESTS_=false
