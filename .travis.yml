@@ -27,7 +27,7 @@ repos:
 r_github_packages:
   - iNZightVIT/gWidgets2RGtk2@inz
   - iNZightVIT/iNZightTools@dev
-  - iNZightVIT/iNZightMR@release/2.2.5
+  - iNZightVIT/iNZightMR@dev
   - iNZightVIT/iNZightPlots@dev
   - iNZightVIT/iNZightTS@dev
   - iNZightVIT/iNZight@dev
