@@ -8,6 +8,7 @@ mod_dir <- file.path(getwd(), "modules")
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
+on.exit(try(ui$close(), silent = TRUE))
 Sys.sleep(2)
 
 test_that("CustomModule super class works", {
@@ -44,5 +45,3 @@ test_that("Directory of modules are loaded", {
         c("DemoModule", "DemoModule2", "DemoModule3")
     )
 })
-
-ui$close()

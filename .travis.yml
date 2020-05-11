@@ -25,11 +25,12 @@ repos:
   docker: https://r.docker.stat.auckland.ac.nz
 
 r_github_packages:
-  - iNZightVIT/iNZightTools@1.8.4
-  - iNZightVIT/iNZightPlots@2.11.1
-  - iNZightVIT/iNZightTS
-  - iNZightVIT/iNZight@3.5.2
-
+  - iNZightVIT/gWidgets2RGtk2@inz
+  - iNZightVIT/iNZightTools@dev
+  - iNZightVIT/iNZightMR@dev
+  - iNZightVIT/iNZightPlots@dev
+  - iNZightVIT/iNZightTS@dev
+  - iNZightVIT/iNZight@dev
 
 env:
   global:
