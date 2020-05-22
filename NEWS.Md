@@ -1,3 +1,8 @@
+# iNZightModules 2.5.1
+
+- fixes a bug in model fitting where no variables showed up when data has only two columns
+
+
 # iNZightModules 2.5
 
 ### New features

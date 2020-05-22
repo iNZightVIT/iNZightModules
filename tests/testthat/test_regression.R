@@ -92,8 +92,25 @@ test_that("Model can be fit without intercept", {
     )
 })
 
-
 mod$close()
+ui$close()
+
+
+test_that("Two columns works fine", {
+    df <- data.frame(x = rnorm(100), y = rnorm(100))
+    ui$initializeGui(df)
+    on.exit(try(ui$close()))
+    mod <- iNZightRegMod$new(ui)
+    on.exit(try(mod$close()), add = TRUE, after = FALSE)
+
+    expect_silent(mod$responseBox$set_value("x"))
+    mod$setExplVars()
+    expect_equal(mod$contVarBox$get_items(), "y")
+})
+
+try(mod$close())
+
+
 
 ## popout mode
 # ui$preferences$popout <- TRUE

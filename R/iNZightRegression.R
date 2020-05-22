@@ -1222,7 +1222,7 @@ iNZightRegMod <- setRefClass(
             if (is.null(response) || length(response) == 0) {
                 vars <- "Select response"
             } else {
-                vars <- names(getdata()[,-which(names(getdata()) == response)])
+                vars <- names(getdata()[,-which(names(getdata()) == response), drop = FALSE])
                 if (length(variables) && response %in% variables) {
                     variables <<- variables[variables != response]
                     setExplVars()
