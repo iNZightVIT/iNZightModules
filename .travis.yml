@@ -29,7 +29,7 @@ r_github_packages:
   - iNZightVIT/iNZightTools@dev
   - iNZightVIT/iNZightMR@dev
   - iNZightVIT/iNZightPlots@dev
-  - iNZightVIT/iNZightTS@dev
+  - iNZightVIT/iNZightTS@release/1.5.3
   - iNZightVIT/iNZight@dev
 
 env:
