@@ -32,7 +32,9 @@ iNZightTSMod <- setRefClass(
         recompProg = "ANY",
         forecastBtn = "ANY", forecasts   = "ANY",
         forecastError = "ANY",
-        timer = "ANY", playTimer = "ANY"
+        timer = "ANY", playTimer = "ANY",
+        timeVarSelect = "ANY",
+        varSelect = "ANY"
     ),
     methods = list(
         initialize = function(GUI) {
@@ -141,7 +143,7 @@ iNZightTSMod <- setRefClass(
             g1a_layout = glayout(container = g1)
             ## g1a options
 
-            g1a_opt1 <- gcombobox(names(activeData),
+            timeVarSelect <<- gcombobox(names(activeData),
                 selected = match(timeVar, names(activeData), nomatch = 0),
                 handler = function(h, ...) {
                     timeVar <<- svalue(h$obj)
@@ -152,7 +154,7 @@ iNZightTSMod <- setRefClass(
             g1a_lab1   = glabel("Select time variable:")
             ## g1a layout
             g1a_layout[2, 1, expand = TRUE, anchor = c(-1, 0)] = g1a_lab1
-            g1a_layout[2, 2, expand = TRUE]   = g1a_opt1
+            g1a_layout[2, 2, expand = TRUE]   = timeVarSelect
 
             ## FOR LAYOUT B
             g1b_layout = glayout(container = g1, spacing = 2)
@@ -170,7 +172,7 @@ iNZightTSMod <- setRefClass(
                         c(names(freqOpts[[svalue(h$obj)]]), "Custom")
                     )
                     svalue(startlbl1) <- "Year"
-                    g3_opt1$invoke_change_handler()
+                    varSelect$invoke_change_handler()
                 }
             )
             g1b_layout[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
@@ -213,7 +215,7 @@ iNZightTSMod <- setRefClass(
                         if (season.name == "Dai") season.name <- "Day"
                     }
                     svalue(startlbl2) <- season.name
-                    g3_opt1$invoke_change_handler()
+                    varSelect$invoke_change_handler()
                 }
             )
             timeFreqNum <- gspinbutton(1, 1000, by = 1,
@@ -229,7 +231,7 @@ iNZightTSMod <- setRefClass(
                         enabled(timeStartSeason) <- TRUE
                         visible(startlbl2) <- TRUE
                     }
-                    g3_opt1$invoke_change_handler()
+                    varSelect$invoke_change_handler()
                 }
             )
             g1b_layout[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
@@ -248,14 +250,14 @@ iNZightTSMod <- setRefClass(
             timeStartPeriod <- gspinbutton(0, 1e5, by = 1, value = 1,
                 handler = function(h, ...) {
                     timeStart <<- c(svalue(h$obj), svalue(timeStartSeason))
-                    g3_opt1$invoke_change_handler()
+                    varSelect$invoke_change_handler()
                 })
             timeStartSeason <- gspinbutton(0, 1e5, by = 1, value = 1,
                 handler = function(h, ...) {
                     if (svalue(h$obj) > timeFreq)
                         svalue(h$obj) <- timeFreq
                     timeStart <<- c(svalue(timeStartPeriod), svalue(h$obj))
-                    g3_opt1$invoke_change_handler()
+                    varSelect$invoke_change_handler()
                 })
             g1b_layout[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
             g1b_layout[ii, 2, expand = TRUE, fill = TRUE] <- timeStartPeriod
@@ -278,7 +280,7 @@ iNZightTSMod <- setRefClass(
                     visible(g1a_layout) = FALSE
                     visible(g1b_layout) = TRUE
                 }
-                g3_opt1$invoke_change_handler()
+                varSelect$invoke_change_handler()
             })
 
             ############
@@ -335,19 +337,19 @@ iNZightTSMod <- setRefClass(
             ##   need to change the variable selection widget for when there
             ##   are many variables which will expand the widget.
             g3_layout = glayout(container = g3)
-            g3_opt1 = gtable(
+            varSelect <<- gtable(
                 names(activeData)[! names(activeData) %in% timeVar],
                 multiple = TRUE
             )
-            size(g3_opt1) <- c(floor(size(GUI$leftMain)[1] * 0.5), 200)
+            size(varSelect) <<- c(floor(size(GUI$leftMain)[1] * 0.5), 200)
             g3_layout[1, 1, anchor = c(-1, 0), expand = TRUE] <-
                 glabel("Hold CTRL to select many")
-            g3_layout[2, 1, expand = TRUE] = g3_opt1
+            g3_layout[2, 1, expand = TRUE] = varSelect
 
 
 
-            addHandlerSelectionChanged(g3_opt1, function(h, ...) {
-                if (length(svalue(g3_opt1)) == 0) {
+            addHandlerSelectionChanged(varSelect, function(h, ...) {
+                if (length(svalue(varSelect)) == 0) {
                     visible(novar) <- TRUE
                     return()
                 }
@@ -405,8 +407,8 @@ iNZightTSMod <- setRefClass(
 
             })
 
-            addHandlerChanged(g1a_opt1, function(h, ...) {
-                g3_opt1$set_items(
+            addHandlerChanged(timeVarSelect, function(h, ...) {
+                varSelect$set_items(
                     names(activeData)[! names(activeData) %in% timeVar]
                 )
             })
@@ -759,7 +761,7 @@ iNZightTSMod <- setRefClass(
             )
 
             ## IF time series variable is chosen, plot first variable.
-            svalue(g3_opt1, index = TRUE) <- 1
+            svalue(varSelect, index = TRUE) <<- 1
         },
 
         # ========
@@ -768,9 +770,20 @@ iNZightTSMod <- setRefClass(
         ## returns the time variable index
         getTime = function(data, index = TRUE) {
             ## look for time or date
-            time_re = "([Tt][Ii][Mm][Ee])|([Dd][Aa][Tt][Ee])"
-            ind     = grep(time_re, names(data))
-            if (length(ind) == 0) ind = 1 else ind = ind[1]
+            ind <- sapply(names(data),
+                function(x) {
+                    t <- try(iNZightTS:::get.ts.structure(data[[x]]), silent = TRUE)
+                    if (inherits(t, "try-error")) return(FALSE)
+                    return(!identical(t, list(start = NA, frequency = NA)))
+                }
+            )
+            if (any(ind)) {
+                ind <- which(ind)[1]
+            } else {
+                time_re <- "([Tt][Ii][Mm][Ee])|([Dd][Aa][Tt][Ee])"
+                ind <- grep(time_re, names(data))
+                ind <- if (length(ind) == 0) 1 else ind[1]
+            }
             if (index) return(ind)
             return(names(data)[ind])
         },
