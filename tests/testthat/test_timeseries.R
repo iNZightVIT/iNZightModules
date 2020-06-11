@@ -159,3 +159,22 @@ test_that("Interact button activated when plot supported", {
     expect_silent(mod$updatePlot())
     expect_true(enabled(ui$plotToolbar$exportplotBtn))
 })
+
+
+covid <- iNZightTS:::covid
+ui$close()
+
+# devtools::load_all("../iNZightPlots")
+# devtools::load_all("../iNZight")
+# ui$close(); devtools::load_all()
+ui <- iNZGUI$new()
+ui$initializeGui(iNZightTS:::covid)
+Sys.sleep(1)
+
+test_that("User can choose between multiple non-numeric variables as time variable", {
+    expect_silent(mod <- iNZightTSMod$new(ui))
+    expect_equal(mod$timeVar, "Time")
+
+    expect_silent(mod$varSelect$set_value("Daily_Deaths"))
+    expect_silent(mod$varSelect$invoke_change_handler())
+})
