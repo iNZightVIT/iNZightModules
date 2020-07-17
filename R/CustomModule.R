@@ -48,7 +48,7 @@ CustomModule <- setRefClass(
             # add the iNZight repository:
             dkr <- "https://r.docker.stat.auckland.ac.nz"
             repo <- options()$repos
-            if (dkr %notin% repo) repo <- c(dkr, repo)
+            if (!dkr %in% repo) repo <- c(dkr, repo)
 
             if (!missing(pkgs)) {
                 pkgs <- pkgs[!pkgs %in% rownames(utils::installed.packages())]
