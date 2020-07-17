@@ -52,7 +52,7 @@ CustomModule <- setRefClass(
                         xlab = "", ylab = "")
                     text(0, 0, "Installing dependencies, please wait ...")
 
-                    utils::install.packages(pkgs, quiet = TRUE)
+                    utils::install.packages(pkgs, quiet = TRUE, dependencies = TRUE)
                 }
             }
 
@@ -60,7 +60,7 @@ CustomModule <- setRefClass(
                 optional <- optional[!optional %in% rownames(utils::installed.packages())]
                 if (length(optional) > 0) {
                     tryCatch(
-                        utils::install.packages(optional, quiet = TRUE),
+                        utils::install.packages(optional, quiet = TRUE, dependencies = TRUE),
                         finally = {}
                     )
                 }
