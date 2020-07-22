@@ -49,7 +49,8 @@ iNZightRegMod <- setRefClass(
         compMatrix = "ANY",
         svyname     = "character",
         codehistory = "ANY",
-        isSurveyObject = "logical"
+        isSurveyObject = "logical",
+        surv_params = "ANY"
     ),
     methods = list(
         initialize = function(GUI) {
@@ -58,7 +59,8 @@ iNZightRegMod <- setRefClass(
                 working = 1L,
                 plottype = 1,
                 codehistory = NULL,
-                svyname = ""
+                svyname = "",
+                surv_params = c("", "")
             )
 
             isSurveyObject <<- !is.null(getdesign())
@@ -195,7 +197,7 @@ iNZightRegMod <- setRefClass(
             responseTbl <- glayout(container = responseGp)
             ii <-  1
 
-            lbl <- glabel("Variable: ")
+            yvar.lbl <- glabel("Variable: ")
             yVars <- names(getdata()[, sapply(getdata(),
                 function(x) is.numeric(x) || length(levels(x)) == 2)])
             responseBox <<- gcombobox(yVars,
@@ -216,8 +218,44 @@ iNZightRegMod <- setRefClass(
                     updateModel()
                 }
             )
-            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+
+            timeToEventBox <- gcombobox(
+                yVars,
+                selected = 0,
+                handler = function(h, ...) {
+                    working <<- working + 1L
+                    surv_params[1] <<- svalue(h$obj)
+                    response <<- surv_params[1]
+                    y <- getdata()[[response]]
+                    ## set explanatory variables
+                    setAvailVars()
+                    working <<- working - 1L
+                    updateModel()
+                }
+            )
+
+            visible(timeToEventBox) <- FALSE
+
+            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- yvar.lbl
             responseTbl[ii, 2:3, expand = TRUE] <- responseBox
+            responseTbl[ii, 2:3, expand = TRUE] <- timeToEventBox
+            ii <- ii + 1
+
+            lbl.event <- glabel("Event indicator: ")
+            survEventBox <- gcombobox(yVars,
+                                       selected = 0,
+                                       handler = function(h, ...) {
+                                           working <<- working + 1L
+                                           surv_params[2] <<- svalue(h$obj)
+                                           working <<- working - 1L
+                                           updateModel()
+                                       }
+            )
+
+            visible(survEventBox) <- FALSE
+            visible(lbl.event) <- FALSE
+            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl.event
+            responseTbl[ii, 2:3, expand = TRUE] <- survEventBox
             ii <- ii + 1
 
             flbl <- glabel("Framework: ")
@@ -225,7 +263,8 @@ iNZightRegMod <- setRefClass(
                 c(
                     "Least Squares",
                     "Binary Regression (logistic, ...)",
-                    "Poisson Regression (counts)"
+                    "Poisson Regression (counts)",
+                    "Cox PH (survival analysis)"
                 ),
                 selected = 0,
                 handler = function(h, ...) {
@@ -235,7 +274,8 @@ iNZightRegMod <- setRefClass(
                         switch(responseType,
                             c("Gaussian"),
                             c("Logistic", "Probit"),
-                            c("Log")
+                            c("Log"),
+                            c("")
                         )
                     )
                     if (responseType == 2) {
@@ -244,6 +284,20 @@ iNZightRegMod <- setRefClass(
                     } else {
                         visible(responseFamilyBox) <<- FALSE
                         svalue(flbl) <- "Framework: "
+                    }
+
+                    if (responseType == 4) {
+                        svalue(yvar.lbl) <- "Time variable: "
+                        visible(timeToEventBox) <- TRUE
+                        visible(responseBox) <<- FALSE
+                        visible(survEventBox) <- TRUE
+                        visible(lbl.event) <- TRUE
+                    } else {
+                        svalue(yvar.lbl) <- "Variable: "
+                        visible(survEventBox) <- FALSE
+                        visible(timeToEventBox) <- FALSE
+                        visible(responseBox) <<- TRUE
+                        visible(lbl.event) <- FALSE
                     }
                     svalue(responseFamilyBox, index = TRUE) <<- 1
                     working <<- working - 1L
@@ -1356,7 +1410,8 @@ iNZightRegMod <- setRefClass(
                     family = switch(responseType,
                         "gaussian",
                         "binomial",
-                        "poisson"
+                        "poisson",
+                        "cox"
                     ),
                     link = switch(responseType,
                         NULL,
@@ -1364,9 +1419,11 @@ iNZightRegMod <- setRefClass(
                             "logit",
                             "probit"
                         ),
+                        NULL,
                         NULL
                     ),
-                    design = ifelse(isSurveyObject, "survey", "simple")
+                    design = ifelse(isSurveyObject, "survey", "simple"),
+                    surv_params = surv_params
                 )
                 fit <<- try(eval(parse(text = mcall)), TRUE)
             }
@@ -1481,6 +1538,8 @@ iNZightRegMod <- setRefClass(
             updatePlot()
         }, # updateModel()
         updatePlot = function(savecode = FALSE) {
+            if (responseType == 4)
+                return()
             dev.hold()
             on.exit(dev.flush())
             visible(compMatrix) <<-
