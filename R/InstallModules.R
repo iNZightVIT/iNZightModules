@@ -143,6 +143,7 @@ InstallModules <- setRefClass(
                     )
 
                     if (all(ok)) close()
+                    else gmessage("Unable to install", parent = installWin)
                 }
             )
             size(inst_repo_btn) <<- c(150, -1)
@@ -181,6 +182,7 @@ InstallModules <- setRefClass(
                     on.exit(unlink(f))
                     download.file(svalue(url), f, quiet = TRUE)
                     if (installmodule(f, manager$m_dir)) close()
+                    else gmessage("Unable to install", parent = installWin)
                 }
             )
             size(inst_url_btn) <<- c(100, -1)
@@ -257,6 +259,7 @@ InstallModules <- setRefClass(
                 container = btn_grp,
                 handler = function(h, ...) {
                     if (installmodule(fname, manager$m_dir)) close()
+                    else gmessage("Unable to install", parent = installWin)
                 }
             )
             size(inst_file_btn) <<- c(100, -1)

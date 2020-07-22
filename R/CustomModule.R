@@ -45,6 +45,11 @@ CustomModule <- setRefClass(
             GUI$getActiveData()
         },
         install_dependencies = function(pkgs, optional) {
+            # add the iNZight repository:
+            dkr <- "https://r.docker.stat.auckland.ac.nz"
+            repo <- options()$repos
+            if (!dkr %in% repo) repo <- c(dkr, repo)
+
             if (!missing(pkgs)) {
                 pkgs <- pkgs[!pkgs %in% rownames(utils::installed.packages())]
                 if (length(pkgs) > 0) {
@@ -52,7 +57,7 @@ CustomModule <- setRefClass(
                         xlab = "", ylab = "")
                     text(0, 0, "Installing dependencies, please wait ...")
 
-                    utils::install.packages(pkgs, quiet = TRUE)
+                    utils::install.packages(pkgs, quiet = TRUE, repos = repo, dependencies = TRUE)
                 }
             }
 
@@ -60,7 +65,7 @@ CustomModule <- setRefClass(
                 optional <- optional[!optional %in% rownames(utils::installed.packages())]
                 if (length(optional) > 0) {
                     tryCatch(
-                        utils::install.packages(optional, quiet = TRUE),
+                        utils::install.packages(optional, quiet = TRUE, repos = repo, dependencies = TRUE),
                         finally = {}
                     )
                 }

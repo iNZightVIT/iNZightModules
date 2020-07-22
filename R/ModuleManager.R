@@ -31,6 +31,32 @@ ModuleManager <- setRefClass(
                 .confirm = confirm
             )
 
+            if (!file.exists(m_dir) && interactive()) {
+                do.create <- gconfirm(
+                    paste0(
+                        "You need to create a modules directory to install modules into.\n\n",
+                        "Would you like to create the following directory?\n\n",
+                        m_dir
+                    ),
+                    title = "Create module directory?",
+                    icon = "question",
+                    parent = GUI$win
+                )
+                if (!do.create) return()
+                if (!dir.create(m_dir)) {
+                    gmessage(
+                        paste0(
+                            "Please create the following directory manually:\n\n",
+                            m_dir
+                        ),
+                        title = "Error creating directory",
+                        icon = "error",
+                        parent = GUI$win
+                    )
+                    return()
+                }
+            }
+
             # Main window & container:
             win <<- gwindow(
                 title = "Manage add-on modules",
