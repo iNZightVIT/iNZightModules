@@ -1,7 +1,6 @@
 ^codecov\.yml$
-^appveyor\.yml$
 ^Makefile$
 ^.*\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^\.travis\.yml$
+^.github$
