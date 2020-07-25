@@ -1,5 +1,7 @@
 context("3D Plotting Module")
 
+skip_on_ci()
+
 require(iNZight)
 # try(ui$close(), T)
 ui <- iNZGUI$new()
