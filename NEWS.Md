@@ -1,3 +1,8 @@
+## iNZightModules 2.5.3
+- ask user to create module directory if it doesn't exist
+- Model Fitting: add negative binomial
+
+
 ## iNZightModules 2.5.2
 
 - fix bug in detecting time variables - now parses each column to determine if it is readable as an iNZight time variable
