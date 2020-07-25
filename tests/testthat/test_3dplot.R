@@ -6,6 +6,8 @@ ui <- iNZGUI$new()
 ui$initializeGui(iris)
 on.exit(try(ui$close(), silent = TRUE))
 
+skip_if_not_installed("car")
+
 test_that("3D module loads", {
     # expect_silent({
         ign <- gwindow("...", visible = FALSE)
