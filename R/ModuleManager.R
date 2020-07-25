@@ -31,7 +31,7 @@ ModuleManager <- setRefClass(
                 .confirm = confirm
             )
 
-            if (!file.exists(m_dir) && interactive()) { # nocov
+            if (!file.exists(m_dir) && interactive()) { # nocov start
                 do.create <- gconfirm(
                     paste0(
                         "You need to create a modules directory to install modules into.\n\n",
