@@ -49,7 +49,12 @@ jobs:
         env:
           RHUB_PLATFORM: linux-x86_64-ubuntu-gcc
         run: |
-          sudo apt install libgtk2.0-dev xorg-dev libxml2-dev libnlopt-dev libcurl4-openssl-dev libudunits2-dev libcgal-dev libglu1-mesa-dev libgdal-dev
+          sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+          sudo apt-get update
+          sudo apt-get install libgtk2.0-dev xorg-dev libxml2-dev libnlopt-dev \
+            libcurl4-openssl-dev \
+            libudunits2-dev libgdal-dev libgeos-dev libproj-dev \
+            libcgal-dev libglu1-mesa-dev
       - name: Install RGtk2
         if: runner.os == 'Windows'
         run: ./.github/install_gtk.cmd
