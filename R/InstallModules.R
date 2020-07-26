@@ -276,8 +276,6 @@ InstallModules <- setRefClass(
 
 installmodule <- function(file, dir, overwrite = FALSE) {
     if (checkfile(file)) {
-        print(file)
-        print(dir)
         if (!overwrite && file.exists(file.path(dir, basename(file)))) {
             if (gconfirm("Module already exists - do you wish to overwrite it?")) {
                 overwrite <- TRUE
