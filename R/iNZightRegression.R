@@ -264,6 +264,7 @@ iNZightRegMod <- setRefClass(
                     "Least Squares",
                     "Binary Regression (logistic, ...)",
                     "Poisson Regression (counts)",
+                    "Negative Binomial (counts)",
                     "Cox PH (survival analysis)"
                 ),
                 selected = 0,
@@ -274,6 +275,7 @@ iNZightRegMod <- setRefClass(
                         switch(responseType,
                             c("Gaussian"),
                             c("Logistic", "Probit"),
+                            c("Log"),
                             c("Log"),
                             c("")
                         )
@@ -1411,6 +1413,7 @@ iNZightRegMod <- setRefClass(
                         "gaussian",
                         "binomial",
                         "poisson",
+                        "negbin",
                         "cox"
                     ),
                     link = switch(responseType,
