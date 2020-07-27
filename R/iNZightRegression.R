@@ -288,7 +288,7 @@ iNZightRegMod <- setRefClass(
                         svalue(flbl) <- "Framework: "
                     }
 
-                    if (responseType == 4) {
+                    if (responseType == 5) {
                         svalue(yvar.lbl) <- "Time variable: "
                         visible(timeToEventBox) <- TRUE
                         visible(responseBox) <<- FALSE
@@ -1541,7 +1541,7 @@ iNZightRegMod <- setRefClass(
             updatePlot()
         }, # updateModel()
         updatePlot = function(savecode = FALSE) {
-            if (responseType == 4)
+            if (responseType == 5)
                 return()
             dev.hold()
             on.exit(dev.flush())
