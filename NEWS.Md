@@ -1,3 +1,4 @@
+## iNZightModules 2.5.4
 - fix issues with specifying time information for annual data
 
 
