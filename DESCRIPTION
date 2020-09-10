@@ -27,7 +27,7 @@ Imports:
     iNZightRegression (>= 1.2.6),
     iNZightTools (>= 1.8.4),
     iNZightMR (>= 2.2.4),
-    iNZightTS (>= 1.5.3)
+    iNZightTS (>= 1.5.5)
 Suggests:
     iNZightMaps (>= 2.2),
     car,
