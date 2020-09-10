@@ -7,9 +7,10 @@ context("Time Series module")
 # devtools::load_all("../iNZightTS"); devtools::load_all("../iNZight")
 
 data(visitorsQ, package = 'iNZightTS')
+data(visitorsA2, package = 'iNZightTS')
 
 require(iNZight)
-# try(ui$close(), T)
+# try(ui$close(), T); load_all()
 ui <- iNZGUI$new()
 ui$initializeGui(visitorsQ)
 on.exit(try(ui$close(), silent = TRUE))
@@ -135,6 +136,37 @@ test_that("Plots works", {
     expect_silent(svalue(tbl, index = TRUE) <- 1:4)
     rdio <- mod$mainGrp$children[[3]]$children[[2]]$children[[2]]$children[[1]]
     expect_silent(svalue(rdio, index = TRUE) <- 2)
+})
+
+ui$close()
+
+# try(ui$close(), T); load_all()
+ui <- iNZGUI$new()
+ui$initializeGui(visitorsA2)
+on.exit(try(ui$close(), silent = TRUE))
+
+test_that("Annual data disables unsupported plots", {
+    expect_silent(mod <- iNZightTSMod$new(ui))
+    on.exit(mod$close())
+    expect_equal(
+        mod$plotType$get_items(),
+        c("Standard", "Decomposition")
+    )
+
+    expect_silent(mod$varSelect$set_selected(0:2))
+    expect_equal(
+        mod$compareChk$get_items(),
+        c("Separate graphs")
+    )
+})
+
+test_that("Annual data can be manually specified", {
+    expect_silent(mod <- iNZightTSMod$new(ui))
+    expect_silent(mod$timeVarType$set_index(2L))
+
+    expect_silent(mod$timePeriodList$set_value("Year"))
+    expect_silent(mod$timeFreqList$set_value("Yearly (1)"))
+    expect_silent(mod$timeStartPeriod$set_value("1999"))
 })
 
 ui$close()

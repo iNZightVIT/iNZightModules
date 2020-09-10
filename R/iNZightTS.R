@@ -16,7 +16,11 @@ iNZightTSMod <- setRefClass(
         GUI         = "ANY",
         mainGrp     = "ANY",
         activeData  = "data.frame",
+        timeVarType = "ANY",
         timeVar     = "ANY",
+        timePeriodList = "ANY",
+        timeFreqList = "ANY", timeFreqNum = "ANY",
+        timeStartPeriod = "ANY", timeStartSeason = "ANY",
         timePeriod = "ANY", timeFreq = "ANY", timeStart = "ANY",
         patternType = "numeric",
         smootherChk = "ANY", show.smoother = "logical",
@@ -25,8 +29,8 @@ iNZightTSMod <- setRefClass(
         yLab        = "ANY", xLab = "ANY",
         xlimLower   = "ANY", xlimUpper   = "ANY",
         modLimEqual = "ANY", modLimLower = "ANY", modLimUpper = "ANY",
-        plottype    = "numeric",
-        compare     = "numeric",
+        plotType = "ANY", plottype = "numeric",
+        compareChk = "ANY", compare = "numeric",
         animateBtn  = "ANY", pauseBtn = "ANY",
         recomposeBtn = "ANY", recomposeResBtn = "ANY", decomp = "ANY",
         recompProg = "ANY",
@@ -132,12 +136,12 @@ iNZightTSMod <- setRefClass(
             ############
             ## FOR MAIN LAYOUT
             g1_layout = glayout(container = g1)
-            g1_opt1   = gradio(
+            timeVarType <<- gradio(
                 c("Select time variable", "Provide time manually"),
                 selected = 1,
                 horizontal = FALSE
             )
-            g1_layout[1, 1:2, expand = TRUE] = g1_opt1
+            g1_layout[1, 1:2, expand = TRUE] = timeVarType
 
             ## FOR LAYOUT A
             g1a_layout = glayout(container = g1)
@@ -164,13 +168,15 @@ iNZightTSMod <- setRefClass(
             ii <- 1
 
             lbl <- glabel("Period :")
-            timePeriodList <- gcombobox(c("Year", "Week", "Day"),
+            timePeriodList <<- gcombobox(c("Year", "Week", "Day"),
                 selected = 0,
                 handler = function(h, ...) {
                     timePeriod <<- svalue(h$obj)
+                    blockHandlers(varSelect)
                     timeFreqList$set_items(
                         c(names(freqOpts[[svalue(h$obj)]]), "Custom")
                     )
+                    unblockHandlers(varSelect)
                     svalue(startlbl1) <- "Year"
                     varSelect$invoke_change_handler()
                 }
@@ -196,16 +202,19 @@ iNZightTSMod <- setRefClass(
                     "Hourly (24)" = 24
                 )
             )
-            timeFreqList <- gcombobox(character(),
+            timeFreqList <<- gcombobox(character(),
                 selected = 0,
                 handler = function(h, ...) {
+                    blockHandlers(varSelect)
                     if (svalue(h$obj) == "Custom") {
-                        enabled(timeFreqNum) <- TRUE
+                        enabled(timeFreqNum) <<- TRUE
                     } else {
-                        enabled(timeFreqNum) <- FALSE
-                        svalue(timeFreqNum) <-
+                        enabled(timeFreqNum) <<- FALSE
+                        svalue(timeFreqNum) <<-
                             freqOpts[[timePeriod]][svalue(h$obj)]
                     }
+                    timeFreqNum$invoke_change_handler()
+                    unblockHandlers(varSelect)
                     season.name <- svalue(h$obj)
                     if (season.name == "Custom") {
                         season.name <- "Season"
@@ -218,19 +227,21 @@ iNZightTSMod <- setRefClass(
                     varSelect$invoke_change_handler()
                 }
             )
-            timeFreqNum <- gspinbutton(1, 1000, by = 1,
+            timeFreqNum <<- gspinbutton(1, 1000, by = 1,
                 value = 1,
                 handler = function(h, ...) {
                     timeFreq <<- svalue(h$obj)
-                    svalue(timeStartSeason) <-
+                    blockHandlers(varSelect)
+                    svalue(timeStartSeason) <<-
                         min(svalue(timeStartSeason), timeFreq)
                     if (svalue(h$obj) == 1) {
-                        enabled(timeStartSeason) <- FALSE
+                        enabled(timeStartSeason) <<- FALSE
                         visible(startlbl2) <- FALSE
                     } else {
-                        enabled(timeStartSeason) <- TRUE
+                        enabled(timeStartSeason) <<- TRUE
                         visible(startlbl2) <- TRUE
                     }
+                    unblockHandlers(varSelect)
                     varSelect$invoke_change_handler()
                 }
             )
@@ -247,12 +258,12 @@ iNZightTSMod <- setRefClass(
             ii <- ii + 1
 
             lbl <- glabel("Start date : ")
-            timeStartPeriod <- gspinbutton(0, 1e5, by = 1, value = 1,
+            timeStartPeriod <<- gspinbutton(0, 1e5, by = 1, value = 1,
                 handler = function(h, ...) {
                     timeStart <<- c(svalue(h$obj), svalue(timeStartSeason))
                     varSelect$invoke_change_handler()
                 })
-            timeStartSeason <- gspinbutton(0, 1e5, by = 1, value = 1,
+            timeStartSeason <<- gspinbutton(0, 1e5, by = 1, value = 1,
                 handler = function(h, ...) {
                     if (svalue(h$obj) > timeFreq)
                         svalue(h$obj) <- timeFreq
@@ -272,7 +283,7 @@ iNZightTSMod <- setRefClass(
             g1b_layout[ii, 3, anchor = c(-1, 1), expand = TRUE] <- startlbl2
             ii <- ii + 1
 
-            addHandlerChanged(g1_opt1, handler = function(h,...) {
+            addHandlerChanged(timeVarType, handler = function(h,...) {
                 if (svalue(h$obj, index = TRUE) == 1) {
                     visible(g1a_layout) = TRUE
                     visible(g1b_layout) = FALSE
@@ -368,10 +379,10 @@ iNZightTSMod <- setRefClass(
                 enabled(g2_opt1) <- can_multiply
                 if (!can_multiply) svalue(g2_opt1, index = TRUE) <- 2
 
-                if ((svalue(g1_opt1, TRUE) == 1 && !is.na(timeVar)) ||
-                    (svalue(g1_opt1, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
-                    tryCatch({
-                        if (svalue(g1_opt1, TRUE) == 1) {
+                if ((svalue(timeVarType, TRUE) == 1 && !is.na(timeVar)) ||
+                    (svalue(timeVarType, TRUE) == 2 && !is.null(timePeriod) && !is.na(timeFreq)) ) {
+                    # tryCatch({
+                        if (svalue(timeVarType, TRUE) == 1) {
                             tso <- iNZightTS::iNZightTS(
                                 data = activeData,
                                 var = var_ind,
@@ -388,21 +399,33 @@ iNZightTSMod <- setRefClass(
                         }
                         tsObj <<- tso
                         updatePlot()
-                    },
-                    error = function(e) {
-                        gmessage(
-                            paste(sep="\n\n",
-                                "Error creating Time Series object",
-                                e$message
-                            ),
-                            title = "Error creating time series",
-                            icon = "error",
-                            parent = GUI$win
-                        )
-                    },
-                    finally = {})
+                    # },
+                    # error = function(e) {
+                    #     gmessage(
+                    #         paste(sep="\n\n",
+                    #             "Error creating Time Series object",
+                    #             e$message
+                    #         ),
+                    #         title = "Error creating time series",
+                    #         icon = "error",
+                    #         parent = GUI$win
+                    #     )
+                    # },
+                    # finally = {})
+
+                    # if freq=1, disable seasonal/forecast/single-graph
+                    if (tsObj$freq == 1) {
+                        plotType$set_items(c("Standard", "Decomposition"))
+                        compareChk$set_items("Separate graphs")
+                    } else {
+                        plotType$set_items(c("Standard", "Decomposition", "Seasonal", "Forecast"))
+                        compareChk$set_items(c("Single graph", "Separate graphs"))
+                    }
+
                 } else {
-                  cat("No time var...\n")
+                    # Something more helpful
+                    tsObj <<- NULL
+
                 }
 
             })
@@ -420,7 +443,7 @@ iNZightTSMod <- setRefClass(
 
             onevar <- gvbox(container = g5)
             addSpring(onevar)
-            plotType <- gradio(
+            plotType <<- gradio(
                 c("Standard", "Decomposition", "Seasonal", "Forecast"),
                 selected = plottype,
                 container = onevar,
@@ -576,7 +599,7 @@ iNZightTSMod <- setRefClass(
             )
 
             multivar <- ggroup(container = g5)
-            compareChk <- gradio(c("Single graph", "Separate graphs"),
+            compareChk <<- gradio(c("Single graph", "Separate graphs"),
                 checked = compare,
                 container = multivar,
                 handler = function(h, ...) {
