@@ -44,7 +44,7 @@ CustomModule <- setRefClass(
         get_data = function() {
             GUI$getActiveData()
         },
-        install_dependencies = function(pkgs, optional) {
+        install_dependencies = function(pkgs, optional, github) {
             # add the iNZight repository:
             dkr <- "https://r.docker.stat.auckland.ac.nz"
             repo <- options()$repos
@@ -70,6 +70,11 @@ CustomModule <- setRefClass(
                     )
                 }
             }
+
+            if (!missing(github)) {
+                remotes::install_github(github, repos = repos)
+            }
+
             plot(0, 0, type = "n", bty = "n", axt = "n", xaxt = "n", yaxt = "n",
                     xlab = "", ylab = "")
         },

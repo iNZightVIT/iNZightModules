@@ -14,12 +14,9 @@ Authors@R: c(
 Depends:
     R (>= 3.2)
 Imports:
-    stats,
-    graphics,
-    utils,
-    grDevices,
-    methods,
     gpairs,
+    graphics,
+    grDevices,
     gWidgets2,
     gWidgets2RGtk2 (>= 1.0.7.1),
     iNZight (>= 3.5.3),
@@ -27,16 +24,21 @@ Imports:
     iNZightRegression (>= 1.2.6),
     iNZightTools (>= 1.8.4),
     iNZightMR (>= 2.2.4),
-    iNZightTS (>= 1.5.5)
+    iNZightTS (>= 1.5.5),
+    methods,
+    remotes,
+    stats,
+    utils
 Suggests:
-    iNZightMaps (>= 2.2),
     car,
-    rgl,
+    covr,
+    iNZightMaps (>= 2.2),
     mgcv,
+    rgl,
     sf,
     survey,
-    testthat,
-    covr
+    testthat
+
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3
 Description: A suite of add-on modules for the iNZight GUI, including model
