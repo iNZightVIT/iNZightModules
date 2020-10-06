@@ -72,7 +72,7 @@ CustomModule <- setRefClass(
             }
 
             if (!missing(github)) {
-                remotes::install_github(github, repos = repos)
+                remotes::install_github(github, repos = repo)
             }
 
             plot(0, 0, type = "n", bty = "n", axt = "n", xaxt = "n", yaxt = "n",
