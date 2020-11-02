@@ -75,8 +75,9 @@ CustomModule <- setRefClass(
                 remotes::install_github(github, repos = repo)
             }
 
-            plot(0, 0, type = "n", bty = "n", axt = "n", xaxt = "n", yaxt = "n",
-                    xlab = "", ylab = "")
+            plot(0, 0, type = "n", bty = "n",
+                xaxt = "n", yaxt = "n",
+                xlab = "", ylab = "")
         },
         close = function() {
             ## run module-specific closure?
