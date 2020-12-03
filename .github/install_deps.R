@@ -21,7 +21,7 @@ options(
 
 if (OS == "Windows" && getRversion() < numeric_version("4")) {
     install.packages("RODBC", type = "binary")
-    install.packages("rgl")
+    install.packages("rgl", type = "binary")
 }
 
 remotes::install_github(
