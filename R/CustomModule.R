@@ -19,7 +19,8 @@ CustomModule <- setRefClass(
     methods = list(
         initialize = function(gui,
             name = "Module",
-            embedded = TRUE
+            embedded = TRUE,
+            uses_code_panel = FALSE
         ) {
             initFields(GUI = gui)
 
@@ -39,6 +40,8 @@ CustomModule <- setRefClass(
             # add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
             add(modwin$footer, homeButton, expand = TRUE, fill = TRUE)
 
+            if (GUI$preferences$dev.features && GUI$preferences$show.code)
+                visible(GUI$code_panel$panel) <<- uses_code_panel
 
         },
         get_data = function() {
@@ -89,6 +92,8 @@ CustomModule <- setRefClass(
             GUI$menuBarWidget$defaultMenu()
             GUI$updatePlot()
             visible(GUI$gp1) <<- TRUE
+            if (GUI$preferences$dev.features && GUI$preferences$show.code)
+                visible(GUI$code_panel$panel) <<- TRUE
             invisible(TRUE)
         }
     )

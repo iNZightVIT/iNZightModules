@@ -1,4 +1,4 @@
-
+* hide the Code Panel in modules (unless they specify they support it)
 
 ## iNZightModules 2.5.4
 - fix issues with specifying time information for annual data
