@@ -5,11 +5,11 @@ Version: 2.5.4.9000
 Authors@R: c(
     person("Tom", "Elliott", role = c("aut", "cre"), email = "tom.elliott@auckland.ac.nz", comment = c(ORCID = "0000-0002-7815-6318")),
     person("Daniel", "Barnett", role = "aut"),
-    person("Eric", "Lim", role = "aut"),
-    person("Junjie", "Zeng", role = c('aut')),
-    person("Dineika", "Chandrananda", role = "aut"),
-    person("Simon", "Potter", role = "aut"),
-    person("David", "Banks", role = "aut")
+    person("Eric", "Lim", role = "ctb"),
+    person("Junjie", "Zeng", role = c('ctb')),
+    person("Dineika", "Chandrananda", role = "ctb"),
+    person("Simon", "Potter", role = "ctb"),
+    person("David", "Banks", role = "ctb")
     )
 Depends:
     R (>= 3.2)
