@@ -10,8 +10,12 @@ ui$initializeGui(apiclus1)
 on.exit(try(ui$close(), silent = TRUE))
 
 ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
-    clus1 = "dnum", wt = "pw", fpc = "fpc",
-    type = "survey",
+    list(
+        ids = "dnum",
+        weights = "pw",
+        fpc = "fpc",
+        type = "survey"
+    ),
     gui = ui
 )
 
@@ -52,19 +56,17 @@ test_that("Model comparison works", {
     expect_equal(svalue(mod$modelList), "Model 2")
 
     expect_silent(mod$compBtn$invoke_change_handler())
+    expect_true(mod$close())
 })
 
-
 ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
-    clus1 = "dnum", wt = "pw", fpc = "fpc",
-    poststrat = list(stype =
-        data.frame(
-            stype = c("E", "H", "M"),
-            Freq = c(4421, 755, 1018),
-            stringsAsFactors = TRUE
-        )
+    list(
+        ids = "dnum",
+        weights = "pw",
+        fpc = "fpc",
+        calibrate = list(stype = c(E = 4421, H = 755, M = 1018)),
+        type = "survey"
     ),
-    type = "survey",
     gui = ui
 )
 
@@ -81,13 +83,19 @@ ui <- iNZGUI$new()
 ui$initializeGui(chis)
 
 ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
-    wt = "rakedw0", repweights = paste0("rakedw", 1:80),
-    reptype = "other", scale = 1, rscales = 1,
-    type = "replicate",
+    list(
+        weights = "rakedw0",
+        repweights = paste0("rakedw", 1:80),
+        reptype = "other",
+        scale = 1,
+        rscales = 1,
+        type = "replicate"
+    ),
     gui = ui
 )
 
 test_that("Replicate design models work", {
     mod <- iNZightRegMod$new(ui)
     expect_silent(svalue(mod$responseBox) <- "bmi_p")
+    expect_true(mod$close())
 })
