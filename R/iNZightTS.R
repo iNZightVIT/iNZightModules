@@ -1056,10 +1056,9 @@ iNZightTSMod <- setRefClass(
         },
         close = function() {
             ## delete the module window
-            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            GUI$close_module()
             ## display the default view (data, variable, etc.)
             GUI$plotToolbar$restore()
-            visible(GUI$gp1) <<- TRUE
             GUI$updatePlot()
         }
     )

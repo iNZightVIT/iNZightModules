@@ -86,14 +86,11 @@ CustomModule <- setRefClass(
             ## run module-specific closure?
 
             ## delete the module window
-            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            GUI$close_module()
             ## display the default view (data, variable, etc.)
             GUI$plotToolbar$restore()
             GUI$menuBarWidget$defaultMenu()
             GUI$updatePlot()
-            visible(GUI$gp1) <<- TRUE
-            if (GUI$preferences$dev.features && GUI$preferences$show.code)
-                visible(GUI$code_panel$panel) <<- TRUE
             invisible(TRUE)
         }
     )

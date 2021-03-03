@@ -1,4 +1,5 @@
 * hide the Code Panel in modules (unless they specify they support it)
+* use new `close_module()` method from GUI rather than doing so manually (this automatically restores things, too)
 
 ## iNZightModules 2.5.4
 - fix issues with specifying time information for annual data
