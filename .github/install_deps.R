@@ -27,6 +27,8 @@ if (OS == "Windows" && getRversion() < numeric_version("4")) {
     install.packages("RODBC", type = "binary")
     install.packages("rgl", type = "binary")
 }
+if (OS == "Windwos")
+    dir.create(tools::R_user_dir("iNZight", "config"), recursive = TRUE)
 
 remotes::install_github(
     github_deps,
