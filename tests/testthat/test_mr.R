@@ -1,5 +1,4 @@
 context("Multiple response module")
-skip("skipping")
 
 require(iNZight)
 require(iNZightMR)

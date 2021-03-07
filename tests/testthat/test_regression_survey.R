@@ -1,5 +1,4 @@
 context("Survey modelling")
-skip("skipping")
 
 chis <- iNZightTools::smart_read("chis.csv")
 

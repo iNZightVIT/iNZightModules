@@ -1,5 +1,4 @@
 context("Model Fitting Module")
-skip("skipping")
 
 require(iNZight)
 ui <- iNZGUI$new()
