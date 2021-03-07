@@ -1,5 +1,4 @@
 context("Addon modules")
-skip("skipping")
 
 mod_dir <- file.path(getwd(), "modules")
 
