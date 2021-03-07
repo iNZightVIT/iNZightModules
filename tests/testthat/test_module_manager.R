@@ -1,5 +1,5 @@
 context("Module manager")
-skip()
+skip("skipping")
 
 skip_if_offline()
 td <- tempdir()
