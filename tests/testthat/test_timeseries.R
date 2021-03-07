@@ -1,4 +1,5 @@
 context("Time Series module")
+skip()
 
 # library(devtools)
 # load_all()
