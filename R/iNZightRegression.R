@@ -1005,7 +1005,7 @@ iNZightRegMod <- setRefClass(
                 c(
                     "Residual", "Scale-Location", "Leverage", "Cook's Distance",
                     "Normal Q-Q", "Histogram", "Summary Matrix", "Partial Residual",
-                    "Factor Comparisons"
+                    "Factor Comparisons", "Marginal Model Plots"
                 ),
                 handler = function(h, ...) {
                     plottype <<- svalue(h$obj, index = TRUE)
@@ -1615,6 +1615,9 @@ iNZightRegMod <- setRefClass(
                         svalue(catVarList, index = FALSE)
                     )
                 }
+            } else if (plottype == 10) {
+                inzplot(fit, which = "marginal", env = e)
+                fmla <- sprintf("inzplot(%s, which = \"marginal\")", fitn)
             } else {
                 plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
                     xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
