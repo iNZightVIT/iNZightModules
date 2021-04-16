@@ -432,7 +432,7 @@ iNZightMultiRes <- setRefClass(
             }
         },
         changePlotSettings = function(set, reset = FALSE) {
-            plotSet <<- iNZight:::modifyList(plotSet, set, keep.null = FALSE)
+            plotSet <<- modifyList(plotSet, set, keep.null = FALSE)
 
             setMRobj()
         },
