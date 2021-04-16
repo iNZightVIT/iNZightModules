@@ -40,8 +40,7 @@ Suggests:
     testthat
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3
-Description: A suite of add-on modules for the iNZight GUI, including model
-    fitting module, multiple response, time series, and some advanced plotting.
+Description: A suite of add-on modules for the iNZight GUI, including model fitting module, multiple response, time series, and some advanced plotting.
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 Language: en-GB
