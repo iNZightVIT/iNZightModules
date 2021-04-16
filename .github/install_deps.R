@@ -1,6 +1,6 @@
 # R script
 github_deps <- c(
-    "tmelliott/gWidgets2@patch-1",
+    "tmelliott/gWidgets2@patch1",
     "iNZightVIT/gWidgets2RGtk2@inz",
     "iNZightVIT/iNZightTools@dev",
     "iNZightVIT/iNZightTS@1.5.5",
@@ -27,7 +27,7 @@ if (OS == "Windows" && getRversion() < numeric_version("4")) {
     install.packages("RODBC", type = "binary")
     install.packages("rgl", type = "binary")
 }
-if (OS == "Windwos")
+if (OS == "Windows")
     dir.create(tools::R_user_dir("iNZight", "config"), recursive = TRUE)
 
 remotes::install_github(
