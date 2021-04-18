@@ -6,7 +6,7 @@ mod_dir <- file.path(getwd(), "modules")
 # load_all("../..")
 
 pdir <- file.path(
-    tools::_user_dir("iNZight", "config"),
+    tools::R_user_dir("iNZight", "config"),
     "preferences.R"
 )
 dput(pdir, list(dev.features = TRUE, show.code = TRUE))
