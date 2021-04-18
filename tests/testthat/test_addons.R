@@ -5,6 +5,13 @@ mod_dir <- file.path(getwd(), "modules")
 # load_all("../../../iNZight")
 # load_all("../..")
 
+pdir <- file.path(
+    tools::_user_dir("iNZight", "config"),
+    "preferences.R"
+)
+dput(pdir, list(dev.features = TRUE, show.code = TRUE))
+on.exit(unlink(pdir))
+
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
@@ -54,7 +61,6 @@ test_that("Code panel is displayed if module supports it", {
 
     mod <- getmodule(file.path(mod_dir, "DemoModule2.R"))
     modwin <- mod$module$new(ui)
-    Sys.sleep(2)
     expect_true(visible(ui$code_panel$panel))
     modwin$close()
 })
