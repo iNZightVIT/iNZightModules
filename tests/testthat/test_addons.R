@@ -5,17 +5,20 @@ mod_dir <- file.path(getwd(), "modules")
 # load_all("../../../iNZight")
 # load_all("../..")
 
-pdir <- file.path(
-    tools::R_user_dir("iNZight", "config"),
-    "preferences.R"
-)
+td <- tempdir()
+pdir <- file.path(td, "R", "iNZight", "preferences.R")
+dir.create(dirname(pdir), recursive = TRUE)
+
+odir <- Sys.getenv("R_USER_CONFIG_DIR")
+Sys.setenv("R_USER_CONFIG_DIR" = td)
+on.exit(Sys.setenv("R_USER_CONFIG_DIR" = odir))
 dput(list(dev.features = TRUE, show.code = TRUE), file = pdir)
-on.exit(unlink(pdir))
+on.exit(unlink(pdir), add = TRUE)
 
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
-on.exit(try(ui$close(), silent = TRUE))
+on.exit(try(ui$close(), silent = TRUE), add = TRUE)
 Sys.sleep(2)
 
 test_that("CustomModule super class works", {
