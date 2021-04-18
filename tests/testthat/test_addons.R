@@ -45,3 +45,15 @@ test_that("Directory of modules are loaded", {
         c("DemoModule", "DemoModule2", "DemoModule3")
     )
 })
+
+test_that("Code panel is displayed if module supports it", {
+    mod <- getmodule(file.path(mod_dir, "DemoModule.R"))
+    modwin <- mod$module$new(ui)
+    expect_false(visible(ui$code_panel$panel))
+    modwin$close()
+
+    mod <- getmodule(file.path(mod_dir, "DemoModule2.R"))
+    modwin <- mod$module$new(ui)
+    expect_true(visible(ui$code_panel$panel))
+    modwin$close()
+})
