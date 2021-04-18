@@ -54,6 +54,7 @@ test_that("Code panel is displayed if module supports it", {
 
     mod <- getmodule(file.path(mod_dir, "DemoModule2.R"))
     modwin <- mod$module$new(ui)
+    Sys.sleep(2)
     expect_true(visible(ui$code_panel$panel))
     modwin$close()
 })
