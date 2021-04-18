@@ -9,7 +9,7 @@ pdir <- file.path(
     tools::R_user_dir("iNZight", "config"),
     "preferences.R"
 )
-dput(pdir, list(dev.features = TRUE, show.code = TRUE))
+dput(list(dev.features = TRUE, show.code = TRUE), file = pdir)
 on.exit(unlink(pdir))
 
 require(iNZight)
