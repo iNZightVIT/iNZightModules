@@ -1,4 +1,5 @@
 context("3D Plotting Module")
+skip("skipping")
 
 require(iNZight)
 # try(ui$close(), T)

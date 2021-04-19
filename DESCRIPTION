@@ -1,25 +1,22 @@
 Package: iNZightModules
 Type: Package
 Title: iNZight GUI Modules
-Version: 2.5.4
+Version: 2.5.5
 Authors@R: c(
     person("Tom", "Elliott", role = c("aut", "cre"), email = "tom.elliott@auckland.ac.nz", comment = c(ORCID = "0000-0002-7815-6318")),
     person("Daniel", "Barnett", role = "aut"),
-    person("Eric", "Lim", role = "aut"),
-    person("Junjie", "Zeng", role = c('aut')),
-    person("Dineika", "Chandrananda", role = "aut"),
-    person("Simon", "Potter", role = "aut"),
-    person("David", "Banks", role = "aut")
+    person("Eric", "Lim", role = "ctb"),
+    person("Junjie", "Zeng", role = c('ctb')),
+    person("Dineika", "Chandrananda", role = "ctb"),
+    person("Simon", "Potter", role = "ctb"),
+    person("David", "Banks", role = "ctb")
     )
 Depends:
     R (>= 3.2)
 Imports:
-    stats,
-    graphics,
-    utils,
-    grDevices,
-    methods,
     gpairs,
+    graphics,
+    grDevices,
     gWidgets2,
     gWidgets2RGtk2 (>= 1.0.7.1),
     iNZight (>= 3.5.3),
@@ -27,20 +24,23 @@ Imports:
     iNZightRegression (>= 1.2.6),
     iNZightTools (>= 1.8.4),
     iNZightMR (>= 2.2.4),
-    iNZightTS (>= 1.5.5)
+    iNZightTS (>= 1.5.5),
+    methods,
+    remotes,
+    stats,
+    utils
 Suggests:
-    iNZightMaps (>= 2.2),
     car,
-    rgl,
+    covr,
+    iNZightMaps (>= 2.2),
     mgcv,
+    rgl,
     sf,
     survey,
-    testthat,
-    covr
+    testthat
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3
-Description: A suite of add-on modules for the iNZight GUI, including model
-    fitting module, multiple response, time series, and some advanced plotting.
-RoxygenNote: 7.1.0
+Description: A suite of add-on modules for the iNZight GUI, including model fitting module, multiple response, time series, and some advanced plotting.
+RoxygenNote: 7.1.1
 Encoding: UTF-8
 Language: en-GB

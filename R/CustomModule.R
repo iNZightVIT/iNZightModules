@@ -19,7 +19,8 @@ CustomModule <- setRefClass(
     methods = list(
         initialize = function(gui,
             name = "Module",
-            embedded = TRUE
+            embedded = TRUE,
+            uses_code_panel = FALSE
         ) {
             initFields(GUI = gui)
 
@@ -39,12 +40,14 @@ CustomModule <- setRefClass(
             # add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
             add(modwin$footer, homeButton, expand = TRUE, fill = TRUE)
 
+            if (GUI$preferences$dev.features && GUI$preferences$show.code)
+                visible(GUI$code_panel$panel) <<- uses_code_panel
 
         },
         get_data = function() {
             GUI$getActiveData()
         },
-        install_dependencies = function(pkgs, optional) {
+        install_dependencies = function(pkgs, optional, github) {
             # add the iNZight repository:
             dkr <- "https://r.docker.stat.auckland.ac.nz"
             repo <- options()$repos
@@ -70,19 +73,24 @@ CustomModule <- setRefClass(
                     )
                 }
             }
-            plot(0, 0, type = "n", bty = "n", axt = "n", xaxt = "n", yaxt = "n",
-                    xlab = "", ylab = "")
+
+            if (!missing(github)) {
+                remotes::install_github(github, repos = repo)
+            }
+
+            plot(0, 0, type = "n", bty = "n",
+                xaxt = "n", yaxt = "n",
+                xlab = "", ylab = "")
         },
         close = function() {
             ## run module-specific closure?
 
             ## delete the module window
-            delete(GUI$leftMain, GUI$leftMain$children[[2]])
+            GUI$close_module()
             ## display the default view (data, variable, etc.)
             GUI$plotToolbar$restore()
             GUI$menuBarWidget$defaultMenu()
             GUI$updatePlot()
-            visible(GUI$gp1) <<- TRUE
             invisible(TRUE)
         }
     )
