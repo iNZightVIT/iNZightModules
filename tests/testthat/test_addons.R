@@ -5,10 +5,20 @@ mod_dir <- file.path(getwd(), "modules")
 # load_all("../../../iNZight")
 # load_all("../..")
 
+td <- tempdir()
+pdir <- file.path(td, "R", "iNZight", "preferences.R")
+dir.create(dirname(pdir), recursive = TRUE)
+
+odir <- Sys.getenv("R_USER_CONFIG_DIR")
+Sys.setenv("R_USER_CONFIG_DIR" = td)
+on.exit(Sys.setenv("R_USER_CONFIG_DIR" = odir))
+dput(list(dev.features = TRUE, show.code = TRUE), file = pdir)
+on.exit(unlink(pdir), add = TRUE)
+
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui(iris)
-on.exit(try(ui$close(), silent = TRUE))
+on.exit(try(ui$close(), silent = TRUE), add = TRUE)
 Sys.sleep(2)
 
 test_that("CustomModule super class works", {
@@ -44,4 +54,16 @@ test_that("Directory of modules are loaded", {
         names(mods),
         c("DemoModule", "DemoModule2", "DemoModule3")
     )
+})
+
+test_that("Code panel is displayed if module supports it", {
+    mod <- getmodule(file.path(mod_dir, "DemoModule.R"))
+    modwin <- mod$module$new(ui)
+    expect_false(visible(ui$code_panel$panel))
+    modwin$close()
+
+    mod <- getmodule(file.path(mod_dir, "DemoModule2.R"))
+    modwin <- mod$module$new(ui)
+    expect_true(visible(ui$code_panel$panel))
+    modwin$close()
 })

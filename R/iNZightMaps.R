@@ -1328,7 +1328,7 @@ iNZightMapMod <- setRefClass(
             if (reset)
                 extra.args <<- set
             else
-                extra.args <<- iNZight:::modifyList(extra.args, set, keep.null = TRUE)
+                extra.args <<- modifyList(extra.args, set, keep.null = TRUE)
 
             updatePlot()
         },
