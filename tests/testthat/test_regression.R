@@ -93,6 +93,18 @@ test_that("Model can be fit without intercept", {
 })
 
 mod$close()
+
+test_that("Marginal model plots (for GLMs)", {
+    mod <- iNZightRegMod$new(ui)
+    on.exit(mod$close())
+    mod$responseBox$set_value("gender")
+    mod$variables <- c("height", "armspan")
+    mod$setExplVars()
+
+    expect_is(mod$fit, "glm")
+    expect_silent(mod$plotTypeList$set_value("Marginal Model Plots"))
+})
+
 ui$close()
 
 
@@ -107,5 +119,7 @@ test_that("Two columns works fine", {
     mod$setExplVars()
     expect_equal(mod$contVarBox$get_items(), "y")
 })
+
+
 
 try(mod$close())
