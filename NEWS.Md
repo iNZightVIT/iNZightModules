@@ -1,3 +1,6 @@
+
+
+
 ## iNZightModules 2.5.5
 * hide the Code Panel in modules (unless they specify they support it)
 * use new `close_module()` method from GUI rather than doing so manually (this automatically restores things, too)
