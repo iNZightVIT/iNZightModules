@@ -310,10 +310,9 @@ iNZightMultiRes <- setRefClass(
             homeButton <- gbutton("Home",
                                 handler = function(h, ...) {
                                     ## delete the module window
-                                    delete(GUI$leftMain, GUI$leftMain$children[[2]])
+                                    GUI$close_module()
                                     ## display the default view (data, variable, etc.)
                                     GUI$plotToolbar$restore()
-                                    visible(GUI$gp1) <<- TRUE
                                 })
 
             add(modwin$footer, helpButton, expand = TRUE, fill = TRUE)
@@ -433,7 +432,7 @@ iNZightMultiRes <- setRefClass(
             }
         },
         changePlotSettings = function(set, reset = FALSE) {
-            plotSet <<- iNZight:::modifyList(plotSet, set, keep.null = FALSE)
+            plotSet <<- modifyList(plotSet, set, keep.null = FALSE)
 
             setMRobj()
         },
