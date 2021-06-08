@@ -292,6 +292,8 @@ iNZightRegMod <- setRefClass(
                         svalue(yvar.lbl) <- "Time variable: "
                         visible(timeToEventBox) <- TRUE
                         visible(responseBox) <<- FALSE
+                        visible(responseTransformBox) <<- FALSE
+                        visible(transformlbl) <<- FALSE
                         visible(survEventBox) <- TRUE
                         visible(lbl.event) <- TRUE
                     } else {
@@ -299,6 +301,8 @@ iNZightRegMod <- setRefClass(
                         visible(survEventBox) <- FALSE
                         visible(timeToEventBox) <- FALSE
                         visible(responseBox) <<- TRUE
+                        visible(responseTransformBox) <<- TRUE
+                        visible(transformlbl) <<- TRUE
                         visible(lbl.event) <- FALSE
                     }
                     svalue(responseFamilyBox, index = TRUE) <<- 1
@@ -326,7 +330,7 @@ iNZightRegMod <- setRefClass(
 
 
             ## Transform response (Y)
-            lbl <- glabel("Transformation: ")
+            transformlbl <- glabel("Transformation: ")
             responseTransformBox <- gcombobox(
                 c("", "log", "exp", "square root", "inverse"),
                 editable = TRUE,
@@ -335,7 +339,7 @@ iNZightRegMod <- setRefClass(
                     updateModel()
                 }
             )
-            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- lbl
+            responseTbl[ii, 1, anchor = c(1, 0), expand = TRUE] <- transformlbl
             responseTbl[ii, 2:3, expand = TRUE] <- responseTransformBox
             ii <- ii + 1
 
@@ -1395,7 +1399,7 @@ iNZightRegMod <- setRefClass(
 
             dataset <- if (isSurveyObject) getdesign() else getdata()
             resp <- response
-            if (length(responseTransform) == 1 && responseTransform != "") {
+            if (length(responseTransform) == 1 && responseTransform != "" && responseType != 5) {
                 trans <- responseTransform
                 if (trans == "inverse") {
                     resp <- paste0("1 / ", response)
