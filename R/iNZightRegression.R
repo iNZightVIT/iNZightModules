@@ -7,6 +7,7 @@
 #' @author Tom Elliott
 #'
 #' @import iNZightRegression
+#' @importFrom survey svyglm
 #'
 #' @export iNZightRegMod
 #' @exportClass iNZightRegMod
