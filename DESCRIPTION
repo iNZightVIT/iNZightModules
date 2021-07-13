@@ -28,6 +28,7 @@ Imports:
     methods,
     remotes,
     stats,
+    survey,
     utils
 Suggests:
     car,
@@ -36,7 +37,6 @@ Suggests:
     mgcv,
     rgl,
     sf,
-    survey,
     testthat
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3
