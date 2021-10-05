@@ -5,7 +5,7 @@ ui <- iNZGUI$new()
 ui$initializeGui()
 initialPrefs <- ui$preferences
 
-ui$preferences$popout <- FALSE
+ui$preferences$popout <- TRUE
 ui$savePreferences()
 ui$close()
 

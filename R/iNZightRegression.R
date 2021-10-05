@@ -71,6 +71,11 @@ iNZightRegMod <- setRefClass(
             mainGrp <<- modwin$body
 
             # character, datasheet, evaluate, history, preview, rlogo,
+            showoutputBtn <- iNZight:::gimagebutton(
+                stock.id = "gw-preview",
+                tooltip = "View model output window",
+                handler = function(h, ...) .self$showOutput()
+            )
             addhistbtn <- iNZight:::gimagebutton(
                 stock.id = "rlogo",
                 tooltip = "Save code for current plot",
@@ -115,9 +120,11 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             )
+            btns <- list(addhistbtn, showhistbtn)
+            if (GUI$popOut) btns <- c(list(showoutputBtn), btns)
             GUI$plotToolbar$update(NULL,
                 refresh = "updatePlot",
-                extra = list(addhistbtn, showhistbtn)
+                extra = btns
             )
 
             ## and set the menubar
