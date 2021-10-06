@@ -1624,7 +1624,10 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             } else if (plottype == 10) {
-                inzplot(fit, which = "marginal", env = e)
+                ## TODO: fix the below assignment as it wont be allowed by CRAN
+                assign("dataset", getdata(), envir = .GlobalEnv)
+                inzplot(fit, which = "marginal")
+                rm(dataset, envir = .GlobalEnv)
                 fmla <- sprintf("inzplot(%s, which = \"marginal\")", fitn)
             } else {
                 plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
