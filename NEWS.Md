@@ -1,4 +1,7 @@
+## iNZightModules 2.5.6
+
 - [Model Fitting] add extra button to plot toolbar in popout mode to bring (back) up model output window
+- Update package dependency versions
 
 ## iNZightModules 2.5.5
 
