@@ -107,7 +107,6 @@ test_that("Marginal model plots (for GLMs)", {
 
 ui$close()
 
-
 test_that("Two columns works fine", {
     df <- data.frame(x = rnorm(100), y = rnorm(100))
     ui$initializeGui(df)
@@ -119,7 +118,3 @@ test_that("Two columns works fine", {
     mod$setExplVars()
     expect_equal(mod$contVarBox$get_items(), "y")
 })
-
-
-
-try(mod$close())

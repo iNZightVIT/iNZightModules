@@ -7,6 +7,7 @@
 #' @author Tom Elliott
 #'
 #' @import iNZightRegression
+#' @importFrom survey svyglm
 #'
 #' @export iNZightRegMod
 #' @exportClass iNZightRegMod
@@ -70,6 +71,11 @@ iNZightRegMod <- setRefClass(
             mainGrp <<- modwin$body
 
             # character, datasheet, evaluate, history, preview, rlogo,
+            showoutputBtn <- iNZight:::gimagebutton(
+                stock.id = "gw-preview",
+                tooltip = "View model output window",
+                handler = function(h, ...) .self$showOutput()
+            )
             addhistbtn <- iNZight:::gimagebutton(
                 stock.id = "rlogo",
                 tooltip = "Save code for current plot",
@@ -114,9 +120,11 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             )
+            btns <- list(addhistbtn, showhistbtn)
+            if (GUI$popOut) btns <- c(list(showoutputBtn), btns)
             GUI$plotToolbar$update(NULL,
                 refresh = "updatePlot",
-                extra = list(addhistbtn, showhistbtn)
+                extra = btns
             )
 
             ## and set the menubar
@@ -1616,7 +1624,10 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             } else if (plottype == 10) {
-                inzplot(fit, which = "marginal", env = e)
+                ## TODO: fix the below assignment as it wont be allowed by CRAN
+                assign("dataset", getdata(), envir = .GlobalEnv)
+                inzplot(fit, which = "marginal")
+                rm(dataset, envir = .GlobalEnv)
                 fmla <- sprintf("inzplot(%s, which = \"marginal\")", fitn)
             } else {
                 plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",

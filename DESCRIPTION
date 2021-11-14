@@ -1,7 +1,7 @@
 Package: iNZightModules
 Type: Package
 Title: iNZight GUI Modules
-Version: 2.5.5
+Version: 2.5.6
 Authors@R: c(
     person("Tom", "Elliott", role = c("aut", "cre"), email = "tom.elliott@auckland.ac.nz", comment = c(ORCID = "0000-0002-7815-6318")),
     person("Daniel", "Barnett", role = "aut"),
@@ -19,24 +19,24 @@ Imports:
     grDevices,
     gWidgets2,
     gWidgets2RGtk2 (>= 1.0.7.1),
-    iNZight (>= 3.5.3),
-    iNZightPlots (>= 2.11.1),
-    iNZightRegression (>= 1.2.6),
-    iNZightTools (>= 1.8.4),
-    iNZightMR (>= 2.2.4),
-    iNZightTS (>= 1.5.5),
+    iNZight (>= 4.1),
+    iNZightPlots (>= 2.13),
+    iNZightRegression (>= 1.3.1),
+    iNZightTools (>= 1.12.1),
+    iNZightMR (>= 2.2.5),
+    iNZightTS (>= 1.5.8),
     methods,
     remotes,
     stats,
+    survey,
     utils
 Suggests:
     car,
     covr,
-    iNZightMaps (>= 2.2),
+    iNZightMaps (>= 2.3),
     mgcv,
     rgl,
     sf,
-    survey,
     testthat
 Additional_repositories: https://r.docker.stat.auckland.ac.nz
 License: GPL-3
