@@ -1,6 +1,6 @@
 # iNZightModules: Add-on modules for iNZight
 
-![R-CMD-check](https://github.com/iNZightVIT/iNZightModules/workflows/R-CMD-check/badge.svg?branch=dev)
+![R-CMD-check](https://github.com/iNZightVIT/iNZightModules/workflows/R-CMD-check/badge.svg)
 [![Coverage status](https://codecov.io/gh/iNZightVIT/iNZightModules/branch/dev/graph/badge.svg)](https://codecov.io/github/iNZightVIT/iNZightModules?branch=dev)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
