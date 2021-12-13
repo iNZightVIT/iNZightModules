@@ -2,6 +2,7 @@
 
 - [Model Fitting] add extra button to plot toolbar in popout mode to bring (back) up model output window
 - Update package dependency versions
+- Implement new plot methods from 'iNZightRegression' (`inzplot()`)
 
 ## iNZightModules 2.5.5
 
