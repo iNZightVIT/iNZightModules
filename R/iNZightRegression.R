@@ -1013,7 +1013,7 @@ iNZightRegMod <- setRefClass(
                 c(
                     "Residual", "Scale-Location", "Leverage", "Cook's Distance",
                     "Normal Q-Q", "Histogram", "Summary Matrix", "Partial Residual",
-                    "Factor Comparisons", "Marginal Model Plots"
+                    "Factor Comparisons", "Marginal Model Plots", "Forest Plot"
                 ),
                 handler = function(h, ...) {
                     plottype <<- svalue(h$obj, index = TRUE)
@@ -1555,20 +1555,20 @@ iNZightRegMod <- setRefClass(
                 } else {
                     plottypes <- c("residual", "scale", "leverage", "cooks", "normal", "hist")
                     ptype <- if (plottype == 7) plottypes else plottypes[plottype]
-                    
-                    iNZightRegression::inzplot(fit, 
-                        which = ptype, 
+
+                    iNZightRegression::inzplot(fit,
+                        which = ptype,
                         show.bootstraps = svalue(showBoots),
                         env = e
                     )
                     fmla <- sprintf("iNZightRegression::inzplot(%s, which = '%s', show.bootstraps = %s)",
                         fitn,
-                        ptype, 
+                        ptype,
                         ifelse(svalue(showBoots), "TRUE", "FALSE")
                     )
                 }
 
-                
+
             } else if (plottype == 8) {
                 numvars <- numericVars()
                 if (length(numvars) == 0) {
@@ -1648,6 +1648,9 @@ iNZightRegMod <- setRefClass(
                 inzplot(fit, which = "marginal")
                 rm(dataset, envir = .GlobalEnv)
                 fmla <- sprintf("inzplot(%s, which = \"marginal\")", fitn)
+            } else if (plottype == 11) {
+                inzplot(fit, which = "forest", show.bootstraps = FALSE)
+                fmla <- sprintf("inzplot(%s, which = \"forest\")", fitn)
             } else {
                 plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
                     xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
