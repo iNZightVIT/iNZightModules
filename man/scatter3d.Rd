@@ -16,8 +16,7 @@ scatter3d(
   bg.col = c("white", "black"),
   axis.col = if (bg.col == "white") c("darkmagenta", "black", "darkcyan") else
     c("darkmagenta", "white", "darkcyan"),
-  surface.col = c("blue", "green", "orange", "magenta", "cyan", "red", "yellow",
-    "gray"),
+  surface.col = c("blue", "green", "orange", "magenta", "cyan", "red", "yellow", "gray"),
   neg.res.col = "red",
   pos.res.col = "green",
   square.col = if (bg.col == "white") "black" else "gray",

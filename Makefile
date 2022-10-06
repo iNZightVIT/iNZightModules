@@ -1,4 +1,4 @@
-R := R
+R := R --slave
 RCMD := $(R) --vanilla --slave
 
 default: install
