@@ -21,7 +21,7 @@ Imports:
     gWidgets2RGtk2 (>= 1.0.7.1),
     iNZight (>= 4.1),
     iNZightPlots (>= 2.13),
-    iNZightRegression (>= 1.3.1),
+    iNZightRegression (>= 1.3.2.9000),
     iNZightTools (>= 1.12.1),
     iNZightMR (>= 2.2.5),
     iNZightTS (>= 1.5.8),
