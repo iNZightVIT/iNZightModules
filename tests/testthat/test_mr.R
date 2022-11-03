@@ -1,5 +1,7 @@
 context("Multiple response module")
 
+skip_on_ci()
+
 require(iNZight)
 require(iNZightMR)
 # try(ui$close(), T)
