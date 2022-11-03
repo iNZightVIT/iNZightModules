@@ -1,5 +1,7 @@
 context("Time Series module")
 
+skip_on_ci()
+
 # library(devtools)
 # load_all()
 # load_all('../iNZight')
