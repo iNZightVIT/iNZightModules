@@ -1,5 +1,7 @@
 context("Survey modelling")
 
+skip_on_ci()
+
 chis <- iNZightTools::smart_read("chis.csv")
 
 data(api, package = "survey")
