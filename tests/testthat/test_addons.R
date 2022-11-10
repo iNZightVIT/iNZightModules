@@ -1,7 +1,5 @@
 context("Addon modules")
 
-skip_on_ci()
-
 mod_dir <- file.path(getwd(), "modules")
 
 # load_all("../../../iNZight")
