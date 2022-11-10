@@ -1,7 +1,5 @@
 context("Module manager")
 
-skip_on_ci()
-
 skip_if_offline()
 td <- tempdir()
 mod_dir <- file.path(td, "modules")
