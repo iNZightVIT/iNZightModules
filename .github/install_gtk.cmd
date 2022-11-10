@@ -12,6 +12,6 @@ if exist D:\a\_temp\Library\RGtk2\NUL (
 )
 
 echo "Installing RGtk2 ..."
-Rscript -e "Sys.setenv(GTK_PATH = file.path(getwd(), 'gtk')); install.packages(c('RGtk2', 'cairoDevice'), repos = 'https://r.docker.stat.auckland.ac.nz', type = 'source')"
+Rscript -e "Sys.setenv(GTK_PATH = file.path(getwd(), 'gtk')); install.packages(c('RGtk2', 'cairoDevice'), repos = 'https://r.docker.stat.auckland.ac.nz', type = 'source', INSTALL_opts = c('--no-multiarch'))"
 
 mv gtk D:\a\_temp\Library\RGtk2\
