@@ -1,5 +1,7 @@
 context("Module manager")
 
+skip_on_ci()
+
 skip_if_offline()
 td <- tempdir()
 mod_dir <- file.path(td, "modules")
@@ -155,16 +157,16 @@ test_that("Modules can be updated from the addon repo", {
     on.exit(dispose(inst$win))
     Sys.sleep(1)
     expect_silent(svalue(inst$repo, index = TRUE) <- 2L)
-    expect_equal(inst$m_tbl[2,5], "0")
+    expect_equal(inst$m_tbl[2, 5], "0")
     w <- which(inst$repo_addons[, "Name"] == "3D Plotting")
-    expect_equivalent(inst$m_tbl[2,7], inst$repo_addons[w, "Version"])
+    expect_equivalent(inst$m_tbl[2, 7], inst$repo_addons[w, "Version"])
 
     expect_silent(inst$m_tbl$set_cell(2, 1, TRUE))
     expect_true(enabled(inst$rmv_btn))
     expect_equal(svalue(inst$upd_btn), "Update selected")
 
     expect_silent(inst$upd_btn$invoke_change_handler())
-    expect_equal(inst$m_tbl[2,5], inst$m_tbl[2,7])
+    expect_equal(inst$m_tbl[2, 5], inst$m_tbl[2, 7])
 })
 
 test_that("Modules can be removed (from addon repo)", {

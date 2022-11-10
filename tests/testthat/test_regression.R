@@ -1,5 +1,7 @@
 context("Model Fitting Module")
 
+skip_on_ci()
+
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui()
