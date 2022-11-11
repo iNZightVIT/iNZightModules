@@ -6,7 +6,7 @@ github_deps <- c(
     "iNZightVIT/gWidgets2RGtk2@inz",
     "iNZightVIT/iNZightTools@dev",
     "iNZightVIT/iNZightTS@1.5.8",
-    "iNZightVIT/iNZightMR@2.2.5",
+    "iNZightVIT/iNZightMR@dev",
     "iNZightVIT/iNZightPlots@dev",
     "iNZightVIT/iNZightRegression@dev",
     "iNZightVIT/iNZight@feature/guinz",
@@ -25,6 +25,12 @@ options(
     ),
     install.packages.compile.from.source = "never"
 )
+
+if (OS == "Linux" &&
+    !requireNamespace("units", quietly = TRUE) &&
+    getRversion() >= "4.3") {
+    system("sudo apt-get install libudunits2-dev")
+}
 
 if (OS == "Windows" && getRversion() < numeric_version("4")) {
     install.packages("RODBC", type = "binary")
