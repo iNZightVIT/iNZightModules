@@ -6,8 +6,8 @@ context("Time Series module")
 # test(filter='regression')
 # devtools::load_all("../iNZightTS"); devtools::load_all("../iNZight")
 
-data(visitorsQ, package = 'iNZightTS')
-data(visitorsA2, package = 'iNZightTS')
+data(visitorsQ, package = "iNZightTS")
+data(visitorsA2, package = "iNZightTS")
 
 require(iNZight)
 # try(ui$close(), T); load_all()
@@ -111,7 +111,7 @@ test_that("Smoother display can be controlled", {
 ui$close()
 
 
-data(visitorsM2, package = 'iNZightTS')
+data(visitorsM2, package = "iNZightTS")
 test_that("Other datasets work too", {
     ui$initializeGui(visitorsM2)
     mod <- iNZightTSMod$new(ui)
@@ -132,6 +132,7 @@ test_that("Plots works", {
     expect_silent(mod$updatePlot())
 
     # change var
+    Sys.sleep(0.1)
     tbl <- mod$mainGrp$children[[3]]$children[[1]]$children[[1]]$children[[2]]
     expect_silent(svalue(tbl, index = TRUE) <- 1:4)
     rdio <- mod$mainGrp$children[[3]]$children[[2]]$children[[2]]$children[[1]]

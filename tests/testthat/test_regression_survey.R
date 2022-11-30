@@ -2,7 +2,7 @@ context("Survey modelling")
 
 chis <- iNZightTools::smart_read("chis.csv")
 
-data(api, package = 'survey')
+data(api, package = "survey")
 
 require(iNZight)
 ui <- iNZGUI$new()
@@ -14,7 +14,7 @@ ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
         ids = "dnum",
         weights = "pw",
         fpc = "fpc",
-        type = "survey"
+        survey_type = "survey"
     ),
     gui = ui
 )
@@ -23,7 +23,8 @@ ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
 test_that("Module opens (and closes)", {
     mod <- iNZightRegMod$new(ui)
     expect_equal(svalue(ui$moduleWindow$header$children[[1]]), "Model Fitting")
-    expect_equal(names(ui$plotWidget$plotNb),
+    expect_equal(
+        names(ui$plotWidget$plotNb),
         c("Model Output", "Model Plots", "Instructions")
     )
 
@@ -65,7 +66,7 @@ ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
         weights = "pw",
         fpc = "fpc",
         calibrate = list(stype = c(E = 4421, H = 755, M = 1018)),
-        type = "survey"
+        survey_type = "survey"
     ),
     gui = ui
 )
@@ -86,10 +87,10 @@ ui$iNZDocuments[[ui$activeDoc]]$getModel()$setDesign(
     list(
         weights = "rakedw0",
         repweights = paste0("rakedw", 1:80),
-        reptype = "other",
+        type = "other",
         scale = 1,
         rscales = 1,
-        type = "replicate"
+        survey_type = "replicate"
     ),
     gui = ui
 )
