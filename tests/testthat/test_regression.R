@@ -107,6 +107,17 @@ test_that("Marginal model plots (for GLMs)", {
     expect_silent(mod$plotTypeList$set_value("Marginal Model Plots"))
 })
 
+test_that("Forest plots", {
+    mod <- iNZightRegMod$new(ui)
+    on.exit(mod$close())
+    mod$responseBox$set_value("height")
+    mod$variables <- c("armspan", "travel", "gender")
+    mod$setExplVars()
+
+    expect_is(mod$fit, "lm")
+    expect_silent(mod$plotTypeList$set_value("Forest Plot"))
+})
+
 ui$close()
 
 test_that("Two columns works fine", {
