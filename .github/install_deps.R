@@ -39,6 +39,11 @@ if (OS == "Windows") {
     dir.create(tools::R_user_dir("iNZight", "config"), recursive = TRUE)
 }
 
+# install broom.helpers if not already installed
+if (!requireNamespace("broom.helpers", quietly = TRUE)) {
+    install.packages("broom.helpers", repos = "https://cloud.r-project.org")
+}
+
 remotes::install_github(
     github_deps,
     INSTALL_opts = "--no-multiarch"
