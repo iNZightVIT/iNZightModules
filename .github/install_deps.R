@@ -9,7 +9,7 @@ github_deps <- c(
     "iNZightVIT/iNZightMR@dev",
     "iNZightVIT/iNZightPlots@dev",
     "iNZightVIT/iNZightRegression@dev",
-    "iNZightVIT/iNZight@feature/guinz",
+    "iNZightVIT/iNZight@dev",
     "iNZightVIT/iNZightMaps@2.3"
 )
 
