@@ -1,7 +1,5 @@
 context("Model Fitting Module")
 
-skip_on_ci()
-
 require(iNZight)
 ui <- iNZGUI$new()
 ui$initializeGui()
@@ -17,7 +15,8 @@ on.exit(try(ui$close(), silent = TRUE))
 test_that("Module opens (and closes)", {
     mod <- iNZightRegMod$new(ui)
     expect_equal(svalue(ui$moduleWindow$header$children[[1]]), "Model Fitting")
-    expect_equal(names(ui$plotWidget$plotNb),
+    expect_equal(
+        names(ui$plotWidget$plotNb),
         c("Model Output", "Model Plots", "Instructions")
     )
 

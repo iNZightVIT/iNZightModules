@@ -17,19 +17,19 @@ jobs:
       matrix:
         config:
           - { os: windows-latest, r: "4.1", cache-version: 2 }
-          - { os: windows-latest, r: "4.2", cache-version: 2 }
+          # - { os: windows-latest, r: "4.2", cache-version: 2 }
           - {
               os: ubuntu-20.04,
               r: "4.1",
               rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest",
               cache-version: 2,
             }
-          - {
-              os: ubuntu-20.04,
-              r: "4.2",
-              rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest",
-              cache-version: 3,
-            }
+          # - {
+          #     os: ubuntu-20.04,
+          #     r: "4.2",
+          #     rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest",
+          #     cache-version: 3,
+          #   }
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
