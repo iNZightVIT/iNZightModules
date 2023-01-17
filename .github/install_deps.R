@@ -1,14 +1,14 @@
 # R script
 github_deps <- c(
-    "tmelliott/surveyspec@develop",
+    "tmelliott/surveyspec",
     "tmelliott/gWidgets2@patch-1",
     "iNZightVIT/gWidgets2RGtk2@inz",
-    "iNZightVIT/iNZightTools@dev",
+    "iNZightVIT/iNZightTools@1.13.0",
     "iNZightVIT/iNZightTS@1.5.8",
-    "iNZightVIT/iNZightMR@dev",
-    "iNZightVIT/iNZightPlots@dev",
-    "iNZightVIT/iNZightRegression@dev",
-    "iNZightVIT/iNZight@dev",
+    "iNZightVIT/iNZightMR@2.2.7",
+    "iNZightVIT/iNZightPlots@2.15.0",
+    "iNZightVIT/iNZightRegression@1.3.3",
+    "iNZightVIT/iNZight@4.3.0",
     "iNZightVIT/iNZightMaps@2.3"
 )
 
