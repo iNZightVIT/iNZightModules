@@ -15,7 +15,8 @@ on.exit(try(ui$close(), silent = TRUE))
 test_that("Module opens (and closes)", {
     mod <- iNZightRegMod$new(ui)
     expect_equal(svalue(ui$moduleWindow$header$children[[1]]), "Model Fitting")
-    expect_equal(names(ui$plotWidget$plotNb),
+    expect_equal(
+        names(ui$plotWidget$plotNb),
         c("Model Output", "Model Plots", "Instructions")
     )
 
@@ -103,6 +104,17 @@ test_that("Marginal model plots (for GLMs)", {
 
     expect_is(mod$fit, "glm")
     expect_silent(mod$plotTypeList$set_value("Marginal Model Plots"))
+})
+
+test_that("Forest plots", {
+    mod <- iNZightRegMod$new(ui)
+    on.exit(mod$close())
+    mod$responseBox$set_value("height")
+    mod$variables <- c("armspan", "travel", "gender")
+    mod$setExplVars()
+
+    expect_is(mod$fit, "lm")
+    expect_silent(mod$plotTypeList$set_value("Forest Plot"))
 })
 
 ui$close()

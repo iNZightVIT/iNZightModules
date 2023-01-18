@@ -3,4 +3,5 @@
 ^.*\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^.github$
+^\.github$
+^\.git$
