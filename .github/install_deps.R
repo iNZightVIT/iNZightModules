@@ -1,34 +1,48 @@
 # R script
 github_deps <- c(
+    "tmelliott/surveyspec",
     "tmelliott/gWidgets2@patch-1",
     "iNZightVIT/gWidgets2RGtk2@inz",
-    "iNZightVIT/iNZightTools@1.11",
-    "iNZightVIT/iNZightTS@1.5.5",
-    "iNZightVIT/iNZightMR@2.2.5",
-    "iNZightVIT/iNZightPlots@2.12",
-    "iNZightVIT/iNZightRegression@1.3.1",
-    "iNZightVIT/iNZight@4.1",
+    "iNZightVIT/iNZightTools@1.13.0",
+    "iNZightVIT/iNZightTS@1.5.8",
+    "iNZightVIT/iNZightMR@2.2.7",
+    "iNZightVIT/iNZightPlots@2.15.0",
+    "iNZightVIT/iNZightRegression@1.3.3",
+    "iNZightVIT/iNZight@4.3.0",
     "iNZightVIT/iNZightMaps@2.3"
 )
 
 OS <- Sys.getenv("OS_TYPE")
-if (OS == "Windows" && !requireNamespace('utf8', quietly = TRUE)) {
+if (OS == "Windows" && !requireNamespace("utf8", quietly = TRUE)) {
     install.packages("utf8", repos = "https://cloud.r-project.org")
 }
+
 options(
     repos = c(
-        if (OS == "Linux") RSPM = Sys.getenv("RSPM"),
+        if (OS == "Linux") RSPM <- Sys.getenv("RSPM"),
         CRAN = "https://cloud.r-project.org"
     ),
     install.packages.compile.from.source = "never"
 )
 
+if (OS == "Linux" &&
+    !requireNamespace("units", quietly = TRUE) &&
+    getRversion() >= "4.3") {
+    system("sudo apt-get install libudunits2-dev")
+}
+
 if (OS == "Windows" && getRversion() < numeric_version("4")) {
     install.packages("RODBC", type = "binary")
     install.packages("rgl", type = "binary")
 }
-if (OS == "Windows")
+if (OS == "Windows") {
     dir.create(tools::R_user_dir("iNZight", "config"), recursive = TRUE)
+}
+
+# install broom.helpers if not already installed
+if (!requireNamespace("broom.helpers", quietly = TRUE)) {
+    install.packages("broom.helpers", repos = "https://cloud.r-project.org")
+}
 
 remotes::install_github(
     github_deps,

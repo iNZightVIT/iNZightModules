@@ -7,6 +7,7 @@
 #' @author Tom Elliott
 #'
 #' @import iNZightRegression
+#' @importFrom survey svyglm
 #'
 #' @export iNZightRegMod
 #' @exportClass iNZightRegMod
@@ -72,6 +73,11 @@ iNZightRegMod <- setRefClass(
             mainGrp <<- modwin$body
 
             # character, datasheet, evaluate, history, preview, rlogo,
+            showoutputBtn <- iNZight:::gimagebutton(
+                stock.id = "gw-preview",
+                tooltip = "View model output window",
+                handler = function(h, ...) .self$showOutput()
+            )
             addhistbtn <- iNZight:::gimagebutton(
                 stock.id = "rlogo",
                 tooltip = "Save code for current plot",
@@ -116,9 +122,11 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             )
+            btns <- list(addhistbtn, showhistbtn)
+            if (GUI$popOut) btns <- c(list(showoutputBtn), btns)
             GUI$plotToolbar$update(NULL,
                 refresh = "updatePlot",
-                extra = list(addhistbtn, showhistbtn)
+                extra = btns
             )
 
             ## and set the menubar
@@ -1063,7 +1071,7 @@ iNZightRegMod <- setRefClass(
                 c(
                     "Residual", "Scale-Location", "Leverage", "Cook's Distance",
                     "Normal Q-Q", "Histogram", "Summary Matrix", "Partial Residual",
-                    "Factor Comparisons", "Marginal Model Plots"
+                    "Factor Comparisons", "Marginal Model Plots", "Forest Plot"
                 ),
                 handler = function(h, ...) {
                     plottype <<- svalue(h$obj, index = TRUE)
@@ -1583,28 +1591,47 @@ iNZightRegMod <- setRefClass(
             fmla <- character()
 
             if (plottype %in% 1:7) {
-                if (svalue(showBoots) && plottype %in% 5:6) {
-                    if (plottype == 5) {
-                        iNZightRegression::iNZightQQplot(fit, env = e)
-                        fmla <- sprintf("iNZightQQplot(%s)", fitn)
+
+                if (isSurveyObject) {
+                    if (svalue(showBoots) && plottype %in% 5:6) {
+                        if (plottype == 5) {
+                            iNZightRegression::iNZightQQplot(fit, env = e)
+                            fmla <- sprintf("iNZightQQplot(%s)", fitn)
+                        } else {
+                            iNZightRegression::histogramArray(fit, env = e)
+                            fmla <- sprintf("histogramArray(%s)", fitn)
+                        }
                     } else {
-                        iNZightRegression::histogramArray(fit, env = e)
-                        fmla <- sprintf("histogramArray(%s)", fitn)
+                        ## I want to do bootstrapping, therefore I need to pass in the environment
+                        iNZightRegression::plotlm6(fit,
+                            which = plottype,
+                            showBootstraps = svalue(showBoots),
+                            env = e
+                        )
+                        fmla <- sprintf(
+                            "plotlm6(%s, which = %s, showBootstraps = %s)",
+                            fitn,
+                            plottype,
+                            ifelse(svalue(showBoots), "TRUE", "FALSE")
+                        )
                     }
                 } else {
-                    ## I want to do bootstrapping, therefore I need to pass in the environment
-                    iNZightRegression::plotlm6(fit,
-                        which = plottype,
-                        showBootstraps = svalue(showBoots),
+                    plottypes <- c("residual", "scale", "leverage", "cooks", "normal", "hist")
+                    ptype <- if (plottype == 7) plottypes else plottypes[plottype]
+
+                    iNZightRegression::inzplot(fit,
+                        which = ptype,
+                        show.bootstraps = svalue(showBoots),
                         env = e
                     )
-                    fmla <- sprintf(
-                        "plotlm6(%s, which = %s, showBootstraps = %s)",
+                    fmla <- sprintf("iNZightRegression::inzplot(%s, which = '%s', show.bootstraps = %s)",
                         fitn,
-                        plottype,
+                        ptype,
                         ifelse(svalue(showBoots), "TRUE", "FALSE")
                     )
                 }
+
+
             } else if (plottype == 8) {
                 numvars <- numericVars()
                 if (length(numvars) == 0) {
@@ -1679,8 +1706,14 @@ iNZightRegMod <- setRefClass(
                     )
                 }
             } else if (plottype == 10) {
-                inzplot(fit, which = "marginal", env = e)
+                ## TODO: fix the below assignment as it wont be allowed by CRAN
+                assign("dataset", getdata(), envir = .GlobalEnv)
+                inzplot(fit, which = "marginal")
+                rm(dataset, envir = .GlobalEnv)
                 fmla <- sprintf("inzplot(%s, which = \"marginal\")", fitn)
+            } else if (plottype == 11) {
+                inzplot(fit, which = "forest", show.bootstraps = FALSE)
+                fmla <- sprintf("inzplot(%s, which = \"forest\")", fitn)
             } else {
                 plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
                     xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
