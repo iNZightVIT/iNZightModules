@@ -14,12 +14,12 @@
 iNZightRegMod <- setRefClass(
     "iNZightRegMod",
     fields = list(
-        GUI         = "ANY",
+        GUI = "ANY",
         outputWin = "ANY",
         plotWin = "ANY",
-        mainGrp     = "ANY",
-        smryOut     = "ANY",
-        regPlots    = "ANY",
+        mainGrp = "ANY",
+        smryOut = "ANY",
+        regPlots = "ANY",
         responseBox = "ANY",
         responseTypeBox = "ANY",
         responseFamilyBox = "ANY",
@@ -27,28 +27,28 @@ iNZightRegMod <- setRefClass(
         responseType = "numeric",
         responseFamily = "numeric",
         responseTransform = "character",
-        contVarBox  = "ANY",
+        contVarBox = "ANY",
         catVarBox = "ANY",
-        variables   = "character",
+        variables = "character",
         intercept = "ANY",
         explanatoryList = "ANY",
         confounding = "character",
         confounderList = "ANY",
-        btnEditSig  = "ANY",
-        modelName   = "ANY",
+        btnEditSig = "ANY",
+        modelName = "ANY",
         modelList = "ANY",
         compBtn = "ANY",
-        fit         = "ANY",
+        fit = "ANY",
         summaryOutput = "character",
-        fits        = "list",
-        working     = "integer",
-        showBoots   = "ANY",
-        plottype    = "numeric",
+        fits = "list",
+        working = "integer",
+        showBoots = "ANY",
+        plottype = "numeric",
         numVarList = "ANY",
         catVarList = "ANY",
         plotTypeList = "ANY",
         compMatrix = "ANY",
-        svyname     = "character",
+        svyname = "character",
         codehistory = "ANY",
         isSurveyObject = "logical"
     ),
@@ -134,12 +134,14 @@ iNZightRegMod <- setRefClass(
                         gaction("Close",
                             icon = "close",
                             tooltip = "Close model fitting module",
-                            handler = function(h, ...) .self$close()),
+                            handler = function(h, ...) .self$close()
+                        ),
                     exit =
                         gaction("Exit iNZight",
                             icon = "symbol_diamond",
                             tooltip = "Exit iNZight completely",
-                            handler = function(h, ...) GUI$close())
+                            handler = function(h, ...) GUI$close()
+                        )
                 ),
                 "View" =
                     if (GUI$popOut) {
@@ -157,14 +159,16 @@ iNZightRegMod <- setRefClass(
                                     handler = function(h, ...) .self$showPlot()
                                 )
                         )
-                    } else list()
+                    } else {
+                        list()
+                    }
             )
 
             if (!is.null(GUI$moduledata) &&
                 !is.null(GUI$moduledata$regression) &&
-                !is.null(GUI$moduledata$regression$fits))
-
+                !is.null(GUI$moduledata$regression$fits)) {
                 fits <<- GUI$moduledata$regression$fits
+            }
 
             if (isSurveyObject) {
                 lbl2 <- glabel(paste0(
@@ -201,11 +205,13 @@ iNZightRegMod <- setRefClass(
             )
             responseGp$set_borderwidth(10)
             responseTbl <- glayout(container = responseGp)
-            ii <-  1
+            ii <- 1
 
             lbl <- glabel("Variable: ")
-            yVars <- names(getdata()[, sapply(getdata(),
-                function(x) is.numeric(x) || length(levels(x)) == 2)])
+            yVars <- names(getdata()[, sapply(
+                getdata(),
+                function(x) is.numeric(x) || length(levels(x)) == 2
+            )])
             responseBox <<- gcombobox(yVars,
                 selected = 0,
                 handler = function(h, ...) {
@@ -326,7 +332,8 @@ iNZightRegMod <- setRefClass(
             ## Right-panel controls (up/down/edit)
             pnlControls <- ggroup()
             addSpring(pnlControls)
-            btnEdit <- gbutton(stock.id = "",
+            btnEdit <- gbutton(
+                stock.id = "",
                 handler = function(h, ...) {},
                 container = pnlControls,
                 tooltip = "Modify Variable (Transform, etc)"
@@ -337,13 +344,15 @@ iNZightRegMod <- setRefClass(
                 stock.id = "up",
                 handler = function(h, ...) {
                     w <- svalue(explanatoryList, index = TRUE)
-                    if (length(w) != 1 || w == 1) return(NULL)
+                    if (length(w) != 1 || w == 1) {
+                        return(NULL)
+                    }
                     ord <- seq_along(variables)
-                    ord[w-1] <- w
-                    ord[w] <- w-1
+                    ord[w - 1] <- w
+                    ord[w] <- w - 1
                     variables <<- variables[ord]
                     setExplVars()
-                    svalue(explanatoryList, index = TRUE) <<- w-1
+                    svalue(explanatoryList, index = TRUE) <<- w - 1
                 },
                 container = pnlControls,
                 tooltip = "Move Variable Up"
@@ -353,13 +362,15 @@ iNZightRegMod <- setRefClass(
                 stock.id = "down",
                 handler = function(h, ...) {
                     w <- svalue(explanatoryList, index = TRUE)
-                    if (length(w) != 1 || w == length(variables)) return(NULL)
+                    if (length(w) != 1 || w == length(variables)) {
+                        return(NULL)
+                    }
                     ord <- seq_along(variables)
-                    ord[w+1] <- w
-                    ord[w] <- w+1
+                    ord[w + 1] <- w
+                    ord[w] <- w + 1
                     variables <<- variables[ord]
                     setExplVars()
-                    svalue(explanatoryList, index = TRUE) <<- w+1
+                    svalue(explanatoryList, index = TRUE) <<- w + 1
                 },
                 container = pnlControls,
                 tooltip = "Move Variable Down"
@@ -382,9 +393,12 @@ iNZightRegMod <- setRefClass(
                 "OTHER"
             )
             transformList <- function(var = "x", box, replace = FALSE) {
-                lapply(transforms,
+                lapply(
+                    transforms,
                     function(x) {
-                        if (x == "SEP") return(gseparator())
+                        if (x == "SEP") {
+                            return(gseparator())
+                        }
                         if (var != "x") x <- gsub("x", var, x)
                         wx <- svalue(box, TRUE)
 
@@ -393,34 +407,35 @@ iNZightRegMod <- setRefClass(
                                 handler = function(h, ...) {
                                     xname <- svalue(box, index = FALSE)
                                     zw <- gbasicdialog("Choose order of power",
-                                        handler = function(h,...) {
+                                        handler = function(h, ...) {
                                             z <- as.numeric(svalue(zval))
-                                            if (is.na(z))
+                                            if (is.na(z)) {
                                                 gmessage(
                                                     "Order must be a number.",
                                                     "Invalid Value",
                                                     "error",
                                                     parent = h$obj
                                                 )
-                                            else {
+                                            } else {
                                                 addTransform(xname,
                                                     paste0("I(", var, "^", z, ")"),
                                                     replace = replace
                                                 )
-                                                if (replace)
+                                                if (replace) {
                                                     svalue(box, TRUE) <- wx
+                                                }
                                             }
                                         },
                                         parent = GUI$win
                                     )
-                                    zg <- ggroup(cont=zw)
+                                    zg <- ggroup(cont = zw)
                                     zt <- glayout(
                                         homogeneous = TRUE,
                                         container = zg
                                     )
-                                    zt[1,1,anchor=c(1,0), expand = TRUE] <-
+                                    zt[1, 1, anchor = c(1, 0), expand = TRUE] <-
                                         glabel(paste0(xname, "^"))
-                                    zt[1,2] <- (zval <- gedit(4, width = 4, container = zt))
+                                    zt[1, 2] <- (zval <- gedit(4, width = 4, container = zt))
                                     out <- visible(zw)
                                 }
                             ))
@@ -431,37 +446,39 @@ iNZightRegMod <- setRefClass(
                                 handler = function(h, ...) {
                                     xname <- svalue(box, index = FALSE)
                                     zw <- gbasicdialog("Choose order of polynomial",
-                                        handler = function(h,...) {
+                                        handler = function(h, ...) {
                                             z <- as.numeric(svalue(zval))
-                                            if (is.na(z))
+                                            if (is.na(z)) {
                                                 gmessage(
                                                     "Order must be a number.",
                                                     "Invalid Value",
                                                     "error",
                                                     parent = h$obj
                                                 )
-                                            else {
+                                            } else {
                                                 addTransform(xname,
                                                     paste0("Poly(", var, ", ", z, ")"),
                                                     replace = replace
                                                 )
-                                                if (replace)
+                                                if (replace) {
                                                     svalue(box, TRUE) <- wx
+                                                }
                                             }
                                         },
                                         parent = GUI$win
                                     )
-                                    zg <- ggroup(cont=zw)
-                                    zt <- glayout(homogeneous = TRUE,
+                                    zg <- ggroup(cont = zw)
+                                    zt <- glayout(
+                                        homogeneous = TRUE,
                                         container = zg
                                     )
-                                    zt[1,1,anchor=c(1,0), expand = TRUE] <-
+                                    zt[1, 1, anchor = c(1, 0), expand = TRUE] <-
                                         glabel(paste0("poly(", xname, ","))
-                                    zt[1,2] = (zval <- gspinbutton(1, 50, 1,
+                                    zt[1, 2] <- (zval <- gspinbutton(1, 50, 1,
                                         value = 2,
                                         container = zt
                                     ))
-                                    zt[1,3, anchor= c(-1,0), expand=TRUE] <-
+                                    zt[1, 3, anchor = c(-1, 0), expand = TRUE] <-
                                         glabel(")")
                                     out <- visible(zw)
                                 }
@@ -474,21 +491,23 @@ iNZightRegMod <- setRefClass(
                                     xname <- svalue(box, index = FALSE)
                                     zw <- gbasicdialog(
                                         "Specify other transformation",
-                                        handler = function(h,...) {
+                                        handler = function(h, ...) {
                                             try(addTransform(
-                                                sprintf("%s(%s)",
+                                                sprintf(
+                                                    "%s(%s)",
                                                     svalue(zfun),
                                                     svalue(zargs)
                                                 ),
                                                 replace = replace
                                             ))
-                                            if (replace)
+                                            if (replace) {
                                                 svalue(box, TRUE) <- wx
+                                            }
                                             invisible(NULL)
                                         },
                                         parent = GUI$win
                                     )
-                                    zg <- gvbox(cont=zw)
+                                    zg <- gvbox(cont = zw)
                                     zt <- glayout(
                                         homogeneous = FALSE,
                                         container = zg
@@ -500,23 +519,24 @@ iNZightRegMod <- setRefClass(
                                     zargs <- gedit(xname, width = 15)
 
                                     ## This needs altering
-                                    zt[1,1] <- glabel("Specify transformation :")
-                                    zt[1,2] <- zfun
-                                    zt[1,3] <- glabel("(")
-                                    zt[1,4] <- zargs
-                                    zt[1,5] <- glabel(")")
+                                    zt[1, 1] <- glabel("Specify transformation :")
+                                    zt[1, 2] <- zfun
+                                    zt[1, 3] <- glabel("(")
+                                    zt[1, 4] <- zargs
+                                    zt[1, 5] <- glabel(")")
                                     glabel(
                                         "Include comma-separated arguments if necessary",
                                         container = zg
                                     )
-                                   out <- visible(zw)
+                                    out <- visible(zw)
                                 }
                             ))
                         }
 
                         lbl <- x
                         if (grepl("I(", lbl, fixed = TRUE)) {
-                            lbl <- gsub(":.+", "",
+                            lbl <- gsub(
+                                ":.+", "",
                                 gsub(")", "",
                                     gsub("I(", "", lbl, fixed = TRUE),
                                     fixed = TRUE
@@ -566,7 +586,8 @@ iNZightRegMod <- setRefClass(
                                 }
                             )
                         } else {
-                            lapply(levels(getdata()[[var]]),
+                            lapply(
+                                levels(getdata()[[var]]),
                                 function(lvl) {
                                     gaction(lvl,
                                         handler = function(h, ...) {
@@ -574,8 +595,9 @@ iNZightRegMod <- setRefClass(
                                                 sprintf("relevel(x, \"%s\")", lvl),
                                                 replace = replace
                                             ))
-                                            if (replace)
+                                            if (replace) {
                                                 svalue(box, TRUE) <- wx
+                                            }
                                             invisible(NULL)
                                         }
                                     )
@@ -594,14 +616,16 @@ iNZightRegMod <- setRefClass(
                                 handler = function(h, ...) {
                                     vs <- c(xname, svalue(intvar, index = FALSE))
 
-                                    if (any(vs %in% variables))
+                                    if (any(vs %in% variables)) {
                                         variables <<-
                                             variables[-which(variables %in% vs)]
+                                    }
 
                                     if (svalue(zval) == 0) {
                                         vv <- paste(vs, collapse = " * ")
                                     } else {
-                                        vtxt <- sprintf("(%s)^%s",
+                                        vtxt <- sprintf(
+                                            "(%s)^%s",
                                             paste(vs, collapse = " + "),
                                             svalue(zval) + 1
                                         )
@@ -610,9 +634,10 @@ iNZightRegMod <- setRefClass(
                                     }
 
                                     ## clean up clutter ...
-                                    if (any(vv %in% variables))
+                                    if (any(vv %in% variables)) {
                                         variables <<-
                                             variables[-which(variables %in% vv)]
+                                    }
 
                                     variables <<- c(variables, vv)
                                     setExplVars()
@@ -658,14 +683,16 @@ iNZightRegMod <- setRefClass(
                     )
                 )
             }
-            addRightclickPopupMenu(contVarBox,
+            addRightclickPopupMenu(
+                contVarBox,
                 c(
                     transformList(box = contVarBox),
                     list(gseparator()),
                     interactList(contVarBox)
                 )
             )
-            addRightclickPopupMenu(catVarBox,
+            addRightclickPopupMenu(
+                catVarBox,
                 c(
                     factorTransformList(box = catVarBox),
                     list(gseparator()),
@@ -681,7 +708,8 @@ iNZightRegMod <- setRefClass(
 
             enabled(btnUp) <- enabled(btnEdit) <- enabled(btnDown) <- FALSE
             btnEditSig <<- NULL
-            addHandlerSelectionChanged(explanatoryList,
+            addHandlerSelectionChanged(
+                explanatoryList,
                 function(h, ...) {
                     enabled(btnEdit) <- length(svalue(h$obj)) == 1
                     enabled(btnUp) <- length(svalue(h$obj)) == 1 &&
@@ -694,7 +722,9 @@ iNZightRegMod <- setRefClass(
                         gSignalHandlerDisconnect(btnEdit$widget, btnEditSig)
                         btnEditSig <<- NULL
                     }
-                    if (length(svalue(h$obj)) != 1) return()
+                    if (length(svalue(h$obj)) != 1) {
+                        return()
+                    }
                     vn <- svalue(h$obj, FALSE)
                     if (!vn %in% names(getdata())) {
                         opts <- list()
@@ -717,13 +747,15 @@ iNZightRegMod <- setRefClass(
                             )
                         } else {
                             ## removing transformation
-                            opts <- c(opts,
+                            opts <- c(
+                                opts,
                                 list(
                                     gaction("Remove transformation",
                                         handler = function(h, ...) {
                                             ## figure out what the variable is ...
                                             v <- svalue(explanatoryList, TRUE)
-                                            var <- gsub(".+\\(|,.+|\\).*|\\^.+", "",
+                                            var <- gsub(
+                                                ".+\\(|,.+|\\).*|\\^.+", "",
                                                 variables[v]
                                             )
                                             if (var %in% names(getdata())) {
@@ -738,14 +770,17 @@ iNZightRegMod <- setRefClass(
                         }
                         btnEditSig <<- addPopupMenu(btnEdit, opts)
                     } else if (vn %in% numericVars()) {
-                        btnEditSig <<- addPopupMenu(btnEdit,
+                        btnEditSig <<- addPopupMenu(
+                            btnEdit,
                             c(
                                 transformList(vn, box = explanatoryList, replace = TRUE),
                                 list(gseparator()),
-                                interactList(explanatoryList))
+                                interactList(explanatoryList)
                             )
+                        )
                     } else {
-                        btnEditSig <<- addPopupMenu(btnEdit,
+                        btnEditSig <<- addPopupMenu(
+                            btnEdit,
                             c(
                                 factorTransformList(vn, box = explanatoryList, replace = TRUE),
                                 list(gseparator()),
@@ -795,9 +830,11 @@ iNZightRegMod <- setRefClass(
             )
 
             addDropTarget(explanatoryList,
-                handler =  function(h, ...) {
+                handler = function(h, ...) {
                     varname <- h$dropdata
-                    if (varname %in% c(variables, confounding)) return()
+                    if (varname %in% c(variables, confounding)) {
+                        return()
+                    }
                     variables <<- c(variables, varname)
                     setExplVars()
                 }
@@ -805,7 +842,9 @@ iNZightRegMod <- setRefClass(
             addDropTarget(confounderList,
                 handler = function(h, ...) {
                     varname <- h$dropdata
-                    if (varname %in% c(variables, confounding)) return()
+                    if (varname %in% c(variables, confounding)) {
+                        return()
+                    }
                     confounding <<- c(confounding, varname)
                     setConfVars()
                 }
@@ -815,8 +854,12 @@ iNZightRegMod <- setRefClass(
             addHandlerDoubleclick(contVarBox,
                 handler = function(h, ...) {
                     varname <- svalue(h$obj)
-                    if (length(varname) != 1) return()
-                    if (varname %in% c(variables, confounding)) return()
+                    if (length(varname) != 1) {
+                        return()
+                    }
+                    if (varname %in% c(variables, confounding)) {
+                        return()
+                    }
                     variables <<- c(variables, varname)
                     setExplVars()
                 }
@@ -824,25 +867,39 @@ iNZightRegMod <- setRefClass(
             addHandlerDoubleclick(catVarBox,
                 handler = function(h, ...) {
                     varname <- svalue(h$obj)
-                    if (length(varname) != 1) return()
-                    if (varname %in% c(variables, confounding)) return()
-                    if (any(grepl(sprintf("relevel\\(%s", varname),
-                        c(variables, confounding)))) return()
-                    if (varname %in% attr(fit$terms, "term.labels")) return()
+                    if (length(varname) != 1) {
+                        return()
+                    }
+                    if (varname %in% c(variables, confounding)) {
+                        return()
+                    }
+                    if (any(grepl(
+                        sprintf("relevel\\(%s", varname),
+                        c(variables, confounding)
+                    ))) {
+                        return()
+                    }
+                    if (varname %in% attr(fit$terms, "term.labels")) {
+                        return()
+                    }
                     variables <<- c(variables, varname)
                     setExplVars()
                 }
             )
             addHandlerDoubleclick(explanatoryList,
                 handler = function(h, ...) {
-                    if (length(svalue(h$obj)) != 1) return()
+                    if (length(svalue(h$obj)) != 1) {
+                        return()
+                    }
                     variables <<- variables[variables != svalue(h$obj)]
                     setExplVars()
                 }
             )
             addHandlerDoubleclick(confounderList,
                 handler = function(h, ...) {
-                    if (length(svalue(h$obj)) != 1) return()
+                    if (length(svalue(h$obj)) != 1) {
+                        return()
+                    }
                     confounding <<- confounding[confounding != svalue(h$obj)]
                     setConfVars()
                 }
@@ -948,7 +1005,8 @@ iNZightRegMod <- setRefClass(
                     fts <- fits
                     names(fts) <- gsub(" ", "_", names(fts))
                     e <- new.env()
-                    z <- lapply(names(fts),
+                    z <- lapply(
+                        names(fts),
                         function(fit) assign(fit, fts[[fit]]$fit, envir = e)
                     )
                     rm("z")
@@ -957,15 +1015,20 @@ iNZightRegMod <- setRefClass(
                     cleanup <- FALSE
                     if (isSurveyObject) {
                         cleanup <- TRUE
-                        if (!"dataSet" %in% ls(.GlobalEnv))
+                        if (!"dataSet" %in% ls(.GlobalEnv)) {
                             assign("dataSet", getdata(), envir = .GlobalEnv)
-                        else cleanup <- FALSE
-                        if (!"svy.design" %in% ls(.GlobalEnv))
+                        } else {
+                            cleanup <- FALSE
+                        }
+                        if (!"svy.design" %in% ls(.GlobalEnv)) {
                             assign("svy.design", getdesign(), envir = .GlobalEnv)
-                        else cleanup <- FALSE
+                        } else {
+                            cleanup <- FALSE
+                        }
                     }
 
-                    expr <- sprintf("iNZightRegression::compare_models(%s)",
+                    expr <- sprintf(
+                        "iNZightRegression::compare_models(%s)",
                         paste(names(fts), collapse = ", ")
                     )
                     x <- suppressWarnings(eval(parse(text = expr), envir = e))
@@ -1041,9 +1104,10 @@ iNZightRegMod <- setRefClass(
             compMatrix <<- gbutton("Comparison Matrix",
                 handler = function(h, ...) {
                     out <- capture.output(
-                        #iNZightMR::moecalc(fit, svalue(catVarList))
+                        # iNZightMR::moecalc(fit, svalue(catVarList))
                         print(
-                            iNZightRegression::factorComp(fit,
+                            iNZightRegression::factorComp(
+                                fit,
                                 svalue(catVarList)
                             )
                         )
@@ -1165,7 +1229,8 @@ iNZightRegMod <- setRefClass(
             watchData()
             ## add to code output
             if (!is.null(getdesign())) {
-                svyname <<- sprintf("%s",
+                svyname <<- sprintf(
+                    "%s",
                     GUI$getActiveDoc()$getModel()$dataDesignName
                 )
             }
@@ -1211,19 +1276,25 @@ iNZightRegMod <- setRefClass(
         },
         getdata = function() {
             des <- getdesign()
-            if (!is.null(des)) return(des$variables)
+            if (!is.null(des)) {
+                return(des$variables)
+            }
             GUI$getActiveData()
         },
         getdesign = function() {
-            if (is.null(GUI$getActiveDoc()$dataModel$getDesign())) return(NULL)
+            if (is.null(GUI$getActiveDoc()$dataModel$getDesign())) {
+                return(NULL)
+            }
             des <- GUI$getActiveDoc()$dataModel$createSurveyObject()
 
             ## set the name
             dname <- attr(GUI$getActiveData(), "name", exact = TRUE)
-            if (is.null(dname) || dname == "")
-                dname <- sprintf("data%s",
+            if (is.null(dname) || dname == "") {
+                dname <- sprintf(
+                    "data%s",
                     ifelse(GUI$activeDoc == 1, "", GUI$activeDoc)
                 )
+            }
             dname <- iNZightTools:::create_varname(dname)
             des$call$data <- eval(parse(text = sprintf("quote(%s)", dname)))
             des
@@ -1232,7 +1303,7 @@ iNZightRegMod <- setRefClass(
             if (is.null(response) || length(response) == 0) {
                 vars <- "Select response"
             } else {
-                vars <- names(getdata()[,-which(names(getdata()) == response), drop = FALSE])
+                vars <- names(getdata()[, -which(names(getdata()) == response), drop = FALSE])
                 if (length(variables) && response %in% variables) {
                     variables <<- variables[variables != response]
                     setExplVars()
@@ -1263,7 +1334,7 @@ iNZightRegMod <- setRefClass(
                 )
             }
         },
-        setExplVars = function () {
+        setExplVars = function() {
             variables <<- unique(variables)
             explanatoryList$set_items(
                 structure(
@@ -1286,19 +1357,24 @@ iNZightRegMod <- setRefClass(
             if (!missing(fun)) {
                 fn <- gsub("x", "%s", fun)
                 nv <- sprintf(fn, var)
-            } else nv <- var
+            } else {
+                nv <- var
+            }
             ## remove any variables (e.g., when adding interaction)
-            if (!missing(remove) && any(remove %in% variables))
+            if (!missing(remove) && any(remove %in% variables)) {
                 variables <<- variables[-which(variables %in% remove)]
+            }
             if (replace) {
                 variables[which(variables == var)] <<- nv
-            } else if (! nv %in% variables ) {
+            } else if (!nv %in% variables) {
                 variables <<- c(variables, nv)
             }
             setExplVars()
         },
         showTab = function(x = c("plot", "summary", "instructions")) {
-            if (GUI$popOut) return(invisible(NULL))
+            if (GUI$popOut) {
+                return(invisible(NULL))
+            }
             x <- match.arg(x)
             svalue(GUI$plotWidget$plotNb) <<-
                 which(names(GUI$plotWidget$plotNb) ==
@@ -1306,8 +1382,7 @@ iNZightRegMod <- setRefClass(
                         "plot" = "Model Plots",
                         "summary" = "Model Output",
                         "instructions" = "Instructions"
-                    )
-                )
+                    ))
             invisible(NULL)
         },
         addOutput = function(..., font.attr = list(family = "monospace")) {
@@ -1318,7 +1393,9 @@ iNZightRegMod <- setRefClass(
             addOutput("", paste0(rep(char, 80), collapse = ""), "")
         },
         modelVars = function() {
-            if (is.null(fit)) return(character())
+            if (is.null(fit)) {
+                return(character())
+            }
             names(fit$model)[-1]
         },
         numericVars = function(index = FALSE) {
@@ -1334,9 +1411,13 @@ iNZightRegMod <- setRefClass(
             ## ind
         },
         updateModel = function(new = TRUE, save = FALSE) {
-            if (working > 0) return()
+            if (working > 0) {
+                return()
+            }
 
-            if (length(response) == 0) return()
+            if (length(response) == 0) {
+                return()
+            }
 
             xexpr <- paste(
                 c(
@@ -1406,13 +1487,15 @@ iNZightRegMod <- setRefClass(
                     ),
                     silent = TRUE
                 )
-                if (inherits(fito, "try-error"))
+                if (inherits(fito, "try-error")) {
                     fito <- try(
                         capture.output(summary(fit)),
                         silent = TRUE
                     )
-                if (inherits(fito, "try-error"))
+                }
+                if (inherits(fito, "try-error")) {
                     fito <- "Unable to obtain summary information for model."
+                }
                 addOutput(fito)
                 options(width = wd)
                 ## plot it
@@ -1429,7 +1512,8 @@ iNZightRegMod <- setRefClass(
                     )
                     if (svalue(modelList, index = TRUE) == 1) {
                         ## Creating a new model
-                        fits <<- c(fits,
+                        fits <<- c(
+                            fits,
                             structure(list(obj), .Names = modelName)
                         )
                     } else {
@@ -1445,27 +1529,33 @@ iNZightRegMod <- setRefClass(
                     summaryOutput <<- svalue(smryOut)
 
                     if (!is.null(mcall)) {
-                        fname <- sprintf("fit%s",
+                        fname <- sprintf(
+                            "fit%s",
                             ifelse(svalue(modelList, TRUE) == 2,
                                 "",
                                 svalue(modelList, TRUE) - 1
                             )
                         )
-                        dname <- sprintf("data%s",
+                        dname <- sprintf(
+                            "data%s",
                             ifelse(GUI$activeDoc == 1, "", GUI$activeDoc)
                         )
                         GUI$rhistory$add(
                             c(
-                                sprintf("%s <- %s",
+                                sprintf(
+                                    "%s <- %s",
                                     fname,
-                                    gsub("svy.design", svyname,
+                                    gsub(
+                                        "svy.design", svyname,
                                         gsub("dataset", dname, mcall)
                                     )
                                 ),
-                                sprintf("iNZightSummary(%s%s)", fname,
+                                sprintf(
+                                    "iNZightSummary(%s%s)", fname,
                                     ifelse(length(confounding) == 0,
                                         "",
-                                        sprintf(", exclude = c(\"%s\")",
+                                        sprintf(
+                                            ", exclude = c(\"%s\")",
                                             paste(confounding,
                                                 collapse = "\",\""
                                             )
@@ -1501,7 +1591,8 @@ iNZightRegMod <- setRefClass(
             e <- new.env()
             assign("dataset", getdata(), e)
 
-            fitn <- sprintf("fit%s",
+            fitn <- sprintf(
+                "fit%s",
                 ifelse(svalue(modelList, TRUE) == 2,
                     "",
                     svalue(modelList, TRUE) - 1
@@ -1511,15 +1602,17 @@ iNZightRegMod <- setRefClass(
             mcall <- ""
             if (savecode && (length(fits) == 0 ||
                 !identical(fit, fits[[svalue(modelList, TRUE) - 1]]$fit))) {
-
-                mcall <- gsub("formula = ", "",
+                mcall <- gsub(
+                    "formula = ", "",
                     paste(capture.output(fit$call), collapse = "\n")
                 )
-                dname <- sprintf("data%s",
+                dname <- sprintf(
+                    "data%s",
                     ifelse(GUI$activeDoc == 1, "", GUI$activeDoc)
                 )
                 fname <- "tmpfit"
-                mcall <- sprintf("%s <- %s", fname,
+                mcall <- sprintf(
+                    "%s <- %s", fname,
                     gsub("dataset", dname, mcall)
                 )
                 fitn <- fname
@@ -1528,7 +1621,6 @@ iNZightRegMod <- setRefClass(
             fmla <- character()
 
             if (plottype %in% 1:7) {
-
                 if (isSurveyObject) {
                     if (svalue(showBoots) && plottype %in% 5:6) {
                         if (plottype == 5) {
@@ -1561,22 +1653,25 @@ iNZightRegMod <- setRefClass(
                         show.bootstraps = svalue(showBoots),
                         env = e
                     )
-                    fmla <- sprintf("iNZightRegression::inzplot(%s, which = '%s', show.bootstraps = %s)",
+                    fmla <- sprintf(
+                        "iNZightRegression::inzplot(%s, which = '%s', show.bootstraps = %s)",
                         fitn,
                         ptype,
                         ifelse(svalue(showBoots), "TRUE", "FALSE")
                     )
                 }
-
-
             } else if (plottype == 8) {
                 numvars <- numericVars()
                 if (length(numvars) == 0) {
                     numvars <- ""
-                    plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
-                        xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
-                    text(0.5, 0.5,
-                        paste(sep = "\n",
+                    plot(NA,
+                        xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
+                        xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = ""
+                    )
+                    text(
+                        0.5, 0.5,
+                        paste(
+                            sep = "\n",
                             "Partial residual plots require",
                             "at least one numeric expanatory variable",
                             cex = 2
@@ -1588,8 +1683,11 @@ iNZightRegMod <- setRefClass(
                 pvar <- svalue(numVarList, index = FALSE)
                 numVarList$set_items(numvars)
                 svalue(numVarList, index = TRUE) <<-
-                    if (length(pvar) == 1 && pvar %in% numvars)
-                        which(numvars == pvar) else 1
+                    if (length(pvar) == 1 && pvar %in% numvars) {
+                        which(numvars == pvar)
+                    } else {
+                        1
+                    }
                 unblockHandlers(numVarList)
 
                 visible(numVarList) <<- length(numvars) > 1
@@ -1610,10 +1708,14 @@ iNZightRegMod <- setRefClass(
                 catvars <- factorVars()
                 if (length(catvars) == 0) {
                     catvars <- ""
-                    plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
-                        xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
-                    text(0.5, 0.5,
-                        paste(sep = "n",
+                    plot(NA,
+                        xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
+                        xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = ""
+                    )
+                    text(
+                        0.5, 0.5,
+                        paste(
+                            sep = "n",
                             "Comparison plots require",
                             "at least one categorical variable",
                             cex = 2
@@ -1624,15 +1726,19 @@ iNZightRegMod <- setRefClass(
                 cvar <- svalue(catVarList, index = FALSE)
                 catVarList$set_items(catvars)
                 svalue(catVarList, index = TRUE) <<-
-                    if (length(cvar) == 1 && cvar %in% catvars)
-                        which(catvars == cvar) else 1
+                    if (length(cvar) == 1 && cvar %in% catvars) {
+                        which(catvars == cvar)
+                    } else {
+                        1
+                    }
                 unblockHandlers(catVarList)
 
                 visible(compMatrix) <<- length(catvars) > 1 || catvars != ""
                 visible(catVarList) <<- length(catvars) > 1
                 if (svalue(catVarList) != "") {
                     plot(
-                        suppressWarnings(iNZightMR::moecalc(fit,
+                        suppressWarnings(iNZightMR::moecalc(
+                            fit,
                             svalue(catVarList, index = FALSE)
                         ))
                     )
@@ -1652,8 +1758,10 @@ iNZightRegMod <- setRefClass(
                 inzplot(fit, which = "forest", show.bootstraps = FALSE)
                 fmla <- sprintf("inzplot(%s, which = \"forest\")", fitn)
             } else {
-                plot(NA, xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
-                    xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = "")
+                plot(NA,
+                    xlim = 0:1, ylim = 0:1, bty = "n", type = "n",
+                    xaxt = "n", yaxt = "n", xlab = "", ylab = "", main = ""
+                )
                 text(0.5, 0.5, "No Model", cex = 2)
             }
 
@@ -1680,8 +1788,10 @@ iNZightRegMod <- setRefClass(
             sapply(
                 list(readLines(
                     system.file(
-                        file.path("instructions",
-                            sprintf("model_fitting_%s.txt",
+                        file.path(
+                            "instructions",
+                            sprintf(
+                                "model_fitting_%s.txt",
                                 ifelse(GUI$popOut, "popout", "integrated")
                             )
                         ),
@@ -1694,9 +1804,13 @@ iNZightRegMod <- setRefClass(
 
             sapply(
                 list(readLines(
-                    system.file(file.path("instructions",
-                        "model_fitting.txt"),
-                        package = "iNZightModules")
+                    system.file(
+                        file.path(
+                            "instructions",
+                            "model_fitting.txt"
+                        ),
+                        package = "iNZightModules"
+                    )
                 )),
                 insert,
                 obj = where
@@ -1724,30 +1838,36 @@ iNZightRegMod <- setRefClass(
 
             ## watch changes to dataset, then ...
             GUI$getActiveDoc()$addDataObserver(
-                function() try({
-                    ## 1. update response variable box (-> which should trigger updating everything else)
-                    yVars <- names(getdata()[, sapply(getdata(),
-                        function(x) is.numeric(x) || length(levels(x)) == 2)]
-                    )
-                    blockHandlers(responseBox)
-                    responseBox$set_items(yVars)
-                    unblockHandlers(responseBox)
-                    if (response %in% yVars) {
-                        svalue(responseBox) <<- response
-                    } else {
-                        response <<- NULL
-                        svalue(responseBox) <<- NULL
-                    }
+                function() {
+                    try(
+                        {
+                            ## 1. update response variable box (-> which should trigger updating everything else)
+                            yVars <- names(getdata()[, sapply(
+                                getdata(),
+                                function(x) is.numeric(x) || length(levels(x)) == 2
+                            )])
+                            blockHandlers(responseBox)
+                            responseBox$set_items(yVars)
+                            unblockHandlers(responseBox)
+                            if (response %in% yVars) {
+                                svalue(responseBox) <<- response
+                            } else {
+                                response <<- NULL
+                                svalue(responseBox) <<- NULL
+                            }
 
-                    ## 2. update code history (but don't show it!)
-                    if (!is.null(codehistory)) {
-                        svalue(codehistory) <<- ""
-                        sapply(GUI$rhistory$get(), insert,
-                            obj = codehistory,
-                            font.attr = list(family = "monospace")
-                        )
-                    }
-                }, silent = TRUE)
+                            ## 2. update code history (but don't show it!)
+                            if (!is.null(codehistory)) {
+                                svalue(codehistory) <<- ""
+                                sapply(GUI$rhistory$get(), insert,
+                                    obj = codehistory,
+                                    font.attr = list(family = "monospace")
+                                )
+                            }
+                        },
+                        silent = TRUE
+                    )
+                }
             )
         }, # watchData()
         close = function() {
@@ -1770,7 +1890,8 @@ iNZightRegMod <- setRefClass(
             }
 
             GUI$rhistory$add(c("", "## End Model Fitting", "SEP"),
-                             tidy = FALSE)
+                tidy = FALSE
+            )
 
             ## delete the module window
             GUI$close_module()
