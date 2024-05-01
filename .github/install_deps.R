@@ -3,6 +3,7 @@ github_deps <- c(
     "tmelliott/surveyspec",
     "tmelliott/gWidgets2@patch-1",
     "cran/maptools",
+    "cran/rgdal",
     "cran/rgeos",
     "iNZightVIT/gWidgets2RGtk2@inz",
     "iNZightVIT/iNZightTools@1.13.0",
