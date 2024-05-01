@@ -16,15 +16,13 @@ github_deps <- c(
 )
 
 OS <- Sys.getenv("OS_TYPE")
-if (OS == "Windows" && !requireNamespace("utf8", quietly = TRUE)) {
-    install.packages("utf8", repos = "https://cloud.r-project.org")
-}
-
 options(
     repos = c(
         if (OS == "Linux") RSPM <- Sys.getenv("RSPM"),
+        inzight = "https://r.docker.stat.auckland.ac.nz",
         CRAN = "https://cloud.r-project.org"
     )
+    # install.packages.compile.from.source = "never"
 )
 
 # if (OS == "Linux" &&
