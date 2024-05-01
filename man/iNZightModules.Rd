@@ -2,6 +2,7 @@
 % Please edit documentation in R/iNZightModules-package.R
 \docType{package}
 \name{iNZightModules}
+\alias{iNZightModules-package}
 \alias{iNZightModules}
 \title{iNZightModules: Add-on modules for iNZight}
 \description{
