@@ -24,7 +24,7 @@ Imports:
     iNZightRegression (>= 1.3.2.9000),
     iNZightTools (>= 1.12.1),
     iNZightMR (>= 2.2.5),
-    iNZightTS (>= 1.5.8),
+    iNZightTSLegacy,
     methods,
     remotes,
     stats,
