@@ -6,9 +6,6 @@
 #' @title iNZight Module Installation
 #'
 #' @author Tom Elliott, Daniel Barnett
-#'
-#' @export ModuleManager
-#' @exportClass ModuleManager
 ModuleManager <- setRefClass(
     "ModuleManager",
     fields = list(
@@ -42,7 +39,9 @@ ModuleManager <- setRefClass(
                     icon = "question",
                     parent = GUI$win
                 )
-                if (!do.create) return()
+                if (!do.create) {
+                    return()
+                }
                 if (!dir.create(m_dir)) {
                     gmessage(
                         paste0(
@@ -108,7 +107,8 @@ ModuleManager <- setRefClass(
                     # update and overwrite
                     w <- which(modules$Select)
                     if (length(w) == 0) w <- seq_along(modules$Select)
-                    ok <- sapply(basename(modules$path[w]),
+                    ok <- sapply(
+                        basename(modules$path[w]),
                         function(mod) {
                             f <- file.path(tempdir(), basename(mod))
                             on.exit(unlink(f))
@@ -120,7 +120,8 @@ ModuleManager <- setRefClass(
                     )
                     if (!all(ok)) {
                         gmessage("Some modules couldn't be updated.",
-                            parent = win)
+                            parent = win
+                        )
                     }
                     update_tbl()
                 }
@@ -132,7 +133,9 @@ ModuleManager <- setRefClass(
                 container = btn_grp,
                 handler = function(h, ...) {
                     w <- which(modules$Select)
-                    if (length(w) == 0) return()
+                    if (length(w) == 0) {
+                        return()
+                    }
                     del <- modules$path[w]
                     msg <- sprintf(
                         "The following modules will be removed:\n\n%s",
@@ -140,7 +143,10 @@ ModuleManager <- setRefClass(
                     )
                     if (.confirm) {
                         if (!gconfirm(msg, "Remove modules",
-                            icon = "question", parent = m_tbl)) return()
+                            icon = "question", parent = m_tbl
+                        )) {
+                            return()
+                        }
                     }
                     sapply(del, file.remove)
                     update_tbl()
@@ -177,7 +183,10 @@ ModuleManager <- setRefClass(
 
             addHandlerChanged(repo,
                 handler = function(h, ...) {
-                    branch <- switch(svalue(repo, index = TRUE), "master", "dev")
+                    branch <- switch(svalue(repo, index = TRUE),
+                        "master",
+                        "dev"
+                    )
                     repo_url <<- sprintf(
                         "https://raw.githubusercontent.com/iNZightVIT/addons/%s",
                         branch
@@ -186,11 +195,15 @@ ModuleManager <- setRefClass(
                     ## Fetch latest repository addons
                     con <- url(file.path(repo_url, "addons.txt"))
                     on.exit(close(con))
-                    repo_addons <<- try({
-                        read.dcf(con)
-                    }, silent = TRUE)
-                    if (inherits(repo_addons, "try-error"))
+                    repo_addons <<- try(
+                        {
+                            read.dcf(con)
+                        },
+                        silent = TRUE
+                    )
+                    if (inherits(repo_addons, "try-error")) {
                         repo_addons <<- NULL
+                    }
                     update_tbl()
                 }
             )
@@ -243,7 +256,8 @@ ModuleManager <- setRefClass(
                     blockHandlers(upd_btn)
                     on.exit(unblockHandlers(upd_btn))
                     svalue(upd_btn) <<- ifelse(sum(modules$Select) > 0,
-                        "Update selected", "Update all")
+                        "Update selected", "Update all"
+                    )
                     enabled(upd_btn) <<- TRUE
                 }
             } else {
@@ -297,7 +311,6 @@ ModuleManager <- setRefClass(
 
 
             # Cancel and install buttons
-
         },
         show_win = function() {
             update_tbl()

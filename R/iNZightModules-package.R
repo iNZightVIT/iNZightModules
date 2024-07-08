@@ -4,7 +4,6 @@
 #' Each module targets a specific R package (for example, iNZightTS, iNZightMaps, etc).
 #'
 #' @name iNZightModules
-#' @docType package
 #'
 #' @import methods graphics utils grDevices
 #' @importFrom stats complete.cases cov lm predict qf
@@ -12,4 +11,4 @@
 #' @author Tom Elliott, Eric Lim, Junjie Zeng, Simon Potter, Dineika Chandranada, David Banks
 #'
 #' Maintainer: Tom Elliott <inzight_support@stat.auckland.ac.nz>
-NULL
+"_PACKAGE"
