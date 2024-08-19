@@ -31,7 +31,7 @@ if (!requireNamespace("pak", quietly = TRUE)) {
     install.packages("pak", type = "source")
 }
 
-pak::pak(c(github_deps, "", dependencies = TRUE)
+pak::pak(github_deps, dependencies = TRUE)
 pak::local_install_dev_deps(dependencies = TRUE, upgrade = FALSE)
 pak::pak("rcmdcheck")
 
