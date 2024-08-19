@@ -6,7 +6,7 @@
 ##'
 ##' @author Eric Lim
 ##'
-##' @import iNZightTS
+##' @import iNZightTSLegacy
 ##'
 ##' @export iNZightTSMod
 ##' @exportClass iNZightTSMod
