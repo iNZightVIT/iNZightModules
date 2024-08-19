@@ -33,7 +33,6 @@ Imports:
 Suggests:
     car,
     covr,
-    iNZightMaps (>= 2.3),
     mgcv,
     rgl,
     sf,
