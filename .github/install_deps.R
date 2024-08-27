@@ -1,9 +1,9 @@
 # R script
-github_deps <- c(
+needs <- c(
     "tmelliott/surveyspec",
     # "tmelliott/gWidgets2@patch-1",
-    "cran/Matrix@1.6-5",
-    "cran/MatrixModels@0.5-2",
+    # "cran/Matrix@1.6-5",
+    # "cran/MatrixModels@0.5-2",
     # "cran/maptools",
     # "cran/rgdal",
     # "cran/rgeos",
@@ -17,22 +17,36 @@ github_deps <- c(
     # "iNZightVIT/iNZightMaps@2.3"
 )
 
-OS <- Sys.getenv("OS_TYPE")
-options(
-    repos = c(
-        # if (OS == "Linux") RSPM <- Sys.getenv("RSPM"),
-        inzight = "https://r.docker.stat.auckland.ac.nz",
-        CRAN = "https://cloud.r-project.org"
-    )
-    # install.packages.compile.from.source = "never"
-)
+# OS <- Sys.getenv("OS_TYPE")
+# options(
+#     repos = c(
+#         # if (OS == "Linux") RSPM <- Sys.getenv("RSPM"),
+#         inzight = "https://r.docker.stat.auckland.ac.nz",
+#         CRAN = "https://cloud.r-project.org"
+#     )
+#     # install.packages.compile.from.source = "never"
+# )
 
 if (!requireNamespace("pak", quietly = TRUE)) {
     install.packages("pak", type = "source")
 }
 
-pak::pak(github_deps, dependencies = TRUE)
-pak::local_install_dev_deps(dependencies = TRUE, upgrade = FALSE)
+
+if (Sys.getenv("OS_TYPE") == "Windows" &&
+    getRversion() < numeric_version("4.4")) {
+    needs <- c(
+        needs,
+        "Matrix@1.6-5",
+        "MatrixModels@0.5-2"
+    )
+}
+
+
+# pak::pak(github_deps, dependencies = TRUE)
+# pak::local_install_dev_deps(dependencies = TRUE, upgrade = FALSE)
+pak::pak(c(".", needs, "iNZightMaps=?ignore"),
+    dependencies = TRUE
+)
 pak::pak("rcmdcheck")
 
 # if (OS == "Linux" &&
