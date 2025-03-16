@@ -1,17 +1,15 @@
-##' iNZight Time Series Module
-##'
-##' A GUI add-on for visualising and doing basic inference and prediction of time series data.
-##'
-##' @title iNZight Time Series Module
-##'
-##' @author Eric Lim
-##'
-##' @import iNZightTSLegacy
-##'
-##' @export iNZightTSMod
-##' @exportClass iNZightTSMod
-iNZightTSMod <- setRefClass(
-    "iNZightTSMod",
+#' iNZight Time Series Module
+#'
+#' A GUI add-on for visualising and doing basic inference and prediction of time series data.
+#'
+#' @title iNZight Time Series Module
+#'
+#' @author Eric Lim
+#'
+#' @export iNZightTSLegacyMod
+#' @exportClass iNZightTSLegacyMod
+iNZightTSLegacyMod <- setRefClass(
+    "iNZightTSLegacyMod",
     fields = list(
         GUI = "ANY",
         mainGrp = "ANY",
@@ -62,7 +60,7 @@ iNZightTSMod <- setRefClass(
             timeVar <<- getTime(activeData, index = FALSE)
 
             modwin <- GUI$initializeModuleWindow(.self,
-                title = "Time Series", scroll = TRUE
+                title = "Time Series (Legacy version)", scroll = TRUE
             )
             mainGrp <<- modwin$body
 
