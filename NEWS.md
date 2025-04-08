@@ -1,6 +1,6 @@
 # iNZightModules 2.6.0
 
-(update previous update to minor update)
+Update previous update to minor update.
 
 - fix bug in NAMESPACE (iNZightTS -> iNZightTSLegacy)
 - remove Modules capabilities
