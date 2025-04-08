@@ -1,3 +1,11 @@
+# iNZightModules 2.6.0
+
+Update previous update to minor update.
+
+- fix bug in NAMESPACE (iNZightTS -> iNZightTSLegacy)
+- remove Modules capabilities
+- remove Maps as these are no longer supported
+
 # iNZightModules 2.5.9
 
 - drop module manager (moved to iNZight)

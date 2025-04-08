@@ -6,8 +6,8 @@ context("Time Series module")
 # test(filter='regression')
 # devtools::load_all("../iNZightTS"); devtools::load_all("../iNZight")
 
-data(visitorsQ, package = "iNZightTS")
-data(visitorsA2, package = "iNZightTS")
+data(visitorsQ, package = "iNZightTSLegacy")
+data(visitorsA2, package = "iNZightTSLegacy")
 
 require(iNZight)
 # try(ui$close(), T); load_all()
@@ -16,14 +16,14 @@ ui$initializeGui(visitorsQ)
 on.exit(try(ui$close(), silent = TRUE))
 
 test_that("Module opens and closes nicely", {
-    expect_silent(mod <- iNZightTSMod$new(ui))
-    expect_is(mod, "iNZightTSMod")
+    expect_silent(mod <- iNZightTSLegacyMod$new(ui))
+    expect_is(mod, "iNZightTSLegacyMod")
     expect_equal(mod$timeVar, "Date")
     expect_silent(mod$close())
     rm("mod")
 })
 
-mod <- iNZightTSMod$new(ui)
+mod <- iNZightTSLegacyMod$new(ui)
 test_that("Axis limits sliders show the range of the data", {
     expect_equal(svalue(mod$xlimLower), "1998Q4")
     expect_equal(svalue(mod$xlimUpper), "2012Q1")
@@ -111,10 +111,10 @@ test_that("Smoother display can be controlled", {
 ui$close()
 
 
-data(visitorsM2, package = "iNZightTS")
+data(visitorsM2, package = "iNZightTSLegacy")
 test_that("Other datasets work too", {
     ui$initializeGui(visitorsM2)
-    mod <- iNZightTSMod$new(ui)
+    mod <- iNZightTSLegacyMod$new(ui)
 })
 
 ui$close()
@@ -122,7 +122,7 @@ ui$close()
 
 test_that("Plots works", {
     ui$initializeGui(visitorsM2)
-    expect_silent(mod <- iNZightTSMod$new(ui))
+    expect_silent(mod <- iNZightTSLegacyMod$new(ui))
     Sys.sleep(1)
     mod$plottype <- 2
     expect_silent(mod$updatePlot())
@@ -147,7 +147,7 @@ ui$initializeGui(visitorsA2)
 on.exit(try(ui$close(), silent = TRUE))
 
 test_that("Annual data disables unsupported plots", {
-    expect_silent(mod <- iNZightTSMod$new(ui))
+    expect_silent(mod <- iNZightTSLegacyMod$new(ui))
     on.exit(mod$close())
     expect_equal(
         mod$plotType$get_items(),
@@ -162,7 +162,7 @@ test_that("Annual data disables unsupported plots", {
 })
 
 test_that("Annual data can be manually specified", {
-    expect_silent(mod <- iNZightTSMod$new(ui))
+    expect_silent(mod <- iNZightTSLegacyMod$new(ui))
     expect_silent(mod$timeVarType$set_index(2L))
 
     expect_silent(mod$timePeriodList$set_value("Year"))
@@ -177,7 +177,7 @@ ui$close()
 # devtools::load_all()
 ui <- iNZGUI$new()
 ui$initializeGui(visitorsM2)
-mod <- iNZightTSMod$new(ui)
+mod <- iNZightTSLegacyMod$new(ui)
 Sys.sleep(1)
 
 test_that("Interact button activated when plot supported", {
@@ -194,18 +194,18 @@ test_that("Interact button activated when plot supported", {
 })
 
 
-covid <- iNZightTS:::covid
+covid <- iNZightTSLegacy:::covid
 ui$close()
 
 # devtools::load_all("../iNZightPlots")
 # devtools::load_all("../iNZight")
 # ui$close(); devtools::load_all()
 ui <- iNZGUI$new()
-ui$initializeGui(iNZightTS:::covid)
+ui$initializeGui(iNZightTSLegacy:::covid)
 Sys.sleep(1)
 
 test_that("User can choose between multiple non-numeric variables as time variable", {
-    expect_silent(mod <- iNZightTSMod$new(ui))
+    expect_silent(mod <- iNZightTSLegacyMod$new(ui))
     expect_equal(mod$timeVar, "Time")
 
     expect_silent(mod$varSelect$set_value("Daily_Deaths"))
